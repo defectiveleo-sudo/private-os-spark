@@ -395,4 +395,4 @@ function FilesWindow({ close }: { close: () => void }) {
       <div className="grid flex-1 place-items-center p-6 text-center"><div><Folder className="mx-auto size-14 text-primary" /><h2 className="mt-4 text-xl font-semibold">Your private space</h2><p className="mt-2 text-sm text-muted-foreground">No files yet. Everything you keep here stays in your session.</p><button type="button" className="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"><Plus className="size-4" />New folder</button></div></div>
     </WindowFrame>
   );
-      
+}

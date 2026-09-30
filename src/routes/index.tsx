@@ -1,33 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ComponentType } from "react";
 import {
-  AppWindow,
   ArrowLeft,
   ArrowRight,
   BatteryFull,
-  BookOpen,
-  Bot,
   Cherry,
   ChevronDown,
   CircleUserRound,
   Cloud,
-  Clock3,
-  Code2,
-  Expand,
   ExternalLink,
   Folder,
-  Gamepad2,
-  Globe2,
   Grid3X3,
-  Home,
-  Image,
-  Leaf,
   LockKeyhole,
   Maximize2,
-  Menu,
-  MessageCircle,
+  Minimize2,
   Minus,
-  Music2,
   Plus,
   RefreshCw,
   Search,
@@ -62,33 +49,49 @@ type WindowName = "browser" | "figure" | "settings" | "files" | null;
 const CHERRION_URL = "https://cherrion.top/";
 const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
 
-const dockApps = [
+type IconComponent = ComponentType<{ className?: string }>;
+
+function PrivateBrowserIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+      <defs>
+        <linearGradient id="private-browser-gradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#6fdc8c" />
+          <stop offset="1" stopColor="#e0a43c" />
+        </linearGradient>
+      </defs>
+      <circle cx="16" cy="16" r="15" fill="url(#private-browser-gradient)" />
+      <g fill="none" stroke="#0d1a10" strokeWidth="1.6" strokeLinecap="round">
+        <circle cx="15" cy="15" r="8" />
+        <ellipse cx="15" cy="15" rx="3.4" ry="8" />
+        <path d="M7 15h16" />
+      </g>
+      <path d="M23 18l4.2 1.6v3.1c0 2.5-1.8 4.2-4.2 5.2-2.4-1-4.2-2.7-4.2-5.2v-3.1z" fill="#0d1a10" stroke="#f3f7ee" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+const WindowContext = createContext<{ minimized: boolean; minimize: () => void }>({ minimized: false, minimize: () => {} });
+
+const dockApps: { id: string; label: string; icon: IconComponent; color: string }[] = [
   { id: "launcher", label: "Apps", icon: Grid3X3, color: "bg-secondary" },
-  { id: "browser", label: "PRIVATE Browser", icon: Globe2, color: "bg-primary text-primary-foreground" },
+  { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon, color: "" },
   { id: "figure", label: "Figure Cloud", icon: Cloud, color: "bg-accent text-accent-foreground" },
   { id: "files", label: "Files", icon: Folder, color: "bg-accent text-accent-foreground" },
   { id: "settings", label: "Settings", icon: Settings, color: "bg-secondary" },
-] as const;
+];
 
-const launcherApps = [
-  { id: "browser", label: "Private Browser", icon: Globe2 },
+const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
+  { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: Cloud },
   { id: "cherrion", label: "Cherrion", icon: Cherry },
   { id: "files", label: "Private Files", icon: Folder },
-  { id: "messages", label: "Messages", icon: MessageCircle },
   { id: "settings", label: "Settings", icon: Settings },
-  { id: "music", label: "Music", icon: Music2 },
-  { id: "photos", label: "Photos", icon: Image },
-  { id: "code", label: "Code Studio", icon: Code2 },
-  { id: "games", label: "Games", icon: Gamepad2 },
-  { id: "assistant", label: "Private AI", icon: Bot },
-  { id: "reading", label: "Reading", icon: BookOpen },
-  { id: "security", label: "Security", icon: ShieldCheck },
-  { id: "focus", label: "Focus", icon: Leaf },
-] as const;
+];
 
 function PrivateOS() {
-  const [booting, setBooting] = useState(true);
+  const [phase, setPhase] = useState<"start" | "boot" | "desktop">("start");
+  const [minimized, setMinimized] = useState(false);
   const [wallpaper, setWallpaper] = useState<0 | 1>(0);
   const [activeWindow, setActiveWindow] = useState<WindowName>(null);
   const [launcher, setLauncher] = useState(false);
@@ -98,13 +101,25 @@ function PrivateOS() {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    const bootTimer = window.setTimeout(() => setBooting(false), 2600);
     const clockTimer = window.setInterval(() => setTime(new Date()), 30000);
-    return () => {
-      globalThis.clearTimeout(bootTimer);
-      globalThis.clearInterval(clockTimer);
-    };
+    return () => globalThis.clearInterval(clockTimer);
   }, []);
+
+  useEffect(() => {
+    if (phase !== "boot") return;
+    const bootTimer = window.setTimeout(() => setPhase("desktop"), 2600);
+    return () => globalThis.clearTimeout(bootTimer);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "desktop") return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Enter" || event.repeat) return;
+      setPhase((current) => (current === "start" ? "boot" : "desktop"));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase]);
 
   const wallpapers = [mountainAsset.url, cherryAsset.url];
   const dateLabel = useMemo(
@@ -114,7 +129,13 @@ function PrivateOS() {
   const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const dockDay = time.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
 
+  const closeWindow = () => {
+    setActiveWindow(null);
+    setMinimized(false);
+  };
+
   const openApp = (id: string) => {
+    setMinimized(false);
     setLauncher(false);
     setQuickMenu(false);
     if (id === "browser" || id === "cherrion") {
@@ -126,7 +147,8 @@ function PrivateOS() {
     if (id === "files") setActiveWindow("files");
   };
 
-  if (booting) return <BootScreen />;
+  if (phase === "start") return <StartScreen onStart={() => setPhase("boot")} />;
+  if (phase === "boot") return <BootScreen />;
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
@@ -173,35 +195,50 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      {activeWindow === "browser" && <PrivateBrowser initialUrl={browserStart} close={() => setActiveWindow(null)} />}
-      {activeWindow === "figure" && <FigureCloudApp close={() => setActiveWindow(null)} />}
-      {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={() => setActiveWindow(null)} />}
-      {activeWindow === "files" && <FilesWindow close={() => setActiveWindow(null)} />}
+      <WindowContext.Provider value={{ minimized, minimize: () => setMinimized(true) }}>
+        {activeWindow === "browser" && <PrivateBrowser initialUrl={browserStart} close={closeWindow} />}
+        {activeWindow === "figure" && <FigureCloudApp close={closeWindow} />}
+        {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={closeWindow} />}
+        {activeWindow === "files" && <FilesWindow close={closeWindow} />}
+      </WindowContext.Provider>
 
-      <nav aria-label="PRIVATE OS dock" className="dock-glass absolute bottom-2 left-1/2 z-40 grid h-16 w-[calc(100%-1rem)] max-w-[42rem] -translate-x-1/2 grid-cols-[auto_minmax(0,1fr)_auto] items-center rounded-lg px-2 md:bottom-5 md:h-[4.5rem] md:px-3">
-        <OsButton label="PRIVATE OS home" onClick={() => { setActiveWindow(null); setLauncher(false); }} className="group relative size-11 shrink-0 rounded-md border border-border bg-background/25 shadow-lg transition-transform hover:-translate-y-0.5 md:size-12">
-          <ShieldCheck className="size-6 text-primary" />
-          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+      <nav aria-label="PRIVATE OS dock" className="dock-glass absolute bottom-2 left-1/2 z-40 flex h-11 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1 rounded-full px-2 md:bottom-3">
+        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 rounded-full border border-border bg-background/25 transition-transform hover:-translate-y-0.5">
+          <ShieldCheck className="size-4 text-primary" />
+          <span className="absolute -top-8 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
         </OsButton>
-        <div className="mx-1.5 flex min-w-0 items-center justify-center gap-1 border-x border-border px-1.5 md:mx-3 md:gap-2 md:px-3">
+        <div className="mx-0.5 flex min-w-0 items-center justify-center gap-1.5 border-x border-border px-2">
           {dockApps.map(({ id, label, icon: Icon, color }) => (
             <OsButton
               key={id}
               label={label}
               onClick={() => id === "launcher" ? setLauncher((value) => !value) : openApp(id)}
-              className={`group relative size-9 shrink-0 rounded-md ${color} shadow-lg transition-transform hover:-translate-y-1 sm:size-10 md:size-12`}
+              className={`group relative size-7 shrink-0 rounded-lg ${color} transition-transform hover:-translate-y-0.5`}
             >
-              <Icon className="size-4.5 md:size-6" />
-              <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
+              <Icon className={id === "browser" ? "size-7" : "size-4"} />
+              <span className="absolute -top-8 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
               {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-foreground" />}
             </OsButton>
           ))}
         </div>
-        <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open date and quick settings" className="flex min-w-11 shrink-0 flex-col items-end rounded-md px-1.5 py-1 text-right outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring md:min-w-16 md:px-2">
-          <span className="text-[9px] font-bold text-muted-foreground md:text-[10px]">{dockDay}</span>
-          <span className="text-xs font-semibold tabular-nums md:text-sm">{timeLabel}</span>
+        <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open date and quick settings" className="flex shrink-0 flex-col items-end rounded-md px-1.5 text-right leading-tight outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
+          <span className="text-[8px] font-bold text-muted-foreground">{dockDay}</span>
+          <span className="text-[11px] font-semibold tabular-nums">{timeLabel}</span>
         </button>
       </nav>
+    </main>
+  );
+}
+
+function StartScreen({ onStart }: { onStart: () => void }) {
+  return (
+    <main className="flex h-dvh flex-col items-center justify-center bg-[linear-gradient(to_bottom,#2b323b,#5d6977_55%,#a4b4c6)] px-4 text-center text-white">
+      <h1 className="text-[clamp(2rem,10vw,5rem)] font-extrabold leading-none tracking-[.14em]">PRIVATE OS</h1>
+      <div className="mt-5 h-[3px] w-[55%] max-w-xs bg-white" />
+      <button type="button" onClick={onStart} className="mt-8 border border-white/70 px-9 py-3 text-xs font-bold tracking-[.2em] outline-none transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white">
+        START
+      </button>
+      <p className="mt-4 text-[11px] tracking-wide text-white/60">Press ENTER twice to skip</p>
     </main>
   );
 }
@@ -222,7 +259,7 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section className="glass-panel absolute bottom-24 left-1/2 z-30 flex h-[min(34rem,68vh)] w-[min(45rem,calc(100%-1.5rem))] -translate-x-1/2 flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:p-6">
+    <section className="glass-panel absolute bottom-16 left-1/2 z-30 flex h-[min(34rem,68vh)] w-[min(45rem,calc(100%-1.5rem))] -translate-x-1/2 flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:p-6">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search apps" className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></div>
         <OsButton label="Close launcher" onClick={close} className="size-10 rounded-md hover:bg-secondary"><X className="size-5" /></OsButton>
@@ -240,12 +277,18 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
   );
 }
 
-function WindowFrame({ title, icon: Icon, close, children }: { title: string; icon: typeof Globe2; close: () => void; children: React.ReactNode }) {
+function WindowFrame({ title, icon: Icon, close, children }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode }) {
+  const { minimized, minimize } = useContext(WindowContext);
+  const [maximized, setMaximized] = useState(false);
   return (
-    <section className="glass-panel absolute inset-x-2 bottom-24 top-14 z-30 flex flex-col overflow-hidden rounded-lg [animation:window-in_.28s_ease-out] md:inset-x-[8%] md:bottom-24 md:top-16">
+    <section className={`glass-panel absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${minimized ? "hidden" : ""} ${maximized ? "inset-x-0 bottom-14 top-11 rounded-none" : "inset-x-2 bottom-16 top-14 rounded-lg md:inset-x-[8%] md:top-16"}`}>
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
         <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="size-4 text-primary" />{title}</div>
-        <div className="flex gap-1"><OsButton label="Minimize" className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton><OsButton label="Maximize" className="size-8 rounded-md hover:bg-secondary"><Maximize2 className="size-3.5" /></OsButton><OsButton label="Close" onClick={close} className="size-8 rounded-md hover:bg-destructive"><X className="size-4" /></OsButton></div>
+        <div className="flex gap-1">
+          <OsButton label="Minimize" onClick={minimize} className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton>
+          <OsButton label={maximized ? "Restore" : "Maximize"} onClick={() => setMaximized((value) => !value)} className="size-8 rounded-md hover:bg-secondary">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
+          <OsButton label="Close" onClick={close} className="size-8 rounded-md hover:bg-destructive"><X className="size-4" /></OsButton>
+        </div>
       </header>
       {children}
     </section>
@@ -282,7 +325,7 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
     setLoading(true);
   };
   return (
-    <WindowFrame title="PRIVATE Browser" icon={Globe2} close={close}>
+    <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
       <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
         <OsButton label="Back" disabled={historyIndex <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={historyIndex >= history.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { setLoading(Boolean(page)); setReloadKey((value) => value + 1); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
         <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-input px-2 sm:px-3"><LockKeyhole className="size-3.5 shrink-0 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search or enter address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
@@ -352,4 +395,4 @@ function FilesWindow({ close }: { close: () => void }) {
       <div className="grid flex-1 place-items-center p-6 text-center"><div><Folder className="mx-auto size-14 text-primary" /><h2 className="mt-4 text-xl font-semibold">Your private space</h2><p className="mt-2 text-sm text-muted-foreground">No files yet. Everything you keep here stays in your session.</p><button type="button" className="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"><Plus className="size-4" />New folder</button></div></div>
     </WindowFrame>
   );
-}
+      

@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep PRIVATE OS as a single browser-based desktop simulation with transient UI state; no backend is needed because all requested interactions are local.

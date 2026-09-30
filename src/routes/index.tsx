@@ -83,7 +83,7 @@ const launcherApps = [
 function PrivateOS() {
   const [booting, setBooting] = useState(true);
   const [wallpaper, setWallpaper] = useState<0 | 1>(0);
-  const [window, setWindow] = useState<WindowName>(null);
+  const [activeWindow, setActiveWindow] = useState<WindowName>(null);
   const [launcher, setLauncher] = useState(false);
   const [quickMenu, setQuickMenu] = useState(false);
   const [query, setQuery] = useState("");
@@ -93,8 +93,8 @@ function PrivateOS() {
     const bootTimer = window.setTimeout(() => setBooting(false), 2600);
     const clockTimer = window.setInterval(() => setTime(new Date()), 30000);
     return () => {
-      window.clearTimeout(bootTimer);
-      window.clearInterval(clockTimer);
+      globalThis.clearTimeout(bootTimer);
+      globalThis.clearInterval(clockTimer);
     };
   }, []);
 
@@ -108,9 +108,9 @@ function PrivateOS() {
   const openApp = (id: string) => {
     setLauncher(false);
     setQuickMenu(false);
-    if (id === "browser") setWindow("browser");
-    if (id === "settings") setWindow("settings");
-    if (id === "files") setWindow("files");
+    if (id === "browser") setActiveWindow("browser");
+    if (id === "settings") setActiveWindow("settings");
+    if (id === "files") setActiveWindow("files");
   };
 
   if (booting) return <BootScreen />;
@@ -160,9 +160,9 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      {window === "browser" && <PrivateBrowser close={() => setWindow(null)} />}
-      {window === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={() => setWindow(null)} />}
-      {window === "files" && <FilesWindow close={() => setWindow(null)} />}
+      {activeWindow === "browser" && <PrivateBrowser close={() => setActiveWindow(null)} />}
+      {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={() => setActiveWindow(null)} />}
+      {activeWindow === "files" && <FilesWindow close={() => setActiveWindow(null)} />}
 
       <nav aria-label="PRIVATE OS dock" className="soft-glass absolute bottom-3 left-1/2 z-40 flex h-16 max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1.5 rounded-lg px-2 shadow-2xl md:bottom-5 md:gap-2 md:px-3">
         {dockApps.map(({ id, label, icon: Icon, color }) => (

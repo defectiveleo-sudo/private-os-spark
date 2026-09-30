@@ -7,11 +7,14 @@ import {
   BatteryFull,
   BookOpen,
   Bot,
+  Cherry,
   ChevronDown,
   CircleUserRound,
+  Cloud,
   Clock3,
   Code2,
   Expand,
+  ExternalLink,
   Folder,
   Gamepad2,
   Globe2,
@@ -54,19 +57,23 @@ export const Route = createFileRoute("/")({
   component: PrivateOS,
 });
 
-type WindowName = "browser" | "settings" | "files" | null;
+type WindowName = "browser" | "figure" | "settings" | "files" | null;
+
+const CHERRION_URL = "https://cherrion.top/";
+const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
 
 const dockApps = [
   { id: "launcher", label: "Apps", icon: Grid3X3, color: "bg-secondary" },
   { id: "browser", label: "PRIVATE Browser", icon: Globe2, color: "bg-primary text-primary-foreground" },
+  { id: "figure", label: "Figure Cloud", icon: Cloud, color: "bg-accent text-accent-foreground" },
   { id: "files", label: "Files", icon: Folder, color: "bg-accent text-accent-foreground" },
-  { id: "messages", label: "Messages", icon: MessageCircle, color: "bg-secondary" },
-  { id: "music", label: "Music", icon: Music2, color: "bg-secondary" },
   { id: "settings", label: "Settings", icon: Settings, color: "bg-secondary" },
 ] as const;
 
 const launcherApps = [
   { id: "browser", label: "Private Browser", icon: Globe2 },
+  { id: "figure", label: "Figure Cloud", icon: Cloud },
+  { id: "cherrion", label: "Cherrion", icon: Cherry },
   { id: "files", label: "Private Files", icon: Folder },
   { id: "messages", label: "Messages", icon: MessageCircle },
   { id: "settings", label: "Settings", icon: Settings },
@@ -87,6 +94,7 @@ function PrivateOS() {
   const [launcher, setLauncher] = useState(false);
   const [quickMenu, setQuickMenu] = useState(false);
   const [query, setQuery] = useState("");
+  const [browserStart, setBrowserStart] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -104,11 +112,16 @@ function PrivateOS() {
     [time],
   );
   const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dockDay = time.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
 
   const openApp = (id: string) => {
     setLauncher(false);
     setQuickMenu(false);
-    if (id === "browser") setActiveWindow("browser");
+    if (id === "browser" || id === "cherrion") {
+      setBrowserStart(id === "cherrion" ? CHERRION_URL : null);
+      setActiveWindow("browser");
+    }
+    if (id === "figure") setActiveWindow("figure");
     if (id === "settings") setActiveWindow("settings");
     if (id === "files") setActiveWindow("files");
   };
@@ -160,22 +173,34 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      {activeWindow === "browser" && <PrivateBrowser close={() => setActiveWindow(null)} />}
+      {activeWindow === "browser" && <PrivateBrowser initialUrl={browserStart} close={() => setActiveWindow(null)} />}
+      {activeWindow === "figure" && <FigureCloudApp close={() => setActiveWindow(null)} />}
       {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={() => setActiveWindow(null)} />}
       {activeWindow === "files" && <FilesWindow close={() => setActiveWindow(null)} />}
 
-      <nav aria-label="PRIVATE OS dock" className="soft-glass absolute bottom-3 left-1/2 z-40 flex h-16 max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1.5 rounded-lg px-2 shadow-2xl md:bottom-5 md:gap-2 md:px-3">
-        {dockApps.map(({ id, label, icon: Icon, color }) => (
-          <OsButton
-            key={id}
-            label={label}
-            onClick={() => id === "launcher" ? setLauncher((value) => !value) : openApp(id)}
-            className={`group relative size-11 shrink-0 rounded-md ${color} transition-transform hover:-translate-y-1 md:size-12`}
-          >
-            <Icon className="size-5 md:size-6" />
-            <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-          </OsButton>
-        ))}
+      <nav aria-label="PRIVATE OS dock" className="dock-glass absolute bottom-2 left-1/2 z-40 grid h-16 w-[calc(100%-1rem)] max-w-[42rem] -translate-x-1/2 grid-cols-[auto_minmax(0,1fr)_auto] items-center rounded-lg px-2 md:bottom-5 md:h-[4.5rem] md:px-3">
+        <OsButton label="PRIVATE OS home" onClick={() => { setActiveWindow(null); setLauncher(false); }} className="group relative size-11 shrink-0 rounded-md border border-border bg-background/25 shadow-lg transition-transform hover:-translate-y-0.5 md:size-12">
+          <ShieldCheck className="size-6 text-primary" />
+          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+        </OsButton>
+        <div className="mx-1.5 flex min-w-0 items-center justify-center gap-1 border-x border-border px-1.5 md:mx-3 md:gap-2 md:px-3">
+          {dockApps.map(({ id, label, icon: Icon, color }) => (
+            <OsButton
+              key={id}
+              label={label}
+              onClick={() => id === "launcher" ? setLauncher((value) => !value) : openApp(id)}
+              className={`group relative size-9 shrink-0 rounded-md ${color} shadow-lg transition-transform hover:-translate-y-1 sm:size-10 md:size-12`}
+            >
+              <Icon className="size-4.5 md:size-6" />
+              <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
+              {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-foreground" />}
+            </OsButton>
+          ))}
+        </div>
+        <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open date and quick settings" className="flex min-w-11 shrink-0 flex-col items-end rounded-md px-1.5 py-1 text-right outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring md:min-w-16 md:px-2">
+          <span className="text-[9px] font-bold text-muted-foreground md:text-[10px]">{dockDay}</span>
+          <span className="text-xs font-semibold tabular-nums md:text-sm">{timeLabel}</span>
+        </button>
       </nav>
     </main>
   );
@@ -227,28 +252,53 @@ function WindowFrame({ title, icon: Icon, close, children }: { title: string; ic
   );
 }
 
-function PrivateBrowser({ close }: { close: () => void }) {
-  const [address, setAddress] = useState("");
-  const [page, setPage] = useState<string | null>(null);
-  const browse = () => {
-    const value = address.trim();
-    if (!value) return;
-    const isUrl = /^https?:\/\//i.test(value) || /^[\w-]+\.[a-z]{2,}/i.test(value);
-    setPage(isUrl ? (value.startsWith("http") ? value : `https://${value}`) : `https://search.brave.com/search?q=${encodeURIComponent(value)}`);
+function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; close: () => void }) {
+  const [address, setAddress] = useState(initialUrl ?? "");
+  const [history, setHistory] = useState<string[]>(initialUrl ? [initialUrl] : []);
+  const [historyIndex, setHistoryIndex] = useState(initialUrl ? 0 : -1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [loading, setLoading] = useState(Boolean(initialUrl));
+  const page = historyIndex >= 0 ? history[historyIndex] : null;
+
+  const navigateTo = (value: string) => {
+    const clean = value.trim();
+    if (!clean) return;
+    const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|[\w-]+\.[a-z]{2,})([/:?#]|$)/i.test(clean);
+    const destination = isUrl ? (/^https?:\/\//i.test(clean) ? clean : `https://${clean}`) : `https://search.brave.com/search?q=${encodeURIComponent(clean)}`;
+    const nextHistory = [...history.slice(0, historyIndex + 1), destination];
+    setHistory(nextHistory);
+    setHistoryIndex(nextHistory.length - 1);
+    setAddress(destination);
+    setLoading(true);
+  };
+
+  const moveHistory = (direction: -1 | 1) => {
+    const next = historyIndex + direction;
+    if (next < 0 || next >= history.length) return;
+    setHistoryIndex(next);
+    setAddress(history[next]);
+    setLoading(true);
   };
   return (
     <WindowFrame title="PRIVATE Browser" icon={Globe2} close={close}>
       <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
-        <OsButton label="Back" className="size-8 rounded-md hover:bg-secondary"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" className="size-8 rounded-md hover:bg-secondary"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" onClick={() => setPage((current) => current ? `${current}${current.includes("?") ? "&" : "?"}r=${Date.now()}` : current)} className="size-8 rounded-md hover:bg-secondary"><RefreshCw className="size-4" /></OsButton>
-        <form onSubmit={(event) => { event.preventDefault(); browse(); }} className="flex h-9 flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><LockKeyhole className="size-3.5 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search privately or enter an address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
-        <OsButton label="Browser menu" className="size-8 rounded-md hover:bg-secondary"><Menu className="size-4" /></OsButton>
+        <OsButton label="Back" disabled={historyIndex <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={historyIndex >= history.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { setLoading(Boolean(page)); setReloadKey((value) => value + 1); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
+        <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-input px-2 sm:px-3"><LockKeyhole className="size-3.5 shrink-0 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search or enter address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
+        <OsButton label="Open this page in a new tab" disabled={!page} onClick={() => page && window.open(page, "_blank", "noopener,noreferrer")} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ExternalLink className="size-4" /></OsButton>
       </div>
       <div className="relative flex-1 overflow-hidden bg-background">
-        {page ? <iframe title="PRIVATE Browser page" src={page} className="size-full border-0 bg-background" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" /> : (
+        {page ? <>
+          {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><RefreshCw className="mx-auto size-6 animate-spin text-primary" /><p className="mt-3 text-xs text-muted-foreground">Opening securely…</p></div></div>}
+          <iframe key={`${page}-${reloadKey}`} title="PRIVATE Browser page" src={page} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation" />
+        </> : (
           <div className="flex size-full flex-col items-center justify-center px-5 text-center">
             <div className="flex size-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xl"><ShieldCheck className="size-8" /></div>
             <h2 className="mt-5 text-2xl font-semibold">Browse without being followed.</h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">PRIVATE Browser opens searches through Brave Search. Some websites may choose to open in a separate tab.</p>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">Search privately or open a website directly. Use the external-open button when a site does not allow an embedded view.</p>
+            <div className="mt-6 grid w-full max-w-lg grid-cols-2 gap-2">
+              <OsButton label="Open Cherrion" onClick={() => navigateTo(CHERRION_URL)} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><Cherry className="size-5" /></span><span><strong className="block text-xs">Cherrion</strong><span className="text-[10px] text-muted-foreground">Recommended app</span></span></OsButton>
+              <OsButton label="Search with Brave" onClick={() => { setAddress("https://search.brave.com/"); navigateTo("https://search.brave.com/"); }} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">Brave Search</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
+            </div>
             <div className="mt-8 grid w-full max-w-lg grid-cols-3 gap-2">
               {["Private search", "Block trackers", "Clear session"].map((text, index) => <div key={text} className="rounded-md border border-border bg-card p-3 text-xs"><span className="mb-2 block text-primary">{index === 0 ? <Search className="mx-auto size-5" /> : index === 1 ? <ShieldCheck className="mx-auto size-5" /> : <Sparkles className="mx-auto size-5" />}</span>{text}</div>)}
             </div>
@@ -256,6 +306,23 @@ function PrivateBrowser({ close }: { close: () => void }) {
         )}
       </div>
       <footer className="flex h-7 items-center justify-between border-t border-border px-3 text-[10px] text-muted-foreground"><span>Shields active</span><span>0 trackers on this page</span></footer>
+    </WindowFrame>
+  );
+}
+
+function FigureCloudApp({ close }: { close: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+  return (
+    <WindowFrame title="Figure Cloud" icon={Cloud} close={close}>
+      <div className="grid h-10 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border bg-background/30 px-3">
+        <div className="flex min-w-0 items-center gap-2"><span className="size-2 shrink-0 rounded-full bg-primary" /><span className="truncate text-[11px] text-muted-foreground">Figure workspace connected</span></div>
+        <div className="flex items-center gap-1"><OsButton label="Reload Figure Cloud" onClick={() => { setLoading(true); setReloadKey((value) => value + 1); }} className="size-7 rounded-md hover:bg-secondary"><RefreshCw className="size-3.5" /></OsButton><OsButton label="Open Figure Cloud in a new tab" onClick={() => window.open(FIGURE_CLOUD_URL, "_blank", "noopener,noreferrer")} className="size-7 rounded-md hover:bg-secondary"><ExternalLink className="size-3.5" /></OsButton></div>
+      </div>
+      <div className="relative flex-1 overflow-hidden bg-background">
+        {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background"><div className="text-center"><div className="mx-auto grid size-14 place-items-center rounded-lg bg-accent text-accent-foreground shadow-xl"><Cloud className="size-7" /></div><p className="mt-4 text-sm font-semibold">Starting Figure Cloud</p><p className="mt-1 text-xs text-muted-foreground">Preparing your workspace…</p></div></div>}
+        <iframe key={reloadKey} title="Figure Cloud application" src={FIGURE_CLOUD_URL} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="clipboard-read; clipboard-write; fullscreen" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation" />
+      </div>
     </WindowFrame>
   );
 }

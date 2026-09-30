@@ -275,8 +275,10 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
   const moveHistory = (direction: -1 | 1) => {
     const next = historyIndex + direction;
     if (next < 0 || next >= history.length) return;
+    const nextPage = history[next];
+    if (!nextPage) return;
     setHistoryIndex(next);
-    setAddress(history[next]);
+    setAddress(nextPage);
     setLoading(true);
   };
   return (

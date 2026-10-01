@@ -21,6 +21,28 @@ function isBlockedHost(hostname: string) {
   return false;
 }
 
+function jsonResponse(body: unknown) {
+  return new Response(JSON.stringify(body), {
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
+// Would a browser let this page be shown inside the given site? (X-Frame-Options / frame-ancestors)
+function canBeFramed(headers: Headers, origin: string) {
+  const csp = headers.get("content-security-policy") ?? "";
+  const ancestors = /(?:^|;)\s*frame-ancestors\s+([^;]*)/i.exec(csp)?.[1]?.trim().toLowerCase();
+  if (ancestors !== undefined) {
+    const sources = ancestors.split(/\s+/).filter(Boolean);
+    const host = new URL(origin).host.toLowerCase();
+    return sources.some((source) => {
+      if (source === "*" || source === origin.toLowerCase() || source === `${new URL(origin).protocol}`) return true;
+      if (source.startsWith("*.")) return host.endsWith(source.slice(1));
+      return source === host || source === `https://${host}`;
+    });
+  }
+  return !(headers.get("x-frame-options") ?? "").trim();
+}
+
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -73,15 +95,16 @@ export const Route = createFileRoute("/api/proxy")({
       GET: async ({ request }) => {
         const self = new URL(request.url);
         const raw = self.searchParams.get("url") ?? "";
+        const checkOnly = self.searchParams.get("check") === "1";
 
         let target: URL;
         try {
           target = new URL(raw);
         } catch {
-          return errorPage(400, "That address isn't valid", "Check the address and try again.");
+          return checkOnly ? jsonResponse({ frameable: null }) : errorPage(400, "That address isn't valid", "Check the address and try again.");
         }
         if (!/^https?:$/.test(target.protocol) || isBlockedHost(target.hostname)) {
-          return errorPage(400, "That address can't be opened", "Only public websites can be opened.");
+          return checkOnly ? jsonResponse({ frameable: null }) : errorPage(400, "That address can't be opened", "Only public websites can be opened.");
         }
 
         let upstream: Response;
@@ -96,7 +119,12 @@ export const Route = createFileRoute("/api/proxy")({
             signal: AbortSignal.timeout(15000),
           });
         } catch {
-          return errorPage(502, "Couldn't reach this site", "The site didn't respond. Try again in a moment.", target.href);
+          return checkOnly ? jsonResponse({ frameable: null }) : errorPage(502, "Couldn't reach this site", "The site didn't respond. Try again in a moment.", target.href);
+        }
+
+        if (checkOnly) {
+          upstream.body?.cancel().catch(() => {});
+          return jsonResponse({ frameable: canBeFramed(upstream.headers, self.origin), status: upstream.status });
         }
 
         const finalUrl = upstream.url || target.href;
@@ -132,6 +160,8 @@ export const Route = createFileRoute("/api/proxy")({
         }
 
         html = html.replace(/<meta[^>]+http-equiv=["']?(?:content-security-policy|x-frame-options)[^>]*>/gi, "");
+        // Scripts and styles load straight from the original site, so drop the attributes that would demand CORS.
+        html = html.replace(/<(?:script|link)\b[^>]*>/gi, (tag) => tag.replace(/\s(?:crossorigin|integrity)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi, ""));
         const inject = `<base href="${escapeHtml(finalUrl)}"><script>${clientScript(finalUrl, self.origin)}</script>`;
         if (/<head(\s[^>]*)?>/i.test(html)) {
           html = html.replace(/<head(\s[^>]*)?>/i, (match) => match + inject);

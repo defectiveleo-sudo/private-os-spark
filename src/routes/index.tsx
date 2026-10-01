@@ -49,23 +49,29 @@ export const Route = createFileRoute("/")({
   component: PrivateOS,
 });
 
-type WindowName = "browser" | "figure" | "settings" | "files" | null;
+type WindowName = "browser" | "figure" | "settings" | "files" | "minecraft" | null;
 
 const CHERRION_URL = "https://cherrion.top/";
 const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
+const MINECRAFT_URL = "https://eaglercraft.com/play?version=modpack-ultimate-wasm";
 
 type IconComponent = ComponentType<{ className?: string }>;
 
 function PrivateBrowserIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true">
+    <svg viewBox="0 0 32 32" className={`drop-shadow-[0_2px_3px_rgb(0_0_0/.45)] ${className ?? ""}`} aria-hidden="true">
       <defs>
         <linearGradient id="private-browser-gradient" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor="#6fdc8c" />
           <stop offset="1" stopColor="#e0a43c" />
         </linearGradient>
+        <linearGradient id="private-browser-gloss" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" stopOpacity=".4" />
+          <stop offset=".55" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
       </defs>
-      <circle cx="16" cy="16" r="15" fill="url(#private-browser-gradient)" />
+      <rect x=".5" y=".5" width="31" height="31" rx="7.2" fill="url(#private-browser-gradient)" />
+      <rect x=".5" y=".5" width="31" height="31" rx="7.2" fill="url(#private-browser-gloss)" />
       <g fill="none" stroke="#0d1a10" strokeWidth="1.6" strokeLinecap="round">
         <circle cx="15" cy="15" r="8" />
         <ellipse cx="15" cy="15" rx="3.4" ry="8" />
@@ -78,22 +84,57 @@ function PrivateBrowserIcon({ className }: { className?: string }) {
 
 const WindowContext = createContext<{ minimized: boolean; minimize: () => void }>({ minimized: false, minimize: () => {} });
 
-function Tile({ className = "", tone, children }: { className?: string | undefined; tone: string; children: ReactNode }) {
+const GLYPH_WHITE = "[&>svg]:size-[56%] [&>svg]:text-white";
+
+// macOS-style app icon: rounded square, soft gradient, glossy top edge and a gentle shadow.
+function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { className?: string | undefined; tone: string; glyph?: string; children: ReactNode }) {
   return (
-    <span className={`grid shrink-0 place-items-center rounded-[22%] bg-gradient-to-br shadow-[0_2px_6px_rgb(0_0_0/.4)] [&>svg]:size-[56%] [&>svg]:text-white ${tone} ${className}`}>
+    <span className={`relative grid shrink-0 place-items-center overflow-hidden rounded-[22.5%] bg-gradient-to-b shadow-[inset_0_1px_0_rgb(255_255_255/.45),inset_0_-1px_0_rgb(0_0_0/.25),0_2px_5px_rgb(0_0_0/.45)] [&>svg]:relative ${glyph} ${tone} ${className}`}>
+      <span className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/30 to-transparent" />
       {children}
     </span>
   );
 }
 
-const CloudIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-indigo-600" className={className}><Cloud /></Tile>;
+const CloudIcon: IconComponent = ({ className }) => <Tile tone="from-sky-300 to-blue-600" className={className}><Cloud className="fill-white" /></Tile>;
 const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
-const FolderIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-orange-500" className={className}><Folder /></Tile>;
-const SettingsIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-400 to-zinc-700" className={className}><Settings /></Tile>;
+const FolderIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-600" className={className}><Folder className="fill-white/90" /></Tile>;
+const SettingsIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-400 to-zinc-700" glyph="[&>svg]:size-[60%] [&>svg]:text-zinc-100" className={className}><Settings /></Tile>;
+
+function GrassBlock() {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <polygon points="16,3 28,9.5 16,16 4,9.5" fill="#6cb04a" />
+      <polygon points="4,9.5 16,16 16,29.5 4,23" fill="#8a5a33" />
+      <polygon points="16,16 28,9.5 28,23 16,29.5" fill="#6e4526" />
+      <polygon points="4,9.5 16,16 16,19.5 4,13" fill="#5a9a3a" />
+      <polygon points="16,16 28,9.5 28,13 16,19.5" fill="#478a2c" />
+      <polygon points="16,6 18.2,7.2 16,8.4 13.8,7.2" fill="#82c25a" />
+      <polygon points="20,10 22.2,11.2 20,12.4 17.8,11.2" fill="#5a9a3a" />
+      <polygon points="11,10.4 13.2,11.6 11,12.8 8.8,11.6" fill="#82c25a" />
+      <polygon points="6.5,19 9,20.3 9,23 6.5,21.7" fill="#6e4526" />
+      <polygon points="23,20.3 25.5,19 25.5,21.7 23,23" fill="#5a381f" />
+      <path d="M16 3L28 9.5V23L16 29.5 4 23V9.5Z" fill="none" stroke="#1e1e1e" strokeOpacity=".55" strokeWidth=".6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Uses /minecraft-icon.png when you add one to the public folder, otherwise the grass-block icon.
+function MinecraftIcon({ className }: { className?: string }) {
+  const [custom, setCustom] = useState(false);
+  useEffect(() => {
+    const probe = new Image();
+    probe.onload = () => setCustom(true);
+    probe.src = "/minecraft-icon.png";
+  }, []);
+  if (custom) return <img src="/minecraft-icon.png" alt="" draggable={false} className={`rounded-[22.5%] object-cover ${className ?? ""}`} />;
+  return <Tile tone="from-zinc-600 to-zinc-900" glyph="[&>svg]:size-[76%]" className={className}><GrassBlock /></Tile>;
+}
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
+  { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -102,6 +143,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
+  { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -113,6 +155,21 @@ const wallpaperOptions: WallpaperOption[] = [
   { label: "Alpine Lake", thumb: mountainAsset.url, src: mountainAsset.url },
   { label: "Cherry Village", thumb: cherryAsset.url, src: cherryAsset.url },
 ];
+
+// Morocco moved to permanent GMT (UTC+0) on 20 Sep 2026. Some browsers still carry the old
+// time-zone rules (UTC+1), so those zones are pinned to the real offset.
+const MOROCCO_GMT_FROM = Date.UTC(2026, 8, 20, 1, 0, 0);
+
+function clockZone(date: Date) {
+  let zone = "UTC";
+  try {
+    zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    // keep UTC
+  }
+  if ((zone === "Africa/Casablanca" || zone === "Africa/El_Aaiun") && date.getTime() >= MOROCCO_GMT_FROM) return "UTC";
+  return zone;
+}
 
 function PrivateOS() {
   const [phase, setPhase] = useState<"start" | "boot" | "desktop">("start");
@@ -127,7 +184,12 @@ function PrivateOS() {
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
-    const clockTimer = window.setInterval(() => setTime(new Date()), 30000);
+    const clockTimer = window.setInterval(() => {
+      setTime((previous) => {
+        const next = new Date();
+        return Math.floor(next.getTime() / 60000) === Math.floor(previous.getTime() / 60000) ? previous : next;
+      });
+    }, 1000);
     return () => globalThis.clearInterval(clockTimer);
   }, []);
 
@@ -156,13 +218,14 @@ function PrivateOS() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, locked]);
 
+  const zone = clockZone(time);
   const dateLabel = useMemo(
-    () => time.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase(),
-    [time],
+    () => time.toLocaleDateString("en-US", { weekday: "long", timeZone: zone }).toUpperCase(),
+    [time, zone],
   );
-  const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long" }).toUpperCase()}, ${time.getFullYear()}.`;
-  const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: zone });
+  const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: zone }).toUpperCase()}, ${time.toLocaleDateString("en-GB", { year: "numeric", timeZone: zone })}.`;
+  const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: zone });
 
   const closeWindow = () => {
     setActiveWindow(null);
@@ -180,6 +243,7 @@ function PrivateOS() {
     if (id === "figure") setActiveWindow("figure");
     if (id === "settings") setActiveWindow("settings");
     if (id === "files") setActiveWindow("files");
+    if (id === "minecraft") setActiveWindow("minecraft");
   };
 
   if (phase === "start") return <StartScreen onStart={() => setPhase("boot")} />;
@@ -190,23 +254,35 @@ function PrivateOS() {
       <Wallpaper index={wallpaper} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <header className="soft-glass absolute inset-x-0 top-0 z-40 flex h-11 items-center justify-between border-x-0 border-t-0 px-4 text-xs font-medium md:px-6">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="size-4 text-primary" />
-          <span className="hidden sm:inline">PRIVATE OS</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setQuickMenu((value) => !value)}
-          aria-label="Open quick settings"
-          className="flex items-center gap-3 rounded-md px-2 py-1 transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <Signal className="size-3.5" />
-          <Wifi className="size-3.5" />
-          <BatteryFull className="size-4" />
-          <span>{timeLabel}</span>
-        </button>
-      </header>
+      <nav aria-label="PRIVATE OS dock" className="absolute left-3 top-3 z-40 flex w-max max-w-[calc(100%-5.5rem)] items-center gap-2.5 rounded-2xl bg-black/30 px-3 py-1.5 backdrop-blur-xl md:left-4 md:top-4 md:gap-3.5 md:px-4">
+        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
+          <ShieldCheck className="size-5 text-white" />
+          <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+        </OsButton>
+        <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
+          <LayoutGrid className="size-5 text-white/70" />
+          <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
+        </OsButton>
+        {dockApps.map(({ id, label, icon: Icon }) => (
+          <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
+            <Icon className="size-7" />
+            <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
+            {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
+          </OsButton>
+        ))}
+      </nav>
+
+      <button
+        type="button"
+        onClick={() => setQuickMenu((value) => !value)}
+        aria-label="Open quick settings"
+        className="absolute right-3 top-3 z-40 flex h-10 items-center gap-3 rounded-2xl bg-black/30 px-3 text-xs font-medium tabular-nums text-white backdrop-blur-xl outline-none transition-colors hover:bg-black/45 focus-visible:ring-2 focus-visible:ring-ring md:right-4 md:top-4"
+      >
+        <Signal className="hidden size-3.5 sm:block" />
+        <Wifi className="hidden size-3.5 sm:block" />
+        <BatteryFull className="hidden size-4 sm:block" />
+        <span>{timeLabel}</span>
+      </button>
 
       <section className="absolute inset-x-0 top-[14%] z-10 text-center drop-shadow-lg">
         <p className="font-['Rajdhani',sans-serif] text-lg font-bold tracking-[.35em] text-foreground/90">{dateLabel}</p>
@@ -215,7 +291,7 @@ function PrivateOS() {
       </section>
 
       {quickMenu && (
-        <aside className="glass-panel absolute right-3 top-14 z-50 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-4 [animation:window-in_.22s_ease-out] md:right-6">
+        <aside className="glass-panel absolute right-3 top-16 z-50 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-4 [animation:window-in_.22s_ease-out] md:right-6">
           <div className="mb-4 flex items-center justify-between">
             <div><p className="text-sm font-semibold">Quick settings</p><p className="text-xs text-muted-foreground">Private by default</p></div>
             <CircleUserRound className="size-7 text-primary" />
@@ -235,25 +311,9 @@ function PrivateOS() {
         {activeWindow === "figure" && <FigureCloudApp close={closeWindow} />}
         {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={closeWindow} />}
         {activeWindow === "files" && <FilesWindow close={closeWindow} />}
+        {activeWindow === "minecraft" && <MinecraftApp close={closeWindow} />}
       </WindowContext.Provider>
 
-      <nav aria-label="PRIVATE OS dock" className="absolute bottom-3 left-1/2 z-40 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-3.5 rounded-2xl bg-black/30 px-4 py-2 backdrop-blur-xl md:bottom-4">
-        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
-          <ShieldCheck className="size-5 text-white" />
-          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
-        </OsButton>
-        <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
-          <LayoutGrid className="size-5 text-white/70" />
-          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
-        </OsButton>
-        {dockApps.map(({ id, label, icon: Icon }) => (
-          <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
-            <Icon className="size-7" />
-            <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-            {activeWindow === id && <span className="absolute -bottom-1.5 size-1 rounded-full bg-white" />}
-          </OsButton>
-        ))}
-      </nav>
 
       <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} />
     </main>
@@ -262,10 +322,13 @@ function PrivateOS() {
 
 function Wallpaper({ index }: { index: number }) {
   const item = wallpaperOptions[index] ?? wallpaperOptions[0]!;
-  if (item.video) {
-    return <video key={item.video} src={item.video} poster={item.thumb} autoPlay loop muted playsInline preload="auto" aria-label={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [index]);
+  if (item.video && !failed) {
+    return <video key={item.video} src={item.video} poster={item.thumb} autoPlay loop muted playsInline preload="auto" onError={() => setFailed(true)} aria-label={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
   }
-  return <img src={item.src} alt={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
+  if (item.src) return <img src={item.src} alt={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
+  return <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0d1b2a,#1b3a4b_55%,#5c7f8a)]" />;
 }
 
 function LockScreen({ locked, unlock, day, date, clock }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string }) {
@@ -315,7 +378,7 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section className="glass-panel absolute bottom-16 left-1/2 z-30 flex h-[min(34rem,68vh)] w-[min(45rem,calc(100%-1.5rem))] -translate-x-1/2 flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:p-6">
+    <section className="glass-panel absolute left-3 top-[4.5rem] z-30 flex h-[min(34rem,calc(100dvh-6rem))] w-[min(45rem,calc(100%-1.5rem))] flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:left-4 md:p-6">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search apps" className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></div>
         <OsButton label="Close launcher" onClick={close} className="size-10 rounded-md hover:bg-secondary"><X className="size-5" /></OsButton>
@@ -333,21 +396,61 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
   );
 }
 
-function WindowFrame({ title, icon: Icon, close, children }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode }) {
+function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean }) {
   const { minimized, minimize } = useContext(WindowContext);
-  const [maximized, setMaximized] = useState(false);
+  const [maximized, setMaximized] = useState(startMaximized);
+  const toggleMaximize = () => setMaximized((value) => !value);
   return (
-    <section className={`glass-panel absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${minimized ? "hidden" : ""} ${maximized ? "inset-x-0 bottom-14 top-11 rounded-none" : "inset-x-2 bottom-16 top-14 rounded-lg md:inset-x-[8%] md:top-16"}`}>
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
-        <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="size-4 text-primary" />{title}</div>
-        <div className="flex gap-1">
-          <OsButton label="Minimize" onClick={minimize} className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton>
-          <OsButton label={maximized ? "Restore" : "Maximize"} onClick={() => setMaximized((value) => !value)} className="size-8 rounded-md hover:bg-secondary">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
-          <OsButton label="Close" onClick={close} className="size-8 rounded-md hover:bg-destructive"><X className="size-4" /></OsButton>
-        </div>
-      </header>
+    <section className={`absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${app ? "border border-white/10 bg-black shadow-2xl" : "glass-panel"} ${minimized ? "hidden" : ""} ${maximized ? "inset-x-0 bottom-0 top-[4.25rem] rounded-none" : `inset-x-2 bottom-3 top-[4.5rem] rounded-lg md:inset-x-[8%] md:bottom-6 md:top-20`}`}>
+      {app ? (
+        <header className="relative flex h-9 shrink-0 items-center border-b border-white/10 bg-[#202020] px-2">
+          <div className="flex items-center">
+            <button type="button" aria-label="Close" onClick={close} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#ff5f57]" /></button>
+            <button type="button" aria-label="Minimize" onClick={minimize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#febc2e]" /></button>
+            <button type="button" aria-label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#28c840]" /></button>
+          </div>
+          <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-2 text-xs font-semibold text-white/80"><Icon className="size-4" />{title}</div>
+        </header>
+      ) : (
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
+          <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="size-4 text-primary" />{title}</div>
+          <div className="flex gap-1">
+            <OsButton label="Minimize" onClick={minimize} className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton>
+            <OsButton label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="size-8 rounded-md hover:bg-secondary">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
+            <OsButton label="Close" onClick={close} className="size-8 rounded-md hover:bg-destructive"><X className="size-4" /></OsButton>
+          </div>
+        </header>
+      )}
       {children}
     </section>
+  );
+}
+
+function MinecraftApp({ close }: { close: () => void }) {
+  const [loading, setLoading] = useState(true);
+  return (
+    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized>
+      <div className="relative flex-1 overflow-hidden bg-black">
+        {loading && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
+            <div className="text-center">
+              <MinecraftIcon className="mx-auto size-20" />
+              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">MINECRAFT</p>
+              <p className="mt-1 text-[11px] text-white/50">Launching game…</p>
+              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#3fae4b] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+            </div>
+          </div>
+        )}
+        <iframe
+          title="Minecraft"
+          src={MINECRAFT_URL}
+          onLoad={() => setLoading(false)}
+          className="size-full border-0 bg-black"
+          allow="fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map"
+          sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
+        />
+      </div>
+    </WindowFrame>
   );
 }
 
@@ -480,7 +583,7 @@ function WallpaperSettings({ wallpaper, setWallpaper, close }: { wallpaper: numb
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {wallpaperOptions.map((item, index) => (
             <OsButton key={item.label} label={`Use ${item.label} wallpaper`} onClick={() => setWallpaper(index)} className={`group relative aspect-video overflow-hidden rounded-md border-2 ${wallpaper === index ? "border-primary" : "border-border"}`}>
-              <img src={item.thumb} alt={item.label} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
+              <img src={item.thumb} alt={item.label} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
             </OsButton>
           ))}
         </div>

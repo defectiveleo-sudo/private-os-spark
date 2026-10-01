@@ -12,7 +12,9 @@ import {
   Folder,
   LayoutGrid,
   LockKeyhole,
+  Maximize,
   Maximize2,
+  Minimize,
   Minimize2,
   Minus,
   Plus,
@@ -43,7 +45,7 @@ export const Route = createFileRoute("/")({
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Rajdhani:wght@500;700&display=swap" },
     ],
   }),
   component: PrivateOS,
@@ -182,6 +184,8 @@ function PrivateOS() {
   const [query, setQuery] = useState("");
   const [browserStart, setBrowserStart] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
+  const [fullscreen, setFullscreen] = useState(false);
+  const [canFullscreen, setCanFullscreen] = useState(false);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => {
@@ -191,6 +195,13 @@ function PrivateOS() {
       });
     }, 1000);
     return () => globalThis.clearInterval(clockTimer);
+  }, []);
+
+  useEffect(() => {
+    setCanFullscreen(Boolean(document.fullscreenEnabled));
+    const onChange = () => setFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
   useEffect(() => {
@@ -227,6 +238,11 @@ function PrivateOS() {
   const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: zone }).toUpperCase()}, ${time.toLocaleDateString("en-GB", { year: "numeric", timeZone: zone })}.`;
   const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: zone });
 
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen().catch(() => {});
+  };
+
   const closeWindow = () => {
     setActiveWindow(null);
     setMinimized(false);
@@ -254,44 +270,48 @@ function PrivateOS() {
       <Wallpaper index={wallpaper} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <nav aria-label="PRIVATE OS dock" className="absolute left-3 top-3 z-40 flex w-max max-w-[calc(100%-5.5rem)] items-center gap-2.5 rounded-2xl bg-black/30 px-3 py-1.5 backdrop-blur-xl md:left-4 md:top-4 md:gap-3.5 md:px-4">
-        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
-          <ShieldCheck className="size-5 text-white" />
-          <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
-        </OsButton>
-        <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
-          <LayoutGrid className="size-5 text-white/70" />
-          <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
-        </OsButton>
-        {dockApps.map(({ id, label, icon: Icon }) => (
-          <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-7 shrink-0 transition-transform hover:translate-y-0.5">
-            <Icon className="size-7" />
-            <span className="absolute left-0 top-9 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-            {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
+      <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
+        <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1.5 rounded-2xl bg-black/35 px-2 py-1.5 backdrop-blur-xl md:gap-3 md:px-4">
+          <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
+            <ShieldCheck className="size-5 text-white" />
+            <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
           </OsButton>
-        ))}
-      </nav>
+          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
+            <LayoutGrid className="size-5 text-white/70" />
+            <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
+          </OsButton>
+          {dockApps.map(({ id, label, icon: Icon }) => (
+            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
+              <Icon className="size-6 md:size-7" />
+              <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
+              {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
+            </OsButton>
+          ))}
+        </nav>
 
-      <button
-        type="button"
-        onClick={() => setQuickMenu((value) => !value)}
-        aria-label="Open quick settings"
-        className="absolute right-3 top-3 z-40 flex h-10 items-center gap-3 rounded-2xl bg-black/30 px-3 text-xs font-medium tabular-nums text-white backdrop-blur-xl outline-none transition-colors hover:bg-black/45 focus-visible:ring-2 focus-visible:ring-ring md:right-4 md:top-4"
-      >
-        <Signal className="hidden size-3.5 sm:block" />
-        <Wifi className="hidden size-3.5 sm:block" />
-        <BatteryFull className="hidden size-4 sm:block" />
-        <span>{timeLabel}</span>
-      </button>
+        <div className="flex h-9 items-center gap-2 rounded-2xl bg-black/35 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3">
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
+            <Signal className="hidden size-3.5 md:block" />
+            <Wifi className="size-3.5" />
+            <BatteryFull className="size-4" />
+            <span>{timeLabel}</span>
+          </button>
+          {canFullscreen && (
+            <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="size-6 shrink-0 rounded-md hover:bg-white/15">
+              {fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+            </OsButton>
+          )}
+        </div>
+      </div>
 
       <section className="absolute inset-x-0 top-[14%] z-10 text-center drop-shadow-lg">
         <p className="font-['Rajdhani',sans-serif] text-lg font-bold tracking-[.35em] text-foreground/90">{dateLabel}</p>
-        <h1 className="mt-3 text-5xl font-light tabular-nums md:text-6xl">{timeLabel}</h1>
+        <h1 className="mt-3 font-['Orbitron',sans-serif] text-4xl font-medium tabular-nums tracking-[.12em] md:text-6xl">{timeLabel}</h1>
         <p className="mt-3 text-xs text-foreground/70">Your space. Your rules.</p>
       </section>
 
       {quickMenu && (
-        <aside className="glass-panel absolute right-3 top-16 z-50 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-4 [animation:window-in_.22s_ease-out] md:right-6">
+        <aside className="glass-panel absolute inset-x-0 bottom-16 z-50 mx-auto w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-4 [animation:window-in_.22s_ease-out] md:bottom-[4.5rem]">
           <div className="mb-4 flex items-center justify-between">
             <div><p className="text-sm font-semibold">Quick settings</p><p className="text-xs text-muted-foreground">Private by default</p></div>
             <CircleUserRound className="size-7 text-primary" />
@@ -339,11 +359,11 @@ function LockScreen({ locked, unlock, day, date, clock }: { locked: boolean; unl
       aria-hidden={!locked}
       aria-label="Unlock PRIVATE OS"
       onClick={unlock}
-      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center bg-black/30 pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
+      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center bg-gradient-to-b from-black/80 via-black/65 to-black/85 pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
     >
       <p className="pl-[.2em] text-[clamp(2rem,10.5vw,7.5rem)] font-medium leading-none tracking-[.2em]">{day}</p>
       <p className="mt-5 pl-[.22em] text-sm font-bold tracking-[.22em] sm:text-xl">{date}</p>
-      <p className="mt-3 pl-[.25em] text-xs font-bold tracking-[.25em] text-[#f4ecd6]/70 sm:text-base">- {clock} -</p>
+      <p className="mt-4 pl-[.18em] font-['Orbitron',sans-serif] text-[clamp(1.5rem,7vw,3rem)] font-bold leading-none tracking-[.18em] text-[#f4ecd6]">{clock}</p>
       <p className="absolute bottom-8 pl-[.3em] text-[11px] font-medium tracking-[.3em] text-white/60">TAP OR PRESS ANY KEY TO UNLOCK</p>
     </div>
   );
@@ -378,7 +398,7 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section className="glass-panel absolute left-3 top-[4.5rem] z-30 flex h-[min(34rem,calc(100dvh-6rem))] w-[min(45rem,calc(100%-1.5rem))] flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:left-4 md:p-6">
+    <section className="glass-panel absolute inset-x-0 bottom-16 z-30 mx-auto flex h-[min(34rem,calc(100dvh-6rem))] w-[min(45rem,calc(100%-1.5rem))] flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:bottom-[4.5rem] md:p-6">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search apps" className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></div>
         <OsButton label="Close launcher" onClick={close} className="size-10 rounded-md hover:bg-secondary"><X className="size-5" /></OsButton>
@@ -396,12 +416,14 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
   );
 }
 
-function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean }) {
+function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
   const { minimized, minimize } = useContext(WindowContext);
   const [maximized, setMaximized] = useState(startMaximized);
   const toggleMaximize = () => setMaximized((value) => !value);
+  const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
+  const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-lg md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
-    <section className={`absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${app ? "border border-white/10 bg-black shadow-2xl" : "glass-panel"} ${minimized ? "hidden" : ""} ${maximized ? "inset-x-0 bottom-0 top-[4.25rem] rounded-none" : `inset-x-2 bottom-3 top-[4.5rem] rounded-lg md:inset-x-[8%] md:bottom-6 md:top-20`}`}>
+    <section className={`absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${surface} ${minimized ? "hidden" : ""} ${position}`}>
       {app ? (
         <header className="relative flex h-9 shrink-0 items-center border-b border-white/10 bg-[#202020] px-2">
           <div className="flex items-center">
@@ -410,6 +432,7 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
             <button type="button" aria-label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#28c840]" /></button>
           </div>
           <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-2 text-xs font-semibold text-white/80"><Icon className="size-4" />{title}</div>
+          <div className="relative z-10 ml-auto flex items-center text-white/70">{actions}</div>
         </header>
       ) : (
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
@@ -427,9 +450,36 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
 }
 
 function MinecraftApp({ close }: { close: () => void }) {
+  const [source, setSource] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Open the game directly when the site allows it; otherwise load it through the page loader.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      let direct = true;
+      try {
+        const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(MINECRAFT_URL)}`);
+        const info = (await response.json()) as { frameable?: boolean | null };
+        if (info.frameable === false) direct = false;
+      } catch {
+        // assume the site can be opened directly
+      }
+      if (!cancelled) setSource(direct ? MINECRAFT_URL : `/api/proxy?url=${encodeURIComponent(MINECRAFT_URL)}`);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const openOutside = (
+    <button type="button" aria-label="Open Minecraft in a new tab" onClick={() => window.open(MINECRAFT_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+      <ExternalLink className="size-3.5" />
+    </button>
+  );
+
   return (
-    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized>
+    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized actions={openOutside}>
       <div className="relative flex-1 overflow-hidden bg-black">
         {loading && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
@@ -441,14 +491,16 @@ function MinecraftApp({ close }: { close: () => void }) {
             </div>
           </div>
         )}
-        <iframe
-          title="Minecraft"
-          src={MINECRAFT_URL}
-          onLoad={() => setLoading(false)}
-          className="size-full border-0 bg-black"
-          allow="fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map"
-          sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
-        />
+        {source && (
+          <iframe
+            title="Minecraft"
+            src={source}
+            onLoad={() => setLoading(false)}
+            className="size-full border-0 bg-black"
+            allow="fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
+          />
+        )}
       </div>
     </WindowFrame>
   );

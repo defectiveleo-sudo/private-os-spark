@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createContext, useContext, useEffect, useMemo, useState, type ComponentType } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -10,7 +10,7 @@ import {
   Cloud,
   ExternalLink,
   Folder,
-  Grid3X3,
+  LayoutGrid,
   LockKeyhole,
   Maximize2,
   Minimize2,
@@ -39,6 +39,11 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "A private, focused desktop with PRIVATE Browser and switchable landscapes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+    ],
+    links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" },
     ],
   }),
   component: PrivateOS,
@@ -73,26 +78,47 @@ function PrivateBrowserIcon({ className }: { className?: string }) {
 
 const WindowContext = createContext<{ minimized: boolean; minimize: () => void }>({ minimized: false, minimize: () => {} });
 
-const dockApps: { id: string; label: string; icon: IconComponent; color: string }[] = [
-  { id: "launcher", label: "Apps", icon: Grid3X3, color: "bg-secondary" },
-  { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon, color: "" },
-  { id: "figure", label: "Figure Cloud", icon: Cloud, color: "bg-accent text-accent-foreground" },
-  { id: "files", label: "Files", icon: Folder, color: "bg-accent text-accent-foreground" },
-  { id: "settings", label: "Settings", icon: Settings, color: "bg-secondary" },
+function Tile({ className = "", tone, children }: { className?: string | undefined; tone: string; children: ReactNode }) {
+  return (
+    <span className={`grid shrink-0 place-items-center rounded-[22%] bg-gradient-to-br shadow-[0_2px_6px_rgb(0_0_0/.4)] [&>svg]:size-[56%] [&>svg]:text-white ${tone} ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+const CloudIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-indigo-600" className={className}><Cloud /></Tile>;
+const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
+const FolderIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-orange-500" className={className}><Folder /></Tile>;
+const SettingsIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-400 to-zinc-700" className={className}><Settings /></Tile>;
+
+const dockApps: { id: string; label: string; icon: IconComponent }[] = [
+  { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
+  { id: "figure", label: "Figure Cloud", icon: CloudIcon },
+  { id: "files", label: "Files", icon: FolderIcon },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
 const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
-  { id: "figure", label: "Figure Cloud", icon: Cloud },
-  { id: "cherrion", label: "Cherrion", icon: Cherry },
-  { id: "files", label: "Private Files", icon: Folder },
-  { id: "settings", label: "Settings", icon: Settings },
+  { id: "figure", label: "Figure Cloud", icon: CloudIcon },
+  { id: "cherrion", label: "Cherrion", icon: CherryIcon },
+  { id: "files", label: "Private Files", icon: FolderIcon },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
+];
+
+type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
+
+const wallpaperOptions: WallpaperOption[] = [
+  { label: "Snowy Campfire", thumb: "/wallpaper-poster.jpg", video: "/wallpaper.mp4" },
+  { label: "Alpine Lake", thumb: mountainAsset.url, src: mountainAsset.url },
+  { label: "Cherry Village", thumb: cherryAsset.url, src: cherryAsset.url },
 ];
 
 function PrivateOS() {
   const [phase, setPhase] = useState<"start" | "boot" | "desktop">("start");
   const [minimized, setMinimized] = useState(false);
-  const [wallpaper, setWallpaper] = useState<0 | 1>(0);
+  const [wallpaper, setWallpaper] = useState(0);
+  const [locked, setLocked] = useState(true);
   const [activeWindow, setActiveWindow] = useState<WindowName>(null);
   const [launcher, setLauncher] = useState(false);
   const [quickMenu, setQuickMenu] = useState(false);
@@ -121,13 +147,22 @@ function PrivateOS() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase]);
 
-  const wallpapers = [mountainAsset.url, cherryAsset.url];
+  useEffect(() => {
+    if (phase !== "desktop" || !locked) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (!event.repeat) setLocked(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, locked]);
+
   const dateLabel = useMemo(
     () => time.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase(),
     [time],
   );
   const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const dockDay = time.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+  const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long" }).toUpperCase()}, ${time.getFullYear()}.`;
+  const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 
   const closeWindow = () => {
     setActiveWindow(null);
@@ -152,7 +187,7 @@ function PrivateOS() {
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
-      <img src={wallpapers[wallpaper]} alt="PRIVATE OS landscape wallpaper" className="absolute inset-0 size-full object-cover" />
+      <Wallpaper index={wallpaper} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
       <header className="soft-glass absolute inset-x-0 top-0 z-40 flex h-11 items-center justify-between border-x-0 border-t-0 px-4 text-xs font-medium md:px-6">
@@ -174,7 +209,7 @@ function PrivateOS() {
       </header>
 
       <section className="absolute inset-x-0 top-[14%] z-10 text-center drop-shadow-lg">
-        <p className="text-xs font-semibold tracking-[.42em] text-foreground/90">{dateLabel}</p>
+        <p className="font-['Rajdhani',sans-serif] text-lg font-bold tracking-[.35em] text-foreground/90">{dateLabel}</p>
         <h1 className="mt-3 text-5xl font-light tabular-nums md:text-6xl">{timeLabel}</h1>
         <p className="mt-3 text-xs text-foreground/70">Your space. Your rules.</p>
       </section>
@@ -202,31 +237,52 @@ function PrivateOS() {
         {activeWindow === "files" && <FilesWindow close={closeWindow} />}
       </WindowContext.Provider>
 
-      <nav aria-label="PRIVATE OS dock" className="dock-glass absolute bottom-2 left-1/2 z-40 flex h-11 w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-1 rounded-full px-2 md:bottom-3">
-        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 rounded-full border border-border bg-background/25 transition-transform hover:-translate-y-0.5">
-          <ShieldCheck className="size-4 text-primary" />
-          <span className="absolute -top-8 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+      <nav aria-label="PRIVATE OS dock" className="absolute bottom-3 left-1/2 z-40 flex w-max max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-3.5 rounded-2xl bg-black/30 px-4 py-2 backdrop-blur-xl md:bottom-4">
+        <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
+          <ShieldCheck className="size-5 text-white" />
+          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
         </OsButton>
-        <div className="mx-0.5 flex min-w-0 items-center justify-center gap-1.5 border-x border-border px-2">
-          {dockApps.map(({ id, label, icon: Icon, color }) => (
-            <OsButton
-              key={id}
-              label={label}
-              onClick={() => id === "launcher" ? setLauncher((value) => !value) : openApp(id)}
-              className={`group relative size-7 shrink-0 rounded-lg ${color} transition-transform hover:-translate-y-0.5`}
-            >
-              <Icon className={id === "browser" ? "size-7" : "size-4"} />
-              <span className="absolute -top-8 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-              {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-foreground" />}
-            </OsButton>
-          ))}
-        </div>
-        <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open date and quick settings" className="flex shrink-0 flex-col items-end rounded-md px-1.5 text-right leading-tight outline-none transition-colors hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring">
-          <span className="text-[8px] font-bold text-muted-foreground">{dockDay}</span>
-          <span className="text-[11px] font-semibold tabular-nums">{timeLabel}</span>
-        </button>
+        <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
+          <LayoutGrid className="size-5 text-white/70" />
+          <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
+        </OsButton>
+        {dockApps.map(({ id, label, icon: Icon }) => (
+          <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-7 shrink-0 transition-transform hover:-translate-y-0.5">
+            <Icon className="size-7" />
+            <span className="absolute -top-9 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
+            {activeWindow === id && <span className="absolute -bottom-1.5 size-1 rounded-full bg-white" />}
+          </OsButton>
+        ))}
       </nav>
+
+      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} />
     </main>
+  );
+}
+
+function Wallpaper({ index }: { index: number }) {
+  const item = wallpaperOptions[index] ?? wallpaperOptions[0]!;
+  if (item.video) {
+    return <video key={item.video} src={item.video} poster={item.thumb} autoPlay loop muted playsInline preload="auto" aria-label={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
+  }
+  return <img src={item.src} alt={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
+}
+
+function LockScreen({ locked, unlock, day, date, clock }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string }) {
+  return (
+    <div
+      role="button"
+      tabIndex={locked ? 0 : -1}
+      aria-hidden={!locked}
+      aria-label="Unlock PRIVATE OS"
+      onClick={unlock}
+      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center bg-black/30 pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
+    >
+      <p className="pl-[.2em] text-[clamp(2rem,10.5vw,7.5rem)] font-medium leading-none tracking-[.2em]">{day}</p>
+      <p className="mt-5 pl-[.22em] text-sm font-bold tracking-[.22em] sm:text-xl">{date}</p>
+      <p className="mt-3 pl-[.25em] text-xs font-bold tracking-[.25em] text-[#f4ecd6]/70 sm:text-base">- {clock} -</p>
+      <p className="absolute bottom-8 pl-[.3em] text-[11px] font-medium tracking-[.3em] text-white/60">TAP OR PRESS ANY KEY TO UNLOCK</p>
+    </div>
   );
 }
 
@@ -268,7 +324,7 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
       <div className="grid flex-1 grid-cols-3 gap-3 overflow-auto sm:grid-cols-4 md:grid-cols-6">
         {filtered.map(({ id, label, icon: Icon }) => (
           <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex min-h-24 flex-col gap-2 rounded-md p-2 transition-colors hover:bg-secondary">
-            <span className="flex size-12 items-center justify-center rounded-md bg-secondary shadow-lg"><Icon className="size-6 text-primary" /></span><span className="text-center text-[11px] leading-tight">{label}</span>
+            <Icon className="size-12" /><span className="text-center text-[11px] leading-tight">{label}</span>
           </OsButton>
         ))}
       </div>
@@ -295,46 +351,90 @@ function WindowFrame({ title, icon: Icon, close, children }: { title: string; ic
   );
 }
 
+const DIRECT_HOSTS = ["cherrion.top"];
+const DIRECT_SANDBOX = "allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation";
+const PROXY_SANDBOX = "allow-forms allow-scripts allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation";
+
+function frameSource(url: string) {
+  try {
+    const { hostname } = new URL(url);
+    if (DIRECT_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`))) return { src: url, direct: true };
+  } catch {
+    // fall through to the page loader
+  }
+  return { src: `/api/proxy?url=${encodeURIComponent(url)}`, direct: false };
+}
+
 function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; close: () => void }) {
   const [address, setAddress] = useState(initialUrl ?? "");
-  const [history, setHistory] = useState<string[]>(initialUrl ? [initialUrl] : []);
-  const [historyIndex, setHistoryIndex] = useState(initialUrl ? 0 : -1);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [nav, setNav] = useState<{ list: string[]; index: number }>({ list: initialUrl ? [initialUrl] : [], index: initialUrl ? 0 : -1 });
+  const [frameTarget, setFrameTarget] = useState<string | null>(initialUrl);
+  const [frameKey, setFrameKey] = useState(0);
   const [loading, setLoading] = useState(Boolean(initialUrl));
-  const page = historyIndex >= 0 ? history[historyIndex] : null;
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const pending = useRef(true);
+  const page = nav.index >= 0 ? nav.list[nav.index] : null;
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frameRef.current?.contentWindow) return;
+      const url = (event.data as { privateNav?: unknown } | null)?.privateNav;
+      if (typeof url !== "string" || !/^https?:\/\//i.test(url)) return;
+      const replace = pending.current;
+      pending.current = false;
+      setNav((current) => {
+        if (current.list[current.index] === url) return current;
+        if (replace && current.index >= 0) {
+          const list = [...current.list];
+          list[current.index] = url;
+          return { list, index: current.index };
+        }
+        return { list: [...current.list.slice(0, current.index + 1), url], index: current.index + 1 };
+      });
+      setAddress(url);
+      setLoading(false);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
+
+  const show = (url: string) => {
+    pending.current = true;
+    setFrameTarget(url);
+    setFrameKey((value) => value + 1);
+    setAddress(url);
+    setLoading(true);
+  };
 
   const navigateTo = (value: string) => {
     const clean = value.trim();
     if (!clean) return;
     const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|[\w-]+\.[a-z]{2,})([/:?#]|$)/i.test(clean);
     const destination = isUrl ? (/^https?:\/\//i.test(clean) ? clean : `https://${clean}`) : `https://search.brave.com/search?q=${encodeURIComponent(clean)}`;
-    const nextHistory = [...history.slice(0, historyIndex + 1), destination];
-    setHistory(nextHistory);
-    setHistoryIndex(nextHistory.length - 1);
-    setAddress(destination);
-    setLoading(true);
+    setNav((current) => ({ list: [...current.list.slice(0, current.index + 1), destination], index: current.index + 1 }));
+    show(destination);
   };
 
   const moveHistory = (direction: -1 | 1) => {
-    const next = historyIndex + direction;
-    if (next < 0 || next >= history.length) return;
-    const nextPage = history[next];
+    const next = nav.index + direction;
+    const nextPage = nav.list[next];
     if (!nextPage) return;
-    setHistoryIndex(next);
-    setAddress(nextPage);
-    setLoading(true);
+    setNav({ list: nav.list, index: next });
+    show(nextPage);
   };
+
+  const frame = frameTarget ? frameSource(frameTarget) : null;
   return (
     <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
       <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
-        <OsButton label="Back" disabled={historyIndex <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={historyIndex >= history.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { setLoading(Boolean(page)); setReloadKey((value) => value + 1); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
+        <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { if (page) show(page); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
         <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-input px-2 sm:px-3"><LockKeyhole className="size-3.5 shrink-0 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search or enter address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
         <OsButton label="Open this page in a new tab" disabled={!page} onClick={() => page && window.open(page, "_blank", "noopener,noreferrer")} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ExternalLink className="size-4" /></OsButton>
       </div>
       <div className="relative flex-1 overflow-hidden bg-background">
-        {page ? <>
+        {frame ? <>
           {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><RefreshCw className="mx-auto size-6 animate-spin text-primary" /><p className="mt-3 text-xs text-muted-foreground">Opening securely…</p></div></div>}
-          <iframe key={`${page}-${reloadKey}`} title="PRIVATE Browser page" src={page} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation" />
+          <iframe ref={frameRef} key={frameKey} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" sandbox={frame.direct ? DIRECT_SANDBOX : PROXY_SANDBOX} />
         </> : (
           <div className="flex size-full flex-col items-center justify-center px-5 text-center">
             <div className="flex size-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xl"><ShieldCheck className="size-8" /></div>
@@ -372,15 +472,15 @@ function FigureCloudApp({ close }: { close: () => void }) {
   );
 }
 
-function WallpaperSettings({ wallpaper, setWallpaper, close }: { wallpaper: 0 | 1; setWallpaper: (value: 0 | 1) => void; close: () => void }) {
+function WallpaperSettings({ wallpaper, setWallpaper, close }: { wallpaper: number; setWallpaper: (value: number) => void; close: () => void }) {
   return (
     <WindowFrame title="Appearance" icon={Settings} close={close}>
       <div className="flex-1 overflow-auto p-5 md:p-8">
         <h2 className="text-xl font-semibold">Choose your landscape</h2><p className="mt-1 text-sm text-muted-foreground">Changes appear instantly across your home screen.</p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {[{ src: mountainAsset.url, label: "Alpine Lake" }, { src: cherryAsset.url, label: "Cherry Village" }].map((item, index) => (
-            <OsButton key={item.label} label={`Use ${item.label} wallpaper`} onClick={() => setWallpaper(index as 0 | 1)} className={`group relative aspect-video overflow-hidden rounded-md border-2 ${wallpaper === index ? "border-primary" : "border-border"}`}>
-              <img src={item.src} alt={item.label} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
+          {wallpaperOptions.map((item, index) => (
+            <OsButton key={item.label} label={`Use ${item.label} wallpaper`} onClick={() => setWallpaper(index)} className={`group relative aspect-video overflow-hidden rounded-md border-2 ${wallpaper === index ? "border-primary" : "border-border"}`}>
+              <img src={item.thumb} alt={item.label} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
             </OsButton>
           ))}
         </div>

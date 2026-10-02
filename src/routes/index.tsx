@@ -449,28 +449,106 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
   );
 }
 
-function MinecraftApp({ close }: { close: () => void }) {
-  const [source, setSource] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+// ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through a Wisp server) ----
+// Change this address to use a different Wisp server.
+const WISP_URL = "wss://wisp.mercurywork.shop/";
 
-  // Open the game directly when the site allows it; otherwise load it through the page loader.
+type EngineFrame = {
+  go: (url: string) => void;
+  addEventListener: (type: string, listener: (event: { url?: string | URL }) => void) => void;
+};
+type EngineController = { init: () => Promise<void>; createFrame: (frame?: HTMLIFrameElement) => EngineFrame };
+type EngineWindow = {
+  BareMux?: { BareMuxConnection: new (workerPath: string) => { setTransport: (path: string, args: unknown[]) => Promise<void> } };
+  $scramjetLoadController?: () => { ScramjetController: new (config: Record<string, unknown>) => EngineController };
+};
+
+let engineStart: Promise<EngineController> | null = null;
+
+function loadScript(src: string) {
+  return new Promise<void>((resolve, reject) => {
+    const element = document.createElement("script");
+    element.src = src;
+    element.async = true;
+    element.onload = () => resolve();
+    element.onerror = () => reject(new Error(`Could not load ${src}`));
+    document.head.appendChild(element);
+  });
+}
+
+function startProxyEngine() {
+  if (!engineStart) {
+    engineStart = (async () => {
+      if (!("serviceWorker" in navigator) || typeof SharedWorker === "undefined" || typeof WebAssembly === "undefined") {
+        throw new Error("This browser can't run the proxy engine");
+      }
+      const scope = window as unknown as EngineWindow;
+      await loadScript("/baremux.js");
+      await loadScript("/scramjet.all.js");
+      if (!scope.BareMux || !scope.$scramjetLoadController) throw new Error("Proxy engine files are missing");
+      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise<void>((resolve) => {
+          navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true });
+          window.setTimeout(resolve, 4000);
+        });
+      }
+      const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
+      await connection.setTransport("/epoxy.mjs", [{ wisp: WISP_URL }]);
+      const { ScramjetController } = scope.$scramjetLoadController();
+      const controller = new ScramjetController({ prefix: "/scramjet/" });
+      await controller.init();
+      return controller;
+    })().catch((error) => {
+      engineStart = null;
+      throw error;
+    });
+  }
+  return engineStart;
+}
+
+const ENGINE_FRAME_PERMISSIONS = "fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map";
+
+function MinecraftApp({ close }: { close: () => void }) {
+  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const controllerRef = useRef<EngineController | null>(null);
+
+  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      let direct = true;
       try {
-        const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(MINECRAFT_URL)}`);
-        const info = (await response.json()) as { frameable?: boolean | null };
-        if (info.frameable === false) direct = false;
+        controllerRef.current = await startProxyEngine();
+        if (!cancelled) setMode("engine");
       } catch {
-        // assume the site can be opened directly
+        let direct = true;
+        try {
+          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(MINECRAFT_URL)}`);
+          const info = (await response.json()) as { frameable?: boolean | null };
+          if (info.frameable === false) direct = false;
+        } catch {
+          // assume the site can be opened directly
+        }
+        if (cancelled) return;
+        setFallbackSrc(direct ? MINECRAFT_URL : `/api/proxy?url=${encodeURIComponent(MINECRAFT_URL)}`);
+        setMode("fallback");
       }
-      if (!cancelled) setSource(direct ? MINECRAFT_URL : `/api/proxy?url=${encodeURIComponent(MINECRAFT_URL)}`);
     })();
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (mode !== "engine") return;
+    const element = frameRef.current;
+    const controller = controllerRef.current;
+    if (element && controller) controller.createFrame(element).go(MINECRAFT_URL);
+  }, [mode]);
 
   const openOutside = (
     <button type="button" aria-label="Open Minecraft in a new tab" onClick={() => window.open(MINECRAFT_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
@@ -491,13 +569,17 @@ function MinecraftApp({ close }: { close: () => void }) {
             </div>
           </div>
         )}
-        {source && (
+        {mode === "engine" && (
+          <iframe ref={frameRef} key="engine" title="Minecraft" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
+        )}
+        {mode === "fallback" && fallbackSrc && (
           <iframe
+            key="fallback"
             title="Minecraft"
-            src={source}
+            src={fallbackSrc}
             onLoad={() => setLoading(false)}
             className="size-full border-0 bg-black"
-            allow="fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map"
+            allow={ENGINE_FRAME_PERMISSIONS}
             sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
           />
         )}
@@ -510,14 +592,13 @@ const DIRECT_HOSTS = ["cherrion.top"];
 const DIRECT_SANDBOX = "allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation";
 const PROXY_SANDBOX = "allow-forms allow-scripts allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals allow-presentation";
 
-function frameSource(url: string) {
+function isDirectHost(url: string) {
   try {
     const { hostname } = new URL(url);
-    if (DIRECT_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`))) return { src: url, direct: true };
+    return DIRECT_HOSTS.some((host) => hostname === host || hostname.endsWith(`.${host}`));
   } catch {
-    // fall through to the page loader
+    return false;
   }
-  return { src: `/api/proxy?url=${encodeURIComponent(url)}`, direct: false };
 }
 
 function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; close: () => void }) {
@@ -526,32 +607,68 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
   const [frameTarget, setFrameTarget] = useState<string | null>(initialUrl);
   const [frameKey, setFrameKey] = useState(0);
   const [loading, setLoading] = useState(Boolean(initialUrl));
+  const [engine, setEngine] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const controllerRef = useRef<EngineController | null>(null);
+  const engineFrame = useRef<{ element: HTMLIFrameElement; frame: EngineFrame } | null>(null);
   const pending = useRef(true);
   const page = nav.index >= 0 ? nav.list[nav.index] : null;
+  const needsEngine = Boolean(frameTarget) && !isDirectHost(frameTarget ?? "");
+
+  // Called whenever the page inside the frame reports its real address.
+  const realUrl = useRef<(url: string) => void>(() => {});
+  realUrl.current = (url: string) => {
+    if (!/^https?:\/\//i.test(url)) return;
+    const replace = pending.current;
+    pending.current = false;
+    setNav((current) => {
+      if (current.list[current.index] === url) return current;
+      if (replace && current.index >= 0) {
+        const list = [...current.list];
+        list[current.index] = url;
+        return { list, index: current.index };
+      }
+      return { list: [...current.list.slice(0, current.index + 1), url], index: current.index + 1 };
+    });
+    setAddress(url);
+    setLoading(false);
+  };
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frameRef.current?.contentWindow) return;
       const url = (event.data as { privateNav?: unknown } | null)?.privateNav;
-      if (typeof url !== "string" || !/^https?:\/\//i.test(url)) return;
-      const replace = pending.current;
-      pending.current = false;
-      setNav((current) => {
-        if (current.list[current.index] === url) return current;
-        if (replace && current.index >= 0) {
-          const list = [...current.list];
-          list[current.index] = url;
-          return { list, index: current.index };
-        }
-        return { list: [...current.list.slice(0, current.index + 1), url], index: current.index + 1 };
-      });
-      setAddress(url);
-      setLoading(false);
+      if (typeof url === "string") realUrl.current(url);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, []);
+
+  // Start the Epoxy + Scramjet engine the first time a page needs it.
+  useEffect(() => {
+    if (!needsEngine || engine !== "idle") return;
+    setEngine("loading");
+    startProxyEngine()
+      .then((controller) => {
+        controllerRef.current = controller;
+        setEngine("ready");
+      })
+      .catch(() => setEngine("failed"));
+  }, [needsEngine, engine]);
+
+  // Send the current page through the engine.
+  useEffect(() => {
+    if (engine !== "ready" || !needsEngine || !frameTarget) return;
+    const element = frameRef.current;
+    const controller = controllerRef.current;
+    if (!element || !controller) return;
+    if (!engineFrame.current || engineFrame.current.element !== element) {
+      const created = controller.createFrame(element);
+      created.addEventListener("urlchange", (event) => realUrl.current(String(event.url ?? "")));
+      engineFrame.current = { element, frame: created };
+    }
+    engineFrame.current.frame.go(frameTarget);
+  }, [engine, needsEngine, frameTarget, frameKey]);
 
   const show = (url: string) => {
     pending.current = true;
@@ -578,7 +695,13 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
     show(nextPage);
   };
 
-  const frame = frameTarget ? frameSource(frameTarget) : null;
+  const frame = frameTarget
+    ? isDirectHost(frameTarget)
+      ? { mode: "direct" as const, src: frameTarget }
+      : engine === "failed"
+        ? { mode: "loader" as const, src: `/api/proxy?url=${encodeURIComponent(frameTarget)}` }
+        : { mode: "engine" as const, src: undefined }
+    : null;
   return (
     <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
       <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
@@ -589,7 +712,7 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
       <div className="relative flex-1 overflow-hidden bg-background">
         {frame ? <>
           {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><RefreshCw className="mx-auto size-6 animate-spin text-primary" /><p className="mt-3 text-xs text-muted-foreground">Opening securely…</p></div></div>}
-          <iframe ref={frameRef} key={frameKey} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" sandbox={frame.direct ? DIRECT_SANDBOX : PROXY_SANDBOX} />
+          <iframe ref={frameRef} key={frame.mode === "engine" ? "engine" : `${frame.mode}-${frameKey}`} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="fullscreen; clipboard-read; clipboard-write; autoplay" sandbox={frame.mode === "direct" ? DIRECT_SANDBOX : frame.mode === "loader" ? PROXY_SANDBOX : undefined} />
         </> : (
           <div className="flex size-full flex-col items-center justify-center px-5 text-center">
             <div className="flex size-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xl"><ShieldCheck className="size-8" /></div>

@@ -31,6 +31,9 @@ import {
   Hexagon,
   StickyNote,
   Terminal,
+  Activity,
+  Download,
+  Upload,
 } from "lucide-react";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -140,6 +143,8 @@ function MinecraftIcon({ className }: { className?: string }) {
   return <Tile tone="from-zinc-600 to-zinc-900" glyph="[&>svg]:size-[76%]" className={className}><GrassBlock /></Tile>;
 }
 
+const TaskIcon: IconComponent = ({ className }) => <Tile tone="from-emerald-400 to-teal-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Activity /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
@@ -159,6 +164,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "notes", label: "Notes", icon: NotesIcon },
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "terminal", label: "Terminal", icon: TerminalIcon },
+  { id: "taskmgr", label: "Task Manager", icon: TaskIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -198,6 +204,7 @@ function PrivateOS() {
   const [time, setTime] = useState(new Date());
   const [fullscreen, setFullscreen] = useState(false);
   const [canFullscreen, setCanFullscreen] = useState(false);
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => {
@@ -288,6 +295,33 @@ function PrivateOS() {
     setOpenWins((list) => [...list.filter((item) => item !== key), key]);
   };
 
+  const menuItems: [string, () => void][] = [
+    ["Change wallpaper", () => setWallpaper((index) => (index + 1) % wallpaperOptions.length)],
+    ["Files", () => openApp("files")],
+    ["Notes", () => openApp("notes")],
+    ["Terminal", () => openApp("terminal")],
+    ["Task Manager", () => openApp("taskmgr")],
+    ["Settings", () => openApp("settings")],
+  ];
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.altKey) && event.code === "Space") {
+        event.preventDefault();
+        setLauncher((value) => !value);
+        return;
+      }
+      if (event.altKey && (event.key === "Tab" || event.code === "KeyW")) {
+        event.preventDefault();
+        const visible = openWins.filter((id) => !minWins.includes(id));
+        if (visible.length > 1) raise(visible[0]!);
+        else if (visible.length === 0 && openWins.length > 0) openApp(openWins[openWins.length - 1]!);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
   const renderWindow = (id: string) => {
     const close = () => closeWindow(id);
     switch (id) {
@@ -300,6 +334,7 @@ function PrivateOS() {
       case "notes": return <NotesApp close={close} />;
       case "calc": return <CalculatorApp close={close} />;
       case "terminal": return <TerminalApp close={close} open={openApp} />;
+      case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       default: return null;
     }
   };
@@ -308,7 +343,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
+    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={() => setMenu(null)} className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
       <Wallpaper index={wallpaper} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
@@ -365,6 +400,14 @@ function PrivateOS() {
           </div>
           <div className="mt-4 flex items-center gap-3"><span className="text-xs">Display</span><div className="h-1.5 flex-1 rounded-full bg-muted"><div className="h-full w-2/3 rounded-full bg-primary" /></div></div>
         </aside>
+      )}
+
+      {menu && (
+        <div role="menu" style={{ left: menu.x, top: menu.y }} className="glass-panel fixed z-50 w-44 rounded-lg p-1 text-xs [animation:window-in_.15s_ease-out]">
+          {menuItems.map(([label, action]) => (
+            <button key={label} type="button" role="menuitem" onClick={() => { action(); setMenu(null); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-secondary">{label}</button>
+          ))}
+        </div>
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
@@ -460,13 +503,15 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
   const { minimized, minimize, focus, z } = useContext(WindowContext);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const resizing = useRef<{ sx: number; sy: number; w: number; h: number; mode: string } | null>(null);
   const [maximized, setMaximized] = useState(startMaximized);
   const toggleMaximize = () => setMaximized((value) => !value);
   const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
   const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-lg md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
     <section
-      style={{ zIndex: z, transform: maximized ? undefined : `translate(${pos.x}px, ${pos.y}px)` }}
+      style={{ zIndex: z, transform: maximized ? undefined : `translate(${pos.x}px, ${pos.y}px)`, ...(size && !maximized ? { width: size.w, height: size.h } : {}) }}
       onPointerDown={(event) => {
         focus();
         const target = event.target as HTMLElement;
@@ -502,6 +547,25 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
         </header>
       )}
       {children}
+      {!maximized && (["e", "s", "se"] as const).map((mode) => (
+        <div
+          key={mode}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+            focus();
+            const box = event.currentTarget.parentElement!.getBoundingClientRect();
+            resizing.current = { sx: event.clientX, sy: event.clientY, w: box.width, h: box.height, mode };
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }}
+          onPointerMove={(event) => {
+            const r = resizing.current;
+            if (!r) return;
+            setSize({ w: r.mode.includes("e") ? Math.max(320, r.w + event.clientX - r.sx) : r.w, h: r.mode.includes("s") ? Math.max(220, r.h + event.clientY - r.sy) : r.h });
+          }}
+          onPointerUp={() => { resizing.current = null; }}
+          className={`absolute z-20 touch-none ${mode === "e" ? "right-0 top-0 h-full w-1.5 cursor-e-resize" : mode === "s" ? "bottom-0 left-0 h-1.5 w-full cursor-s-resize" : "bottom-0 right-0 size-4 cursor-se-resize"}`}
+        />
+      ))}
     </section>
   );
 }
@@ -786,6 +850,37 @@ function isDirectHost(url: string) {
 }
 
 function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; close: () => void }) {
+  const [tabs, setTabs] = useState<{ id: number; url: string | null }[]>([{ id: 1, url: initialUrl }]);
+  const [activeTab, setActiveTab] = useState(1);
+  const nextId = useRef(2);
+  const addTab = () => {
+    const id = nextId.current++;
+    setTabs((list) => [...list, { id, url: null }]);
+    setActiveTab(id);
+  };
+  const closeTab = (id: number) => {
+    if (tabs.length === 1) return close();
+    const rest = tabs.filter((tab) => tab.id !== id);
+    setTabs(rest);
+    if (activeTab === id) setActiveTab(rest[rest.length - 1]!.id);
+  };
+  return (
+    <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
+      <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-background/60 px-2">
+        {tabs.map((tab, index) => (
+          <div key={tab.id} className={`flex h-7 shrink-0 items-center gap-1 rounded-md pl-3 pr-1 text-xs ${tab.id === activeTab ? "bg-secondary" : "hover:bg-secondary/50"}`}>
+            <button type="button" onClick={() => setActiveTab(tab.id)}>Tab {index + 1}</button>
+            <button type="button" aria-label={`Close tab ${index + 1}`} onClick={() => closeTab(tab.id)} className="rounded p-0.5 hover:bg-background/60"><X className="size-3" /></button>
+          </div>
+        ))}
+        <button type="button" aria-label="New tab" onClick={addTab} className="grid size-7 shrink-0 place-items-center rounded-md hover:bg-secondary"><Plus className="size-4" /></button>
+      </div>
+      {tabs.map((tab) => <BrowserTab key={tab.id} initialUrl={tab.url} active={tab.id === activeTab} />)}
+    </WindowFrame>
+  );
+}
+
+function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active: boolean }) {
   const [address, setAddress] = useState(initialUrl ?? "");
   const [nav, setNav] = useState<{ list: string[]; index: number }>({ list: initialUrl ? [initialUrl] : [], index: initialUrl ? 0 : -1 });
   const [frameTarget, setFrameTarget] = useState<string | null>(initialUrl);
@@ -887,7 +982,7 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
         : { mode: "engine" as const, src: undefined }
     : null;
   return (
-    <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
+    <div className={active ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
       <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
         <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { if (page) show(page); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
         <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-input px-2 sm:px-3"><LockKeyhole className="size-3.5 shrink-0 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search or enter address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
@@ -913,7 +1008,7 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
         )}
       </div>
       <footer className="flex h-7 items-center justify-between border-t border-border px-3 text-[10px] text-muted-foreground"><span>Shields active</span><span>0 trackers on this page</span></footer>
-    </WindowFrame>
+    </div>
   );
 }
 
@@ -970,12 +1065,14 @@ function readFs(): Record<string, FsNode> {
 }
 
 function writeFs(fs: Record<string, FsNode>) {
+  let ok = true;
   try {
     localStorage.setItem(FS_KEY, JSON.stringify(fs));
   } catch {
-    // storage unavailable
+    ok = false;
   }
   window.dispatchEvent(new Event("pos-fs"));
+  return ok;
 }
 
 function useFs() {
@@ -999,6 +1096,7 @@ const baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 function FilesWindow({ close, open }: { close: () => void; open: (id: string) => void }) {
   const fs = useFs();
   const [dir, setDir] = useState("/");
+  const fileInput = useRef<HTMLInputElement>(null);
   const items = childrenOf(fs, dir);
   const up = dir === "/" ? "/" : dir.slice(0, dir.lastIndexOf("/")) || "/";
   const make = (folder: boolean) => {
@@ -1015,6 +1113,31 @@ function FilesWindow({ close, open }: { close: () => void; open: (id: string) =>
     for (const key of Object.keys(next)) if (key === path || key.startsWith(`${path}/`)) delete next[key];
     writeFs(next);
   };
+  const upload = (list: FileList | null) => {
+    if (!list) return;
+    Array.from(list).forEach((file) => {
+      const asText = file.type.startsWith("text/") || /\.(txt|md|json|csv|js|ts|tsx|html|css|xml|ya?ml|log)$/i.test(file.name);
+      const reader = new FileReader();
+      reader.onload = () => {
+        const next = { ...readFs() };
+        next[`${dir === "/" ? "" : dir}/${file.name.replace(/\//g, "")}`] = String(reader.result ?? "");
+        if (!writeFs(next)) window.alert("Browser storage is full. Try a smaller file.");
+      };
+      if (asText) reader.readAsText(file);
+      else reader.readAsDataURL(file);
+    });
+  };
+  const download = (path: string) => {
+    const value = fs[path];
+    if (typeof value !== "string") return;
+    const isData = value.startsWith("data:");
+    const url = isData ? value : URL.createObjectURL(new Blob([value], { type: "text/plain" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = baseName(path);
+    link.click();
+    if (!isData) window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   const btn = "rounded-md bg-secondary px-2.5 py-1 text-xs hover:bg-secondary/70 disabled:opacity-30";
   return (
     <WindowFrame title="Private Files" icon={Folder} close={close}>
@@ -1023,6 +1146,8 @@ function FilesWindow({ close, open }: { close: () => void; open: (id: string) =>
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{dir}</span>
         <button type="button" onClick={() => make(true)} className={btn}>New folder</button>
         <button type="button" onClick={() => make(false)} className={btn}>New file</button>
+        <button type="button" onClick={() => fileInput.current?.click()} className={btn}><Upload className="inline size-3" /> Upload</button>
+        <input ref={fileInput} type="file" multiple hidden onChange={(event) => { upload(event.target.files); event.target.value = ""; }} />
       </div>
       <div className="flex-1 overflow-auto p-3">
         {items.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">This folder is empty.</p>}
@@ -1047,6 +1172,7 @@ function FilesWindow({ close, open }: { close: () => void; open: (id: string) =>
                 {folder ? <Folder className="size-4 shrink-0 text-primary" /> : <StickyNote className="size-4 shrink-0 text-muted-foreground" />}
                 <span className="truncate">{baseName(path)}</span>
               </button>
+              {!folder && <button type="button" aria-label={`Download ${baseName(path)}`} onClick={() => download(path)} className="rounded p-1 hover:bg-secondary"><Download className="size-4" /></button>}
               <button type="button" aria-label={`Delete ${baseName(path)}`} onClick={() => remove(path)} className="rounded p-1 hover:bg-secondary">
                 <X className="size-4" />
               </button>
@@ -1178,7 +1304,7 @@ function TerminalApp({ close, open }: { close: () => void; open: (id: string) =>
     }
     return `/${out.join("/")}`;
   };
-  const apps: Record<string, string> = { browser: "browser", beez: "beez", files: "files", notes: "notes", calc: "calc", terminal: "terminal", settings: "settings", minecraft: "minecraft", figure: "figure", cherrion: "cherrion" };
+  const apps: Record<string, string> = { browser: "browser", beez: "beez", files: "files", notes: "notes", calc: "calc", terminal: "terminal", settings: "settings", taskmgr: "taskmgr", minecraft: "minecraft", figure: "figure", cherrion: "cherrion" };
   const run = (line: string) => {
     const [cmd = "", ...args] = line.trim().split(/\s+/);
     const arg = args.join(" ");
@@ -1321,5 +1447,22 @@ function NetworkPrivacy() {
         <button type="button" onClick={wipe} className="mt-3 rounded-md bg-destructive px-3 py-1.5 text-xs text-white">Clear all data</button>
       </section>
     </div>
+  );
+}
+
+function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: string[]; end: (id: string) => void; show: (id: string) => void }) {
+  const nameOf = (id: string) => [...dockApps, ...launcherApps].find((app) => app.id === id)?.label ?? id;
+  return (
+    <WindowFrame title="Task Manager" icon={Activity} close={close}>
+      <div className="flex-1 overflow-auto p-3">
+        {wins.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">No apps running.</p>}
+        {[...wins].reverse().map((id) => (
+          <div key={id} className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary">
+            <button type="button" onClick={() => show(id)} className="min-w-0 flex-1 truncate text-left text-sm">{nameOf(id)}</button>
+            <button type="button" onClick={() => end(id)} className="rounded-md bg-destructive px-2.5 py-1 text-xs text-white">End task</button>
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
   );
 }

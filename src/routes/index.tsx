@@ -27,6 +27,10 @@ import {
   Volume2,
   Wifi,
   X,
+  Calculator,
+  Hexagon,
+  StickyNote,
+  Terminal,
 } from "lucide-react";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -51,10 +55,9 @@ export const Route = createFileRoute("/")({
   component: PrivateOS,
 });
 
-type WindowName = "browser" | "figure" | "settings" | "files" | "minecraft" | null;
-
 const CHERRION_URL = "https://cherrion.top/";
 const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
+const BEEZ_URL = "https://beez.beez-softwares.workers.dev/";
 const MINECRAFT_URL = "https://eaglercraft.com/play?version=modpack-ultimate-wasm";
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -84,7 +87,7 @@ function PrivateBrowserIcon({ className }: { className?: string }) {
   );
 }
 
-const WindowContext = createContext<{ minimized: boolean; minimize: () => void }>({ minimized: false, minimize: () => {} });
+const WindowContext = createContext<{ minimized: boolean; minimize: () => void; focus: () => void; z: number }>({ minimized: false, minimize: () => {}, focus: () => {}, z: 10 });
 
 const GLYPH_WHITE = "[&>svg]:size-[56%] [&>svg]:text-white";
 
@@ -102,6 +105,10 @@ const CloudIcon: IconComponent = ({ className }) => <Tile tone="from-sky-300 to-
 const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
 const FolderIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-600" className={className}><Folder className="fill-white/90" /></Tile>;
 const SettingsIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-400 to-zinc-700" glyph="[&>svg]:size-[60%] [&>svg]:text-zinc-100" className={className}><Settings /></Tile>;
+const BeeZIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-yellow-600" glyph="[&>svg]:size-[62%] [&>svg]:text-zinc-900" className={className}><Hexagon className="fill-zinc-900/25" /></Tile>;
+const NotesIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-300 to-orange-500" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><StickyNote /></Tile>;
+const CalcIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-500 to-zinc-800" className={className}><Calculator /></Tile>;
+const TerminalIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-700 to-black" glyph="[&>svg]:size-[56%] [&>svg]:text-green-400" className={className}><Terminal /></Tile>;
 
 function GrassBlock() {
   return (
@@ -136,6 +143,7 @@ function MinecraftIcon({ className }: { className?: string }) {
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
+  { id: "beez", label: "BeeZ", icon: BeeZIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
@@ -144,9 +152,13 @@ const dockApps: { id: string; label: string; icon: IconComponent }[] = [
 const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
+  { id: "beez", label: "BeeZ", icon: BeeZIcon },
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
+  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "calc", label: "Calculator", icon: CalcIcon },
+  { id: "terminal", label: "Terminal", icon: TerminalIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -175,10 +187,10 @@ function clockZone(date: Date) {
 
 function PrivateOS() {
   const [phase, setPhase] = useState<"start" | "boot" | "desktop">("start");
-  const [minimized, setMinimized] = useState(false);
   const [wallpaper, setWallpaper] = useState(0);
   const [locked, setLocked] = useState(true);
-  const [activeWindow, setActiveWindow] = useState<WindowName>(null);
+  const [openWins, setOpenWins] = useState<string[]>([]);
+  const [minWins, setMinWins] = useState<string[]>([]);
   const [launcher, setLauncher] = useState(false);
   const [quickMenu, setQuickMenu] = useState(false);
   const [query, setQuery] = useState("");
@@ -243,23 +255,53 @@ function PrivateOS() {
     else document.documentElement.requestFullscreen().catch(() => {});
   };
 
-  const closeWindow = () => {
-    setActiveWindow(null);
-    setMinimized(false);
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem("pos-wallpaper"));
+      if (Number.isInteger(saved) && saved >= 0 && saved < wallpaperOptions.length) setWallpaper(saved);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("pos-wallpaper", String(wallpaper));
+    } catch {
+      // storage unavailable
+    }
+  }, [wallpaper]);
+
+  const closeWindow = (id: string) => {
+    setOpenWins((list) => list.filter((item) => item !== id));
+    setMinWins((list) => list.filter((item) => item !== id));
   };
 
+  const raise = (id: string) => setOpenWins((list) => (list[list.length - 1] === id ? list : [...list.filter((item) => item !== id), id]));
+
   const openApp = (id: string) => {
-    setMinimized(false);
     setLauncher(false);
     setQuickMenu(false);
-    if (id === "browser" || id === "cherrion") {
-      setBrowserStart(id === "cherrion" ? CHERRION_URL : null);
-      setActiveWindow("browser");
+    const key = id === "cherrion" ? "browser" : id;
+    if (id === "cherrion") setBrowserStart(CHERRION_URL);
+    setMinWins((list) => list.filter((item) => item !== key));
+    setOpenWins((list) => [...list.filter((item) => item !== key), key]);
+  };
+
+  const renderWindow = (id: string) => {
+    const close = () => closeWindow(id);
+    switch (id) {
+      case "browser": return <PrivateBrowser key={browserStart ?? "home"} initialUrl={browserStart} close={close} />;
+      case "figure": return <FigureCloudApp close={close} />;
+      case "beez": return <BeeZApp close={close} />;
+      case "minecraft": return <MinecraftApp close={close} />;
+      case "settings": return <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={close} />;
+      case "files": return <FilesWindow close={close} open={openApp} />;
+      case "notes": return <NotesApp close={close} />;
+      case "calc": return <CalculatorApp close={close} />;
+      case "terminal": return <TerminalApp close={close} open={openApp} />;
+      default: return null;
     }
-    if (id === "figure") setActiveWindow("figure");
-    if (id === "settings") setActiveWindow("settings");
-    if (id === "files") setActiveWindow("files");
-    if (id === "minecraft") setActiveWindow("minecraft");
   };
 
   if (phase === "start") return <StartScreen onStart={() => setPhase("boot")} />;
@@ -272,7 +314,7 @@ function PrivateOS() {
 
       <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
         <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1.5 rounded-2xl bg-black/35 px-2 py-1.5 backdrop-blur-xl md:gap-3 md:px-4">
-          <OsButton label="PRIVATE OS home" onClick={() => { closeWindow(); setLauncher(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
+          <OsButton label="PRIVATE OS home" onClick={() => { setMinWins(openWins); setLauncher(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
             <ShieldCheck className="size-5 text-white" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
           </OsButton>
@@ -284,7 +326,7 @@ function PrivateOS() {
             <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
               <Icon className="size-6 md:size-7" />
               <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-              {activeWindow === id && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
+              {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
             </OsButton>
           ))}
         </nav>
@@ -326,13 +368,11 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      <WindowContext.Provider value={{ minimized, minimize: () => setMinimized(true) }}>
-        {activeWindow === "browser" && <PrivateBrowser initialUrl={browserStart} close={closeWindow} />}
-        {activeWindow === "figure" && <FigureCloudApp close={closeWindow} />}
-        {activeWindow === "settings" && <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={closeWindow} />}
-        {activeWindow === "files" && <FilesWindow close={closeWindow} />}
-        {activeWindow === "minecraft" && <MinecraftApp close={closeWindow} />}
-      </WindowContext.Provider>
+      {openWins.map((id, index) => (
+        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + index }}>
+          {renderWindow(id)}
+        </WindowContext.Provider>
+      ))}
 
 
       <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} />
@@ -417,13 +457,30 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
 }
 
 function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
-  const { minimized, minimize } = useContext(WindowContext);
+  const { minimized, minimize, focus, z } = useContext(WindowContext);
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
   const [maximized, setMaximized] = useState(startMaximized);
   const toggleMaximize = () => setMaximized((value) => !value);
   const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
   const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-lg md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
-    <section className={`absolute z-30 flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${surface} ${minimized ? "hidden" : ""} ${position}`}>
+    <section
+      style={{ zIndex: z, transform: maximized ? undefined : `translate(${pos.x}px, ${pos.y}px)` }}
+      onPointerDown={(event) => {
+        focus();
+        const target = event.target as HTMLElement;
+        if (maximized || event.button !== 0 || !target.closest("header") || target.closest("button")) return;
+        drag.current = { sx: event.clientX, sy: event.clientY, ox: pos.x, oy: pos.y };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const d = drag.current;
+        if (d) setPos({ x: d.ox + event.clientX - d.sx, y: d.oy + event.clientY - d.sy });
+      }}
+      onPointerUp={() => { drag.current = null; }}
+      className={`absolute flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${surface} ${minimized ? "hidden" : ""} ${position}`}
+    >
       {app ? (
         <header className="relative flex h-9 shrink-0 items-center border-b border-white/10 bg-[#202020] px-2">
           <div className="flex items-center">
@@ -451,7 +508,56 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
 
 // ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through a Wisp server) ----
 // Change this address to use a different Wisp server.
-const WISP_URL = "wss://wisp.mercurywork.shop/";
+const WISP_SERVERS = ["wss://wisp.mercurywork.shop/", "wss://anura.pro/", "wss://wisp.rhw.one/wisp/"];
+
+function probeWisp(url: string, ms = 4000) {
+  return new Promise<boolean>((resolve) => {
+    let done = false;
+    let socket: WebSocket | null = null;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      window.clearTimeout(timer);
+      try {
+        socket?.close();
+      } catch {
+        // already closed
+      }
+      resolve(ok);
+    };
+    const timer = window.setTimeout(() => finish(false), ms);
+    try {
+      socket = new WebSocket(url);
+      socket.onopen = () => finish(true);
+      socket.onerror = () => finish(false);
+      socket.onclose = () => finish(false);
+    } catch {
+      finish(false);
+    }
+  });
+}
+
+// Picks a working Wisp server: a custom choice if set, otherwise the first live one (last working server first).
+async function pickWisp() {
+  let choice = "auto";
+  let last = "";
+  try {
+    choice = localStorage.getItem("pos-wisp-choice") || "auto";
+    last = localStorage.getItem("pos-wisp-last") || "";
+  } catch {
+    // storage unavailable
+  }
+  if (choice.startsWith("wss://")) return choice;
+  const list = [...new Set([last, ...WISP_SERVERS].filter(Boolean))];
+  const results = await Promise.all(list.map((url) => probeWisp(url)));
+  const working = list.find((_, index) => results[index]) ?? WISP_SERVERS[0]!;
+  try {
+    localStorage.setItem("pos-wisp-last", working);
+  } catch {
+    // storage unavailable
+  }
+  return working;
+}
 
 type EngineFrame = {
   go: (url: string) => void;
@@ -495,7 +601,7 @@ function startProxyEngine() {
         });
       }
       const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
-      await connection.setTransport("/epoxy.mjs", [{ wisp: WISP_URL }]);
+      await connection.setTransport("/epoxy.mjs", [{ wisp: await pickWisp() }]);
       const { ScramjetController } = scope.$scramjetLoadController();
       const controller = new ScramjetController({ prefix: "/scramjet/" });
       await controller.init();
@@ -576,6 +682,84 @@ function MinecraftApp({ close }: { close: () => void }) {
           <iframe
             key="fallback"
             title="Minecraft"
+            src={fallbackSrc}
+            onLoad={() => setLoading(false)}
+            className="size-full border-0 bg-black"
+            allow={ENGINE_FRAME_PERMISSIONS}
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
+          />
+        )}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function BeeZApp({ close }: { close: () => void }) {
+  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const controllerRef = useRef<EngineController | null>(null);
+
+  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        controllerRef.current = await startProxyEngine();
+        if (!cancelled) setMode("engine");
+      } catch {
+        let direct = true;
+        try {
+          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(BEEZ_URL)}`);
+          const info = (await response.json()) as { frameable?: boolean | null };
+          if (info.frameable === false) direct = false;
+        } catch {
+          // assume the site can be opened directly
+        }
+        if (cancelled) return;
+        setFallbackSrc(direct ? BEEZ_URL : `/api/proxy?url=${encodeURIComponent(BEEZ_URL)}`);
+        setMode("fallback");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "engine") return;
+    const element = frameRef.current;
+    const controller = controllerRef.current;
+    if (element && controller) controller.createFrame(element).go(BEEZ_URL);
+  }, [mode]);
+
+  const openOutside = (
+    <button type="button" aria-label="Open BeeZ in a new tab" onClick={() => window.open(BEEZ_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+      <ExternalLink className="size-3.5" />
+    </button>
+  );
+
+  return (
+    <WindowFrame title="BeeZ" icon={BeeZIcon} close={close} app startMaximized actions={openOutside}>
+      <div className="relative flex-1 overflow-hidden bg-black">
+        {loading && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
+            <div className="text-center">
+              <BeeZIcon className="mx-auto size-20" />
+              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">BEEZ</p>
+              <p className="mt-1 text-[11px] text-white/50">Loading…</p>
+              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#f5b301] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+            </div>
+          </div>
+        )}
+        {mode === "engine" && (
+          <iframe ref={frameRef} key="engine" title="BeeZ" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
+        )}
+        {mode === "fallback" && fallbackSrc && (
+          <iframe
+            key="fallback"
+            title="BeeZ"
             src={fallbackSrc}
             onLoad={() => setLoading(false)}
             className="size-full border-0 bg-black"
@@ -762,15 +946,380 @@ function WallpaperSettings({ wallpaper, setWallpaper, close }: { wallpaper: numb
             </OsButton>
           ))}
         </div>
+        <NetworkPrivacy />
       </div>
     </WindowFrame>
   );
 }
 
-function FilesWindow({ close }: { close: () => void }) {
+
+type FsNode = string | null; // string = file, null = folder
+const FS_KEY = "pos-fs";
+
+function readFs(): Record<string, FsNode> {
+  try {
+    const raw = localStorage.getItem(FS_KEY);
+    if (raw) {
+      const data = JSON.parse(raw) as Record<string, FsNode>;
+      if (data && typeof data === "object") return data;
+    }
+  } catch {
+    // storage unavailable or corrupted
+  }
+  return { "/Documents": null, "/Documents/welcome.txt": "Welcome to PRIVATE OS. Files live only in this browser." };
+}
+
+function writeFs(fs: Record<string, FsNode>) {
+  try {
+    localStorage.setItem(FS_KEY, JSON.stringify(fs));
+  } catch {
+    // storage unavailable
+  }
+  window.dispatchEvent(new Event("pos-fs"));
+}
+
+function useFs() {
+  const [fs, setFs] = useState<Record<string, FsNode>>({});
+  useEffect(() => {
+    const load = () => setFs(readFs());
+    load();
+    window.addEventListener("pos-fs", load);
+    return () => window.removeEventListener("pos-fs", load);
+  }, []);
+  return fs;
+}
+
+const childrenOf = (fs: Record<string, FsNode>, dir: string) =>
+  Object.keys(fs)
+    .filter((path) => path !== "/" && (path.slice(0, path.lastIndexOf("/")) || "/") === dir)
+    .sort();
+
+const baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
+
+function FilesWindow({ close, open }: { close: () => void; open: (id: string) => void }) {
+  const fs = useFs();
+  const [dir, setDir] = useState("/");
+  const items = childrenOf(fs, dir);
+  const up = dir === "/" ? "/" : dir.slice(0, dir.lastIndexOf("/")) || "/";
+  const make = (folder: boolean) => {
+    const name = window.prompt(folder ? "Folder name" : "File name")?.trim().replace(/\//g, "");
+    if (!name) return;
+    const path = `${dir === "/" ? "" : dir}/${name}`;
+    const next = { ...readFs() };
+    if (path in next) return;
+    next[path] = folder ? null : "";
+    writeFs(next);
+  };
+  const remove = (path: string) => {
+    const next = { ...readFs() };
+    for (const key of Object.keys(next)) if (key === path || key.startsWith(`${path}/`)) delete next[key];
+    writeFs(next);
+  };
+  const btn = "rounded-md bg-secondary px-2.5 py-1 text-xs hover:bg-secondary/70 disabled:opacity-30";
   return (
     <WindowFrame title="Private Files" icon={Folder} close={close}>
-      <div className="grid flex-1 place-items-center p-6 text-center"><div><Folder className="mx-auto size-14 text-primary" /><h2 className="mt-4 text-xl font-semibold">Your private space</h2><p className="mt-2 text-sm text-muted-foreground">No files yet. Everything you keep here stays in your session.</p><button type="button" className="mt-5 inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"><Plus className="size-4" />New folder</button></div></div>
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
+        <button type="button" disabled={dir === "/"} onClick={() => setDir(up)} className={btn}>Up</button>
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{dir}</span>
+        <button type="button" onClick={() => make(true)} className={btn}>New folder</button>
+        <button type="button" onClick={() => make(false)} className={btn}>New file</button>
+      </div>
+      <div className="flex-1 overflow-auto p-3">
+        {items.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">This folder is empty.</p>}
+        {items.map((path) => {
+          const folder = fs[path] === null;
+          return (
+            <div key={path} className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary">
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-3 text-left text-sm"
+                onClick={() => {
+                  if (folder) return setDir(path);
+                  try {
+                    localStorage.setItem("pos-note-path", path);
+                  } catch {
+                    // storage unavailable
+                  }
+                  window.dispatchEvent(new Event("pos-note"));
+                  open("notes");
+                }}
+              >
+                {folder ? <Folder className="size-4 shrink-0 text-primary" /> : <StickyNote className="size-4 shrink-0 text-muted-foreground" />}
+                <span className="truncate">{baseName(path)}</span>
+              </button>
+              <button type="button" aria-label={`Delete ${baseName(path)}`} onClick={() => remove(path)} className="rounded p-1 hover:bg-secondary">
+                <X className="size-4" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </WindowFrame>
+  );
+}
+
+function NotesApp({ close }: { close: () => void }) {
+  const [path, setPath] = useState("/Documents/note.txt");
+  const [text, setText] = useState("");
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    const pull = () => {
+      try {
+        const next = localStorage.getItem("pos-note-path");
+        if (!next) return;
+        localStorage.removeItem("pos-note-path");
+        setPath(next);
+        const value = readFs()[next];
+        setText(typeof value === "string" ? value : "");
+        setMsg("Opened");
+      } catch {
+        // storage unavailable
+      }
+    };
+    pull();
+    window.addEventListener("pos-note", pull);
+    return () => window.removeEventListener("pos-note", pull);
+  }, []);
+  const save = () => {
+    const fs = { ...readFs() };
+    const parent = path.slice(0, path.lastIndexOf("/"));
+    if (!path.startsWith("/") || (parent && fs[parent] !== null)) return setMsg("That folder doesn't exist");
+    fs[path] = text;
+    writeFs(fs);
+    setMsg("Saved");
+  };
+  const load = () => {
+    const value = readFs()[path];
+    if (typeof value === "string") {
+      setText(value);
+      setMsg("Opened");
+    } else setMsg("File not found");
+  };
+  return (
+    <WindowFrame title="Notes" icon={StickyNote} close={close}>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
+        <input value={path} onChange={(event) => setPath(event.target.value)} aria-label="File path" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
+        <button type="button" onClick={load} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs">Open</button>
+        <button type="button" onClick={save} className="rounded-md bg-primary px-2.5 py-1.5 text-xs text-primary-foreground">Save</button>
+      </div>
+      <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Start typing…" className="flex-1 resize-none bg-transparent p-4 text-sm outline-none" />
+      <p className="h-6 shrink-0 px-4 text-[11px] text-muted-foreground">{msg}</p>
+    </WindowFrame>
+  );
+}
+
+function CalculatorApp({ close }: { close: () => void }) {
+  const [disp, setDisp] = useState("0");
+  const [acc, setAcc] = useState<number | null>(null);
+  const [op, setOp] = useState<string | null>(null);
+  const [fresh, setFresh] = useState(true);
+  const fmt = (n: number) => (Number.isFinite(n) ? String(+n.toFixed(10)) : "Error");
+  const calc = (a: number, b: number, o: string) => (o === "+" ? a + b : o === "-" ? a - b : o === "×" ? a * b : b === 0 ? NaN : a / b);
+  const press = (k: string) => {
+    if (/^[\d.]$/.test(k)) {
+      setDisp((d) => (fresh ? (k === "." ? "0." : k) : k === "." && d.includes(".") ? d : d === "0" && k !== "." ? k : d + k));
+      setFresh(false);
+      return;
+    }
+    if (k === "C") {
+      setDisp("0");
+      setAcc(null);
+      setOp(null);
+      setFresh(true);
+      return;
+    }
+    const cur = parseFloat(disp);
+    if (k === "=") {
+      if (acc !== null && op) {
+        setDisp(fmt(calc(acc, cur, op)));
+        setAcc(null);
+        setOp(null);
+        setFresh(true);
+      }
+      return;
+    }
+    const base = acc !== null && op && !fresh ? calc(acc, cur, op) : cur;
+    setAcc(base);
+    setOp(k);
+    setDisp(fmt(base));
+    setFresh(true);
+  };
+  const keys = ["C", "÷", "×", "-", "7", "8", "9", "+", "4", "5", "6", "=", "1", "2", "3", "0", "."];
+  return (
+    <WindowFrame title="Calculator" icon={Calculator} close={close}>
+      <div className="mx-auto flex w-full max-w-xs flex-1 flex-col justify-center gap-3 p-4">
+        <div className="truncate rounded-md bg-secondary px-4 py-5 text-right text-3xl font-semibold tabular-nums">{disp}</div>
+        <div className="grid grid-cols-4 gap-2">
+          {keys.map((k) => (
+            <button key={k} type="button" onClick={() => press(k)} className={`rounded-md py-3 text-lg ${/[÷×\-+=]/.test(k) ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-secondary/70"} ${k === "=" ? "row-span-2" : ""}`}>
+              {k}
+            </button>
+          ))}
+        </div>
+      </div>
+    </WindowFrame>
+  );
+}
+
+function TerminalApp({ close, open }: { close: () => void; open: (id: string) => void }) {
+  const [cwd, setCwd] = useState("/");
+  const [lines, setLines] = useState<string[]>(["PRIVATE OS terminal. Type 'help'."]);
+  const [input, setInput] = useState("");
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    boxRef.current?.scrollTo({ top: boxRef.current.scrollHeight });
+  }, [lines]);
+  const resolve = (p: string) => {
+    const out: string[] = [];
+    for (const part of (p.startsWith("/") ? p : `${cwd}/${p}`).split("/")) {
+      if (!part || part === ".") continue;
+      if (part === "..") out.pop();
+      else out.push(part);
+    }
+    return `/${out.join("/")}`;
+  };
+  const apps: Record<string, string> = { browser: "browser", beez: "beez", files: "files", notes: "notes", calc: "calc", terminal: "terminal", settings: "settings", minecraft: "minecraft", figure: "figure", cherrion: "cherrion" };
+  const run = (line: string) => {
+    const [cmd = "", ...args] = line.trim().split(/\s+/);
+    const arg = args.join(" ");
+    const fs = { ...readFs() };
+    let out: string[] = [];
+    switch (cmd) {
+      case "": break;
+      case "help": out = ["ls cd cat mkdir touch rm echo [text > file] clear date open <app>", `apps: ${Object.keys(apps).join(" ")}`]; break;
+      case "ls": out = childrenOf(fs, resolve(arg || ".")).map((p) => baseName(p) + (fs[p] === null ? "/" : "")); break;
+      case "cd": {
+        const t = resolve(arg || "/");
+        if (t === "/" || fs[t] === null) setCwd(t);
+        else out = ["no such folder"];
+        break;
+      }
+      case "cat": {
+        const v = fs[resolve(arg)];
+        out = typeof v === "string" ? v.split("\n") : ["no such file"];
+        break;
+      }
+      case "mkdir": fs[resolve(arg)] = null; writeFs(fs); break;
+      case "touch": { const t = resolve(arg); if (!(t in fs)) fs[t] = ""; writeFs(fs); break; }
+      case "rm": {
+        const t = resolve(arg);
+        for (const key of Object.keys(fs)) if (key === t || key.startsWith(`${t}/`)) delete fs[key];
+        writeFs(fs);
+        break;
+      }
+      case "echo": {
+        const [text = "", file] = arg.split(" > ");
+        if (file) { fs[resolve(file.trim())] = text; writeFs(fs); } else out = [text];
+        break;
+      }
+      case "date": out = [new Date().toString()]; break;
+      case "open": {
+        const id = apps[arg.toLowerCase()];
+        if (id) open(id);
+        else out = ["unknown app"];
+        break;
+      }
+      case "clear": setLines([]); return;
+      default: out = [`${cmd}: command not found`];
+    }
+    setLines((list) => [...list, `${cwd}$ ${line}`, ...out]);
+  };
+  return (
+    <WindowFrame title="Terminal" icon={Terminal} close={close} app>
+      <div ref={boxRef} className="flex-1 overflow-auto bg-black p-3 font-mono text-xs text-green-400">
+        {lines.map((l, i) => <div key={i} className="whitespace-pre-wrap">{l}</div>)}
+        <div className="flex gap-2">
+          <span>{cwd}$</span>
+          <input
+            value={input}
+            autoFocus
+            aria-label="Terminal input"
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              run(input);
+              setInput("");
+            }}
+            className="min-w-0 flex-1 bg-transparent outline-none"
+          />
+        </div>
+      </div>
+    </WindowFrame>
+  );
+}
+
+function NetworkPrivacy() {
+  const [choice, setChoice] = useState("auto");
+  const [custom, setCustom] = useState("");
+  const [status, setStatus] = useState<Record<string, boolean>>({});
+  const [testing, setTesting] = useState(false);
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pos-wisp-choice") || "auto";
+      if (!saved.startsWith("wss://")) return;
+      if (WISP_SERVERS.includes(saved)) setChoice(saved);
+      else {
+        setChoice("custom");
+        setCustom(saved);
+      }
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const save = (value: string, customValue = custom) => {
+    setChoice(value);
+    const stored = value === "custom" ? customValue.trim() : value;
+    try {
+      localStorage.setItem("pos-wisp-choice", stored.startsWith("wss://") ? stored : "auto");
+    } catch {
+      // storage unavailable
+    }
+  };
+  const test = async () => {
+    setTesting(true);
+    const results = await Promise.all(WISP_SERVERS.map((url) => probeWisp(url)));
+    setStatus(Object.fromEntries(WISP_SERVERS.map((url, index) => [url, Boolean(results[index])])));
+    setTesting(false);
+  };
+  const wipe = () => {
+    if (!window.confirm("Erase all PRIVATE OS data in this browser?")) return;
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch {
+      // storage unavailable
+    }
+    navigator.serviceWorker?.getRegistrations().then((list) => list.forEach((r) => r.unregister())).catch(() => {});
+    window.setTimeout(() => window.location.reload(), 300);
+  };
+  return (
+    <div className="mt-8 space-y-6 text-sm">
+      <section>
+        <h3 className="font-semibold">Proxy server</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Auto tests the servers and uses the first one that responds. Reload the page after changing.</p>
+        <select value={choice} onChange={(event) => save(event.target.value)} aria-label="Proxy server" className="mt-3 w-full rounded-md bg-secondary px-3 py-2 text-xs outline-none">
+          <option value="auto">Auto (recommended)</option>
+          {WISP_SERVERS.map((url) => <option key={url} value={url}>{url}</option>)}
+          <option value="custom">Custom…</option>
+        </select>
+        {choice === "custom" && (
+          <input value={custom} placeholder="wss://your-wisp-server/" aria-label="Custom Wisp server" onChange={(event) => { setCustom(event.target.value); save("custom", event.target.value); }} className="mt-2 w-full rounded-md bg-secondary px-3 py-2 text-xs outline-none" />
+        )}
+        <div className="mt-3 flex items-center gap-2">
+          <button type="button" onClick={test} disabled={testing} className="rounded-md bg-secondary px-3 py-1.5 text-xs disabled:opacity-50">{testing ? "Testing…" : "Test connection"}</button>
+          <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Reload</button>
+        </div>
+        {Object.keys(status).length > 0 && (
+          <ul className="mt-2 space-y-1 text-xs">
+            {WISP_SERVERS.map((url) => <li key={url} className="truncate">{status[url] ? "✓" : "✗"} {url}</li>)}
+          </ul>
+        )}
+      </section>
+      <section>
+        <h3 className="font-semibold">Privacy</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Everything is stored only in this browser. Wipe it any time.</p>
+        <button type="button" onClick={wipe} className="mt-3 rounded-md bg-destructive px-3 py-1.5 text-xs text-white">Clear all data</button>
+      </section>
+    </div>
   );
 }

@@ -763,9 +763,34 @@ function loadScript(src: string) {
   });
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(new Error(message)), ms);
+    promise.then(
+      (value) => {
+        window.clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        window.clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+async function resetProxyWorker() {
+  try {
+    const list = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(list.map((registration) => registration.unregister()));
+  } catch {
+    // nothing to reset
+  }
+}
+
 function startProxyEngine() {
   if (!engineStart) {
-    engineStart = (async () => {
+    engineStart = withTimeout((async () => {
       if (!("serviceWorker" in navigator) || typeof SharedWorker === "undefined" || typeof WebAssembly === "undefined") {
         throw new Error("This browser can't run the proxy engine");
       }
@@ -774,7 +799,7 @@ function startProxyEngine() {
       await loadScript("/scramjet.all.js");
       if (!scope.BareMux || !scope.$scramjetLoadController) throw new Error("Proxy engine files are missing");
       await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-      await navigator.serviceWorker.ready;
+      await withTimeout(navigator.serviceWorker.ready, 8000, "The proxy worker did not start");
       if (!navigator.serviceWorker.controller) {
         await new Promise<void>((resolve) => {
           navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true });
@@ -782,13 +807,14 @@ function startProxyEngine() {
         });
       }
       const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
-      await connection.setTransport("/epoxy.mjs", [{ wisp: await pickWisp() }]);
+      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: await pickWisp() }]), 12000, "Could not reach a proxy server");
       const { ScramjetController } = scope.$scramjetLoadController();
       const controller = new ScramjetController({ prefix: "/scramjet/" });
-      await controller.init();
+      await withTimeout(controller.init(), 10000, "The proxy engine did not initialise");
       return controller;
-    })().catch((error) => {
+    })(), 30000, "The proxy engine took too long to start").catch((error) => {
       engineStart = null;
+      void resetProxyWorker();
       throw error;
     });
   }
@@ -1552,6 +1578,7 @@ function NetworkPrivacy() {
         <div className="mt-3 flex items-center gap-2">
           <button type="button" onClick={test} disabled={testing} className="rounded-md bg-secondary px-3 py-1.5 text-xs disabled:opacity-50">{testing ? "Testing…" : "Test connection"}</button>
           <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Reload</button>
+          <button type="button" onClick={() => { void resetProxyWorker().then(() => window.location.reload()); }} className="rounded-md bg-secondary px-3 py-1.5 text-xs">Repair proxy</button>
         </div>
         {Object.keys(status).length > 0 && (
           <ul className="mt-2 space-y-1 text-xs">

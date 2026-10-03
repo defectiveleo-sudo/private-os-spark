@@ -208,6 +208,8 @@ function PrivateOS() {
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
   const [zOrder, setZOrder] = useState<string[]>([]);
   const [startMenu, setStartMenu] = useState(false);
+  const [startPos, setStartPos] = useState<{ left: number; bottom: number } | null>(null);
+  const wallInput = useRef<HTMLInputElement>(null);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
@@ -379,6 +381,7 @@ function PrivateOS() {
 
   const menuItems: [string, () => void][] = [
     ["Change wallpaper", () => setWallpaper((index) => (index + 1) % allWalls.length)],
+    ["Add wallpaper…", () => wallInput.current?.click()],
     ["Files", () => openApp("files")],
     ["Notes", () => openApp("notes")],
     ["Terminal", () => openApp("terminal")],
@@ -441,10 +444,22 @@ function PrivateOS() {
 
       <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
         <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1.5 rounded-2xl bg-black/35 px-2 py-1.5 backdrop-blur-xl md:gap-3 md:px-4">
-          <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => { setStartMenu((value) => !value); setLauncher(false); setQuickMenu(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
-            <ShieldCheck className="size-5 text-white" />
-            <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
-          </OsButton>
+          <span data-start id="start-anchor" className="inline-flex">
+            <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => {
+              const anchor = document.getElementById("start-anchor");
+              if (anchor) {
+                const box = anchor.getBoundingClientRect();
+                const width = Math.min(416, window.innerWidth - 16);
+                setStartPos({ left: Math.max(8, Math.min(box.left - 8, window.innerWidth - width - 8)), bottom: window.innerHeight - box.top + 12 });
+              }
+              setStartMenu((value) => !value);
+              setLauncher(false);
+              setQuickMenu(false);
+            }} className="group relative size-9 shrink-0 rounded-xl bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20 md:size-11">
+              <ShieldCheck className="size-6 text-white md:size-7" />
+              <span className="absolute bottom-12 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+            </OsButton>
+          </span>
           <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
             <LayoutGrid className="size-5 text-white/70" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
@@ -494,11 +509,65 @@ function PrivateOS() {
         </aside>
       )}
 
-      {startMenu && (
-        <aside data-start className="glass-panel absolute inset-x-0 bottom-16 z-50 mx-auto w-[min(16rem,calc(100%-1.5rem))] rounded-lg p-1.5 text-sm [animation:window-in_.18s_ease-out] md:bottom-[4.5rem]">
-          {startItems.map(([label, action]) => (
-            <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-secondary">{label}</button>
-          ))}
+      {settings.desktop.length > 0 && (
+        <div className="pointer-events-none absolute left-3 top-3 z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap content-start gap-2">
+          {settings.desktop.map((id) => {
+            const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
+            if (!app) return null;
+            const Icon = app.icon;
+            return (
+              <div key={id} className="group pointer-events-auto relative w-20 text-center">
+                <OsButton label={`Open ${app.label}`} onClick={() => openApp(id)} className="flex w-full flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
+                  <Icon className="size-12" />
+                  <span className="line-clamp-2 text-[11px] text-white drop-shadow">{app.label}</span>
+                </OsButton>
+                <button type="button" aria-label={`Remove ${app.label} from desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.filter((item) => item !== id) }))} className="absolute right-0 top-0 hidden rounded-full bg-black/60 p-0.5 text-white group-hover:block"><X className="size-3" /></button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => void addWall(file)); event.target.value = ""; }} />
+
+      {startMenu && startPos && (
+        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-xl p-4 [animation:window-in_.18s_ease-out]">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Apps</p>
+            <div className="grid grid-cols-4 gap-2">
+              {launcherApps.map(({ id, label, icon: Icon }) => {
+                const pinned = settings.desktop.includes(id);
+                return (
+                  <div key={id} className="relative">
+                    <button type="button" onClick={() => { setStartMenu(false); openApp(id); }} className="flex w-full flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-secondary">
+                      <Icon className="size-10" />
+                      <span className="w-full truncate text-center">{label}</span>
+                    </button>
+                    <button type="button" aria-label={pinned ? `Remove ${label} from desktop` : `Add ${label} to desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.includes(id) ? current.desktop.filter((item) => item !== id) : [...current.desktop, id] }))} className={`absolute right-0 top-0 rounded-full px-1.5 text-[10px] ${pinned ? "bg-primary text-primary-foreground" : "bg-black/50 text-white"}`}>{pinned ? "✓" : "+"}</button>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">Tap + on an app to put it on your desktop.</p>
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Widgets</p>
+            <div className="flex flex-wrap gap-2">
+              {WIDGET_LIST.map((widget) => {
+                const on = settings.widgets.includes(widget.id);
+                return (
+                  <button key={widget.id} type="button" onClick={() => patchSettings((current) => ({ widgets: current.widgets.includes(widget.id) ? current.widgets.filter((item) => item !== widget.id) : [...current.widgets, widget.id] }))} className={`rounded-md px-3 py-1.5 text-xs ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                    {on ? "✓ " : "+ "}{widget.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="grid grid-cols-5 gap-1 border-t border-border pt-3 text-center text-[11px]">
+            {startItems.map(([label, action]) => (
+              <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="rounded-md px-1 py-2 hover:bg-secondary">{label}</button>
+            ))}
+          </div>
         </aside>
       )}
 
@@ -1612,8 +1681,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }> };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {} };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[] };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["browser", "beez", "minecraft", "files"] };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },

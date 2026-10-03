@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Component } from "react";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   ArrowLeft,
@@ -205,6 +206,11 @@ function PrivateOS() {
   const [fullscreen, setFullscreen] = useState(false);
   const [canFullscreen, setCanFullscreen] = useState(false);
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+  const [zOrder, setZOrder] = useState<string[]>([]);
+  const [startMenu, setStartMenu] = useState(false);
+  const [power, setPower] = useState<"on" | "sleep" | "off">("on");
+  const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
+  const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
 
   useEffect(() => {
     const clockTimer = window.setInterval(() => {
@@ -253,9 +259,9 @@ function PrivateOS() {
     () => time.toLocaleDateString("en-US", { weekday: "long", timeZone: zone }).toUpperCase(),
     [time, zone],
   );
-  const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", timeZone: zone });
+  const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: !settings.clock24, timeZone: zone });
   const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: zone }).toUpperCase()}, ${time.toLocaleDateString("en-GB", { year: "numeric", timeZone: zone })}.`;
-  const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: zone });
+  const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: !settings.clock24, timeZone: zone });
 
   const toggleFullscreen = () => {
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -265,7 +271,7 @@ function PrivateOS() {
   useEffect(() => {
     try {
       const saved = Number(localStorage.getItem("pos-wallpaper"));
-      if (Number.isInteger(saved) && saved >= 0 && saved < wallpaperOptions.length) setWallpaper(saved);
+      if (Number.isInteger(saved) && saved >= 0 && saved < 100) setWallpaper(saved);
     } catch {
       // storage unavailable
     }
@@ -279,12 +285,79 @@ function PrivateOS() {
     }
   }, [wallpaper]);
 
+  const patchSettings = (patch: Partial<OsSettings> | ((current: OsSettings) => Partial<OsSettings>)) =>
+    setSettings((current) => {
+      const next = { ...current, ...(typeof patch === "function" ? patch(current) : patch) };
+      try {
+        localStorage.setItem("pos-settings", JSON.stringify(next));
+      } catch {
+        // storage unavailable
+      }
+      return next;
+    });
+
+  const refreshWalls = async () => {
+    const list = await loadWalls();
+    setCustomWalls(list.map((item) => ({ id: item.id, label: item.label, url: URL.createObjectURL(item.blob) })));
+    return list.length;
+  };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("pos-settings");
+      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<OsSettings>) });
+    } catch {
+      // storage unavailable
+    }
+    refreshWalls().catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (power === "on") return;
+    const wake = () => {
+      setPower("on");
+      setLocked(true);
+      if (power === "off") setPhase("boot");
+    };
+    window.addEventListener("keydown", wake);
+    return () => window.removeEventListener("keydown", wake);
+  }, [power]);
+
+  const addWall = async (file: File) => {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, 2200 / bitmap.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+      canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+      if (!blob) throw new Error("encode failed");
+      await saveWall(file.name.replace(/\.[^.]+$/, ""), blob);
+      const count = await refreshWalls();
+      setWallpaper(wallpaperOptions.length + count - 1);
+    } catch {
+      window.alert("Couldn't add that image.");
+    }
+  };
+
+  const removeWall = async (id: number) => {
+    await deleteWall(id);
+    await refreshWalls();
+    setWallpaper(0);
+  };
+
+  const allWalls: WallpaperOption[] = [...wallpaperOptions, ...customWalls.map((wall) => ({ label: wall.label, thumb: wall.url, src: wall.url }))];
+
   const closeWindow = (id: string) => {
     setOpenWins((list) => list.filter((item) => item !== id));
     setMinWins((list) => list.filter((item) => item !== id));
+    setZOrder((list) => list.filter((item) => item !== id));
   };
 
-  const raise = (id: string) => setOpenWins((list) => (list[list.length - 1] === id ? list : [...list.filter((item) => item !== id), id]));
+  // DOM order of windows never changes (moving an iframe in the DOM would reload it); only z-index does.
+  const raise = (id: string) => setZOrder((list) => (list[list.length - 1] === id ? list : [...list.filter((item) => item !== id), id]));
 
   const openApp = (id: string) => {
     setLauncher(false);
@@ -292,11 +365,20 @@ function PrivateOS() {
     const key = id === "cherrion" ? "browser" : id;
     if (id === "cherrion") setBrowserStart(CHERRION_URL);
     setMinWins((list) => list.filter((item) => item !== key));
-    setOpenWins((list) => [...list.filter((item) => item !== key), key]);
+    setOpenWins((list) => (list.includes(key) ? list : [...list, key]));
+    raise(key);
   };
 
+  const startItems: [string, () => void][] = [
+    ["Show desktop", () => setMinWins(openWins)],
+    ["Lock", () => setLocked(true)],
+    ["Sleep", () => setPower("sleep")],
+    ["Restart", () => window.location.reload()],
+    ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
+  ];
+
   const menuItems: [string, () => void][] = [
-    ["Change wallpaper", () => setWallpaper((index) => (index + 1) % wallpaperOptions.length)],
+    ["Change wallpaper", () => setWallpaper((index) => (index + 1) % allWalls.length)],
     ["Files", () => openApp("files")],
     ["Notes", () => openApp("notes")],
     ["Terminal", () => openApp("terminal")],
@@ -306,6 +388,11 @@ function PrivateOS() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.altKey && event.code === "KeyL") {
+        event.preventDefault();
+        setLocked(true);
+        return;
+      }
       if ((event.ctrlKey || event.altKey) && event.code === "Space") {
         event.preventDefault();
         setLauncher((value) => !value);
@@ -313,7 +400,7 @@ function PrivateOS() {
       }
       if (event.altKey && (event.key === "Tab" || event.code === "KeyW")) {
         event.preventDefault();
-        const visible = openWins.filter((id) => !minWins.includes(id));
+        const visible = zOrder.filter((id) => openWins.includes(id) && !minWins.includes(id));
         if (visible.length > 1) raise(visible[0]!);
         else if (visible.length === 0 && openWins.length > 0) openApp(openWins[openWins.length - 1]!);
       }
@@ -329,7 +416,7 @@ function PrivateOS() {
       case "figure": return <FigureCloudApp close={close} />;
       case "beez": return <BeeZApp close={close} />;
       case "minecraft": return <MinecraftApp close={close} />;
-      case "settings": return <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} close={close} />;
+      case "settings": return <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} walls={allWalls} custom={customWalls} addWall={addWall} removeWall={removeWall} settings={settings} patch={patchSettings} close={close} />;
       case "files": return <FilesWindow close={close} open={openApp} />;
       case "notes": return <NotesApp close={close} />;
       case "calc": return <CalculatorApp close={close} />;
@@ -343,13 +430,18 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={() => setMenu(null)} className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
-      <Wallpaper index={wallpaper} />
+    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.8s_ease-out]">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
+          <Wallpaper index={wallpaper} options={allWalls} />
+        </div>
+      </div>
+      <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
       <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
         <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1.5 rounded-2xl bg-black/35 px-2 py-1.5 backdrop-blur-xl md:gap-3 md:px-4">
-          <OsButton label="PRIVATE OS home" onClick={() => { setMinWins(openWins); setLauncher(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
+          <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => { setStartMenu((value) => !value); setLauncher(false); setQuickMenu(false); }} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
             <ShieldCheck className="size-5 text-white" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
           </OsButton>
@@ -402,6 +494,30 @@ function PrivateOS() {
         </aside>
       )}
 
+      {startMenu && (
+        <aside data-start className="glass-panel absolute inset-x-0 bottom-16 z-50 mx-auto w-[min(16rem,calc(100%-1.5rem))] rounded-lg p-1.5 text-sm [animation:window-in_.18s_ease-out] md:bottom-[4.5rem]">
+          {startItems.map(([label, action]) => (
+            <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-secondary">{label}</button>
+          ))}
+        </aside>
+      )}
+
+      {settings.widgets.length > 0 && (
+        <div className="pointer-events-none absolute right-3 top-3 z-[9] flex flex-col items-end gap-3">
+          {settings.widgets.map((id) => (
+            <WidgetShell key={id} title={WIDGET_LIST.find((item) => item.id === id)?.label ?? id} offset={settings.wpos[id] ?? { x: 0, y: 0 }} onMove={(pos) => patchSettings((current) => ({ wpos: { ...current.wpos, [id]: pos } }))} onRemove={() => patchSettings((current) => ({ widgets: current.widgets.filter((item) => item !== id) }))}>
+              {id === "music" ? <MusicWidget /> : id === "notes" ? <NotesWidget /> : id === "calendar" ? <CalendarWidget /> : <StopwatchWidget />}
+            </WidgetShell>
+          ))}
+        </div>
+      )}
+
+      {power !== "on" && (
+        <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
+          {power === "off" ? "PRESS ANYTHING TO POWER ON" : ""}
+        </div>
+      )}
+
       {menu && (
         <div role="menu" style={{ left: menu.x, top: menu.y }} className="glass-panel fixed z-50 w-44 rounded-lg p-1 text-xs [animation:window-in_.15s_ease-out]">
           {menuItems.map(([label, action]) => (
@@ -411,20 +527,20 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      {openWins.map((id, index) => (
-        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + index }}>
-          {renderWindow(id)}
+      {openWins.map((id) => (
+        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)) }}>
+          <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
         </WindowContext.Provider>
       ))}
 
 
-      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} />
+      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} />
     </main>
   );
 }
 
-function Wallpaper({ index }: { index: number }) {
-  const item = wallpaperOptions[index] ?? wallpaperOptions[0]!;
+function Wallpaper({ index, options }: { index: number; options: WallpaperOption[] }) {
+  const item = options[index] ?? options[0]!;
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [index]);
   if (item.video && !failed) {
@@ -434,7 +550,7 @@ function Wallpaper({ index }: { index: number }) {
   return <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0d1b2a,#1b3a4b_55%,#5c7f8a)]" />;
 }
 
-function LockScreen({ locked, unlock, day, date, clock }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string }) {
+function LockScreen({ locked, unlock, day, date, clock, dim, blur }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string; dim: number; blur: number }) {
   return (
     <div
       role="button"
@@ -442,7 +558,8 @@ function LockScreen({ locked, unlock, day, date, clock }: { locked: boolean; unl
       aria-hidden={!locked}
       aria-label="Unlock PRIVATE OS"
       onClick={unlock}
-      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center bg-gradient-to-b from-black/80 via-black/65 to-black/85 pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
+      style={{ backgroundColor: `rgba(0,0,0,${dim / 100})`, backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)` }}
+      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
     >
       <p className="pl-[.2em] text-[clamp(2rem,10.5vw,7.5rem)] font-medium leading-none tracking-[.2em]">{day}</p>
       <p className="mt-5 pl-[.22em] text-sm font-bold tracking-[.22em] sm:text-xl">{date}</p>
@@ -1029,18 +1146,19 @@ function FigureCloudApp({ close }: { close: () => void }) {
   );
 }
 
-function WallpaperSettings({ wallpaper, setWallpaper, close }: { wallpaper: number; setWallpaper: (value: number) => void; close: () => void }) {
+function WallpaperSettings({ wallpaper, setWallpaper, walls, custom, addWall, removeWall, settings, patch, close }: { wallpaper: number; setWallpaper: (value: number) => void; walls: WallpaperOption[]; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void; settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; close: () => void }) {
   return (
     <WindowFrame title="Appearance" icon={Settings} close={close}>
       <div className="flex-1 overflow-auto p-5 md:p-8">
         <h2 className="text-xl font-semibold">Choose your landscape</h2><p className="mt-1 text-sm text-muted-foreground">Changes appear instantly across your home screen.</p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {wallpaperOptions.map((item, index) => (
+          {walls.map((item, index) => (
             <OsButton key={item.label} label={`Use ${item.label} wallpaper`} onClick={() => setWallpaper(index)} className={`group relative aspect-video overflow-hidden rounded-md border-2 ${wallpaper === index ? "border-primary" : "border-border"}`}>
               <img src={item.thumb} alt={item.label} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
             </OsButton>
           ))}
         </div>
+        <Personalize settings={settings} patch={patch} custom={custom} addWall={addWall} removeWall={removeWall} />
         <NetworkPrivacy />
       </div>
     </WindowFrame>
@@ -1464,5 +1582,251 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
         ))}
       </div>
     </WindowFrame>
+  );
+}
+
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }> };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {} };
+const WIDGET_LIST = [
+  { id: "music", label: "Music" },
+  { id: "notes", label: "Quick note" },
+  { id: "calendar", label: "Calendar" },
+  { id: "stopwatch", label: "Stopwatch" },
+];
+
+// Custom wallpapers live in IndexedDB (this browser only).
+function openWallDb() {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open("pos-walls", 1);
+    request.onupgradeneeded = () => request.result.createObjectStore("w", { keyPath: "id", autoIncrement: true });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+async function loadWalls() {
+  const db = await openWallDb();
+  return new Promise<{ id: number; label: string; blob: Blob }[]>((resolve) => {
+    const query = db.transaction("w").objectStore("w").getAll();
+    query.onsuccess = () => resolve(query.result as { id: number; label: string; blob: Blob }[]);
+    query.onerror = () => resolve([]);
+  });
+}
+async function saveWall(label: string, blob: Blob) {
+  const db = await openWallDb();
+  return new Promise<void>((resolve) => {
+    const tx = db.transaction("w", "readwrite");
+    tx.objectStore("w").add({ label, blob });
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+}
+async function deleteWall(id: number) {
+  const db = await openWallDb();
+  return new Promise<void>((resolve) => {
+    const tx = db.transaction("w", "readwrite");
+    tx.objectStore("w").delete(id);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => resolve();
+  });
+}
+
+class AppBoundary extends Component<{ children: ReactNode; close: () => void }, { error: string | null }> {
+  state = { error: null as string | null };
+  static getDerivedStateFromError(error: unknown) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+  render() {
+    if (this.state.error === null) return this.props.children;
+    return (
+      <WindowFrame title="App error" icon={X} close={this.props.close}>
+        <div className="p-6 text-sm">
+          <p className="font-semibold">This app crashed.</p>
+          <p className="mt-2 break-words text-muted-foreground">{this.state.error}</p>
+        </div>
+      </WindowFrame>
+    );
+  }
+}
+
+function Personalize({ settings, patch, custom, addWall, removeWall }: { settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const slider = (label: string, key: "blur" | "dim" | "lockBlur" | "lockDim", max: number, unit: string) => (
+    <label className="block text-xs">
+      <span className="flex justify-between"><span>{label}</span><span className="text-muted-foreground">{settings[key]}{unit}</span></span>
+      <input type="range" min={0} max={max} value={settings[key]} onChange={(event) => patch({ [key]: Number(event.target.value) } as Partial<OsSettings>)} className="mt-2 w-full" />
+    </label>
+  );
+  const chip = "rounded-md px-3 py-1.5 text-xs";
+  return (
+    <div className="mt-8 space-y-6 text-sm">
+      <section>
+        <h3 className="font-semibold">Your wallpapers</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Add any image from this device. It stays only in this browser.</p>
+        <button type="button" onClick={() => fileRef.current?.click()} className="mt-3 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Add from device</button>
+        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => addWall(file)); event.target.value = ""; }} />
+        {custom.map((wall) => (
+          <div key={wall.id} className="mt-2 flex items-center gap-3 text-xs">
+            <img src={wall.url} alt="" className="h-8 w-14 rounded object-cover" />
+            <span className="min-w-0 flex-1 truncate">{wall.label}</span>
+            <button type="button" onClick={() => removeWall(wall.id)} className="rounded-md bg-secondary px-2 py-1">Remove</button>
+          </div>
+        ))}
+      </section>
+      <section className="space-y-4">
+        <h3 className="font-semibold">Look and feel</h3>
+        {slider("Wallpaper blur", "blur", 24, "px")}
+        {slider("Wallpaper darkness", "dim", 80, "%")}
+        {slider("Lock screen blur", "lockBlur", 30, "px")}
+        {slider("Lock screen darkness", "lockDim", 100, "%")}
+        <div className="flex items-center justify-between text-xs">
+          <span>24-hour clock</span>
+          <button type="button" onClick={() => patch({ clock24: !settings.clock24 })} className={`${chip} ${settings.clock24 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{settings.clock24 ? "On" : "Off"}</button>
+        </div>
+      </section>
+      <section>
+        <h3 className="font-semibold">Widgets</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Add widgets to the desktop and drag them by their title.</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {WIDGET_LIST.map((widget) => {
+            const on = settings.widgets.includes(widget.id);
+            return (
+              <button key={widget.id} type="button" onClick={() => patch({ widgets: on ? settings.widgets.filter((id) => id !== widget.id) : [...settings.widgets, widget.id] })} className={`${chip} ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
+                {on ? "✓ " : "+ "}{widget.label}
+              </button>
+            );
+          })}
+        </div>
+        <button type="button" onClick={() => patch(DEFAULT_SETTINGS)} className="mt-4 rounded-md bg-secondary px-3 py-1.5 text-xs">Reset look and widgets</button>
+      </section>
+    </div>
+  );
+}
+
+function WidgetShell({ title, offset, onMove, onRemove, children }: { title: string; offset: { x: number; y: number }; onMove: (pos: { x: number; y: number }) => void; onRemove: () => void; children: ReactNode }) {
+  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
+  return (
+    <div style={{ transform: `translate(${offset.x}px, ${offset.y}px)` }} className="glass-panel pointer-events-auto w-60 rounded-lg text-xs">
+      <div
+        onPointerDown={(event) => {
+          if ((event.target as HTMLElement).closest("button")) return;
+          drag.current = { sx: event.clientX, sy: event.clientY, ox: offset.x, oy: offset.y };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          const d = drag.current;
+          if (d) onMove({ x: d.ox + event.clientX - d.sx, y: d.oy + event.clientY - d.sy });
+        }}
+        onPointerUp={() => { drag.current = null; }}
+        className="flex cursor-grab touch-none items-center justify-between px-3 py-2 font-semibold"
+      >
+        <span>{title}</span>
+        <button type="button" aria-label={`Remove ${title} widget`} onClick={onRemove} className="rounded p-0.5 hover:bg-secondary"><X className="size-3.5" /></button>
+      </div>
+      <div className="px-3 pb-3">{children}</div>
+    </div>
+  );
+}
+
+function MusicWidget() {
+  const [tracks, setTracks] = useState<{ name: string; url: string }[]>([]);
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [volume, setVolume] = useState(0.7);
+  const [stream, setStream] = useState("");
+  const audio = useRef<HTMLAudioElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const current = tracks[index];
+  useEffect(() => {
+    if (audio.current) audio.current.volume = volume;
+  }, [volume]);
+  useEffect(() => {
+    const el = audio.current;
+    if (!el || !current) return;
+    if (playing) el.play().catch(() => setPlaying(false));
+    else el.pause();
+  }, [playing, current?.url]); // eslint-disable-line react-hooks/exhaustive-deps
+  const step = (delta: number) => tracks.length && setIndex((value) => (value + delta + tracks.length) % tracks.length);
+  const btn = "rounded-md bg-secondary px-2.5 py-1.5 hover:bg-secondary/70";
+  return (
+    <div className="space-y-2">
+      <audio ref={audio} src={current?.url} loop={tracks.length === 1} onEnded={() => step(1)} />
+      <p className="truncate">{current ? current.name : "No song yet"}</p>
+      <div className="flex items-center justify-center gap-2">
+        <button type="button" aria-label="Previous" onClick={() => step(-1)} className={btn}>⏮</button>
+        <button type="button" aria-label={playing ? "Pause" : "Play"} onClick={() => current && setPlaying((value) => !value)} className={`${btn} px-4`}>{playing ? "⏸" : "▶"}</button>
+        <button type="button" aria-label="Next" onClick={() => step(1)} className={btn}>⏭</button>
+      </div>
+      <input type="range" min={0} max={1} step={0.05} value={volume} aria-label="Volume" onChange={(event) => setVolume(Number(event.target.value))} className="w-full" />
+      <div className="flex gap-1">
+        <input value={stream} onChange={(event) => setStream(event.target.value)} placeholder="Stream URL (mp3…)" aria-label="Stream URL" className="min-w-0 flex-1 rounded-md bg-secondary px-2 py-1 outline-none" />
+        <button type="button" onClick={() => { if (!/^https?:\/\//i.test(stream)) return; setTracks((list) => [...list, { name: stream.replace(/^https?:\/\//i, ""), url: stream }]); setStream(""); }} className={btn}>Add</button>
+      </div>
+      <button type="button" onClick={() => fileRef.current?.click()} className={`${btn} w-full`}>Add songs from device</button>
+      <input ref={fileRef} type="file" accept="audio/*" multiple hidden onChange={(event) => { const files = Array.from(event.target.files ?? []); setTracks((list) => [...list, ...files.map((file) => ({ name: file.name.replace(/\.[^.]+$/, ""), url: URL.createObjectURL(file) }))]); event.target.value = ""; }} />
+      <p className="text-[10px] text-muted-foreground">Device songs last until you close this tab.</p>
+    </div>
+  );
+}
+
+function NotesWidget() {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    try {
+      setText(localStorage.getItem("pos-widget-note") ?? "");
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  return (
+    <textarea
+      value={text}
+      placeholder="Quick note…"
+      aria-label="Quick note"
+      onChange={(event) => {
+        setText(event.target.value);
+        try {
+          localStorage.setItem("pos-widget-note", event.target.value);
+        } catch {
+          // storage unavailable
+        }
+      }}
+      className="h-24 w-full resize-none rounded-md bg-secondary p-2 outline-none"
+    />
+  );
+}
+
+function CalendarWidget() {
+  const now = new Date();
+  const first = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const cells: (number | null)[] = [...Array.from({ length: first }, () => null), ...Array.from({ length: days }, (_, i) => i + 1)];
+  return (
+    <div>
+      <p className="mb-2 text-center font-semibold">{now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
+      <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => <span key={i} className="text-muted-foreground">{day}</span>)}
+        {cells.map((day, i) => <span key={i} className={day === now.getDate() ? "rounded bg-primary text-primary-foreground" : ""}>{day}</span>)}
+      </div>
+    </div>
+  );
+}
+
+function StopwatchWidget() {
+  const [ms, setMs] = useState(0);
+  const [run, setRun] = useState(false);
+  useEffect(() => {
+    if (!run) return;
+    const timer = window.setInterval(() => setMs((value) => value + 100), 100);
+    return () => window.clearInterval(timer);
+  }, [run]);
+  const sec = ms / 1000;
+  return (
+    <div className="text-center">
+      <p className="font-['Orbitron',sans-serif] text-2xl tabular-nums">{String(Math.floor(sec / 60)).padStart(2, "0")}:{(sec % 60).toFixed(1).padStart(4, "0")}</p>
+      <div className="mt-2 flex justify-center gap-2">
+        <button type="button" onClick={() => setRun((value) => !value)} className="rounded-md bg-primary px-3 py-1 text-primary-foreground">{run ? "Pause" : "Start"}</button>
+        <button type="button" onClick={() => { setRun(false); setMs(0); }} className="rounded-md bg-secondary px-3 py-1">Reset</button>
+      </div>
+    </div>
   );
 }

@@ -1173,7 +1173,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
     const clean = value.trim();
     if (!clean) return;
     const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|[\w-]+\.[a-z]{2,})([/:?#]|$)/i.test(clean);
-    const destination = isUrl ? (/^https?:\/\//i.test(clean) ? clean : `https://${clean}`) : `https://search.brave.com/search?q=${encodeURIComponent(clean)}`;
+    const destination = isUrl ? (/^https?:\/\//i.test(clean) ? clean : `https://${clean}`) : `https://duckduckgo.com/?q=${encodeURIComponent(clean)}`;
     setNav((current) => ({ list: [...current.list.slice(0, current.index + 1), destination], index: current.index + 1 }));
     show(destination);
   };
@@ -1211,7 +1211,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
             <p className="mt-2 max-w-md text-sm text-muted-foreground">Search privately or open a website directly. Use the external-open button when a site does not allow an embedded view.</p>
             <div className="mt-6 grid w-full max-w-lg grid-cols-2 gap-2">
               <OsButton label="Open Cherrion" onClick={() => navigateTo(CHERRION_URL)} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><Cherry className="size-5" /></span><span><strong className="block text-xs">Cherrion</strong><span className="text-[10px] text-muted-foreground">Recommended app</span></span></OsButton>
-              <OsButton label="Search with Brave" onClick={() => { setAddress("https://search.brave.com/"); navigateTo("https://search.brave.com/"); }} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">Brave Search</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
+              <OsButton label="Search with DuckDuckGo" onClick={() => { setAddress("https://duckduckgo.com/"); navigateTo("https://duckduckgo.com/"); }} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">DuckDuckGo</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
             </div>
             <div className="mt-8 grid w-full max-w-lg grid-cols-3 gap-2">
               {["Private search", "Block trackers", "Clear session"].map((text, index) => <div key={text} className="rounded-md border border-border bg-card p-3 text-xs"><span className="mb-2 block text-primary">{index === 0 ? <Search className="mx-auto size-5" /> : index === 1 ? <ShieldCheck className="mx-auto size-5" /> : <Sparkles className="mx-auto size-5" />}</span>{text}</div>)}

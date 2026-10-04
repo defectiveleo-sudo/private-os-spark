@@ -39,6 +39,15 @@ import {
   ListChecks,
   Paintbrush,
   Play,
+  Music,
+  MessageCircle,
+  Tv,
+  Gamepad2,
+  Bell,
+  Film,
+  Image as ImageIcon,
+  EyeOff,
+  RotateCw,
 } from "lucide-react";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -157,6 +166,26 @@ const TodoIcon: IconComponent = ({ className }) => <Tile tone="from-lime-400 to-
 
 const YouTubeIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" glyph="[&>svg]:size-[52%] [&>svg]:text-white" className={className}><Play className="fill-white" /></Tile>;
 
+type Movie = { id: string; title: string; genre: string; year: string; studio: string; rating: string; blurb: string; poster: string };
+const MOVIES: Movie[] = [
+  { id: "backrooms", title: "The Backrooms", genre: "Horror", year: "2026", studio: "A24 Productions", rating: "7.9/10", blurb: "A strange doorway appears in the basement of a furniture showroom.", poster: "linear-gradient(160deg,#f6c90e,#b07d00)" },
+  { id: "mario", title: "Super Mario Bros.", genre: "Adventure", year: "2023", studio: "Illumination Entertainment", rating: "7.0/10", blurb: "A plumber is pulled into a strange new world and has to save a kingdom.", poster: "linear-gradient(160deg,#ff5fa2,#ffb100 45%,#2bb5ff)" },
+];
+
+const LINK_APPS = [
+  { id: "spotify", label: "Spotify", url: "https://open.spotify.com/", tone: "from-green-400 to-green-700", icon: Music },
+  { id: "discord", label: "Discord", url: "https://discord.com/app", tone: "from-indigo-400 to-indigo-700", icon: MessageCircle },
+  { id: "crunchyroll", label: "Crunchyroll", url: "https://www.crunchyroll.com/", tone: "from-orange-400 to-orange-600", icon: Tv },
+  { id: "geforce", label: "GeForce NOW", url: "https://play.geforcenow.com/", tone: "from-lime-400 to-green-700", icon: Gamepad2 },
+  { id: "xbox", label: "Xbox", url: "https://www.xbox.com/play", tone: "from-green-500 to-emerald-800", icon: Gamepad2 },
+];
+const linkLauncher = LINK_APPS.map((app) => ({
+  id: app.id,
+  label: app.label,
+  icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
+}));
+const MovieIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-300 to-amber-600" glyph="[&>svg]:size-[56%] [&>svg]:text-black" className={className}><Film /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
@@ -184,6 +213,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "todo", label: "To-Do", icon: TodoIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
+launcherApps.push(...linkLauncher, { id: "movie", label: "Private Hill", icon: MovieIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -227,6 +257,8 @@ function PrivateOS() {
   const [startPos, setStartPos] = useState<{ left: number; bottom: number } | null>(null);
   const wallInput = useRef<HTMLInputElement>(null);
   const [taskView, setTaskView] = useState(false);
+  const [movieId, setMovieId] = useState("backrooms");
+  const [battery, setBattery] = useState(100);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
@@ -304,6 +336,15 @@ function PrivateOS() {
     }
   }, [wallpaper]);
 
+  useEffect(() => {
+    const nav = navigator as Navigator & { getBattery?: () => Promise<{ level: number; addEventListener: (type: string, listener: () => void) => void }> };
+    nav.getBattery?.().then((b) => {
+      const update = () => setBattery(Math.round(b.level * 100));
+      update();
+      b.addEventListener("levelchange", update);
+    }).catch(() => {});
+  }, []);
+
   const patchSettings = (patch: Partial<OsSettings> | ((current: OsSettings) => Partial<OsSettings>)) =>
     setSettings((current) => {
       const next = { ...current, ...(typeof patch === "function" ? patch(current) : patch) };
@@ -378,7 +419,12 @@ function PrivateOS() {
   // DOM order of windows never changes (moving an iframe in the DOM would reload it); only z-index does.
   const raise = (id: string) => setZOrder((list) => (list[list.length - 1] === id ? list : [...list.filter((item) => item !== id), id]));
 
-  const openApp = (id: string) => {
+  const openApp = (id: string): void => {
+    const link = LINK_APPS.find((app) => app.id === id);
+    if (link) {
+      setBrowserStart(link.url);
+      return openApp("browser");
+    }
     setLauncher(false);
     setQuickMenu(false);
     const key = id === "cherrion" ? "browser" : id;
@@ -396,14 +442,14 @@ function PrivateOS() {
     ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
   ];
 
-  const menuItems: [string, () => void][] = [
-    ["Change wallpaper", () => setWallpaper((index) => (index + 1) % allWalls.length)],
-    ["Add wallpaper…", () => wallInput.current?.click()],
-    ["Files", () => openApp("files")],
-    ["Notes", () => openApp("notes")],
-    ["Terminal", () => openApp("terminal")],
-    ["Task Manager", () => openApp("taskmgr")],
-    ["Settings", () => openApp("settings")],
+  const widgetsHidden = settings.railHidden && settings.hubHidden;
+  const menuItems: { label: string; action: () => void; icon: ReactNode }[] = [
+    { label: "Reopen Private HUB", action: () => patchSettings({ hubHidden: false }), icon: <Film className="size-3" /> },
+    { label: "Adjust Wallpaper", action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
+    { label: "Expand Icons", action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
+    { label: "Standard Icons", action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
+    { label: widgetsHidden ? "Show Widgets" : "Hide Widgets", action: () => patchSettings({ railHidden: !widgetsHidden, hubHidden: !widgetsHidden }), icon: <EyeOff className="size-3" /> },
+    { label: "Reload", action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
   ];
 
   useEffect(() => {
@@ -434,6 +480,11 @@ function PrivateOS() {
     return () => window.removeEventListener("keydown", onKey);
   });
 
+  const openMovie = (id: string) => {
+    setMovieId(id);
+    openApp("movie");
+  };
+
   const renderWindow = (id: string) => {
     const close = () => closeWindow(id);
     switch (id) {
@@ -450,6 +501,10 @@ function PrivateOS() {
       case "weather": return <WeatherApp close={close} />;
       case "paint": return <PaintApp close={close} />;
       case "todo": return <TodoApp close={close} />;
+      case "movie": {
+        const movie = MOVIES.find((item) => item.id === movieId) ?? MOVIES[0]!;
+        return <MovieApp movie={movie} onPick={setMovieId} onPlay={() => { setBrowserStart(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${movie.title} official trailer`)}`); openApp("browser"); }} close={close} />;
+      }
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       default: return null;
     }
@@ -468,8 +523,19 @@ function PrivateOS() {
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
-        <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1 rounded-xl bg-black/50 px-2 py-1 backdrop-blur-xl md:gap-1.5 md:px-3">
+      <div className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
+        <div
+          role="separator"
+          aria-label="Drag to move the dock to another edge"
+          onPointerDown={(event) => event.currentTarget.setPointerCapture(event.pointerId)}
+          onPointerUp={(event) => {
+            const x = event.clientX / window.innerWidth;
+            const y = event.clientY / window.innerHeight;
+            patchSettings({ dockPos: x > 0.8 ? "right" : y < 0.25 ? "top" : "bottom" });
+          }}
+          className={`absolute cursor-grab touch-none rounded-full bg-white/50 ${settings.dockPos === "right" ? "-left-2.5 top-1/2 h-8 w-1 -translate-y-1/2" : settings.dockPos === "top" ? "-bottom-2 left-1/2 h-1 w-8 -translate-x-1/2" : "-top-2 left-1/2 h-1 w-8 -translate-x-1/2"}`}
+        />
+        <nav aria-label="PRIVATE OS dock" className={`flex items-center gap-1 rounded-xl bg-black/50 px-2 py-1 backdrop-blur-xl md:gap-1.5 md:px-3 ${settings.dockPos === "right" ? "flex-col" : ""}`}>
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
@@ -493,14 +559,14 @@ function PrivateOS() {
           </OsButton>
           {dockApps.map(({ id, label, icon: Icon }) => (
             <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5">
-              <Icon className="size-5 md:size-6" />
+              <Icon className={settings.bigIcons ? "size-7 md:size-8" : "size-5 md:size-6"} />
               <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
               {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
             </OsButton>
           ))}
         </nav>
 
-        <div className="flex h-9 items-center gap-2 rounded-xl bg-black/50 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3">
+        <div className={`flex h-9 items-center gap-2 rounded-xl bg-black/50 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3 ${settings.dockPos === "right" ? "hidden" : ""}`}>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
@@ -543,7 +609,7 @@ function PrivateOS() {
             return (
               <div key={id} className="group pointer-events-auto relative w-20 text-center">
                 <OsButton label={`Open ${app.label}`} onClick={() => openApp(id)} className="flex w-full flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
-                  <Icon className="size-12" />
+                  <Icon className={settings.bigIcons ? "size-16" : "size-12"} />
                   <span className="line-clamp-2 text-[11px] text-white drop-shadow">{app.label}</span>
                 </OsButton>
                 <button type="button" aria-label={`Remove ${app.label} from desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.filter((item) => item !== id) }))} className="absolute right-0 top-0 hidden rounded-full bg-black/60 p-0.5 text-white group-hover:block"><X className="size-3" /></button>
@@ -597,7 +663,7 @@ function PrivateOS() {
       )}
 
       {settings.widgets.length > 0 && (
-        <div className="pointer-events-none absolute right-3 top-3 z-[9] flex flex-col items-end gap-3">
+        <div className={`pointer-events-none absolute right-3 z-[9] flex flex-col items-end gap-3 ${settings.railHidden ? "top-3" : "top-72"}`}>
           {settings.widgets.map((id) => (
             <WidgetShell key={id} title={WIDGET_LIST.find((item) => item.id === id)?.label ?? id} offset={settings.wpos[id] ?? { x: 0, y: 0 }} onMove={(pos) => patchSettings((current) => ({ wpos: { ...current.wpos, [id]: pos } }))} onRemove={() => patchSettings((current) => ({ widgets: current.widgets.filter((item) => item !== id) }))}>
               {id === "music" ? <MusicWidget /> : id === "notes" ? <NotesWidget /> : id === "calendar" ? <CalendarWidget /> : <StopwatchWidget />}
@@ -632,10 +698,58 @@ function PrivateOS() {
         </div>
       )}
 
+      {!settings.railHidden && (
+        <div className="pointer-events-none absolute right-3 top-3 z-[8] flex w-56 flex-col gap-2 text-white md:w-60">
+          <div className="flex items-center justify-end gap-2 text-[10px] font-semibold text-[#f0b36a]">
+            <BatteryFull className="size-4" />
+            <span>{battery}%</span>
+            <Bell className="size-3.5" />
+          </div>
+          <p className="mt-2 text-[9px] font-bold tracking-[.15em] text-white/55">MEDIA</p>
+          <button type="button" onClick={() => openApp("spotify")} className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/10 bg-black/45 p-2.5 text-left backdrop-blur-xl hover:bg-black/60">
+            <span className="grid size-8 place-items-center rounded-full bg-[#1ed760] text-black"><Music className="size-4" /></span>
+            <span><span className="block text-xs font-bold">Not Playing</span><span className="block text-[10px] text-white/55">Spotify</span></span>
+          </button>
+          <p className="mt-1 text-[9px] font-bold tracking-[.15em] text-white/55">CONSOLE EMULATOR</p>
+          <button type="button" onClick={() => openApp("geforce")} className="pointer-events-auto flex items-center gap-3 rounded-xl border border-white/10 bg-black/45 p-2.5 text-left backdrop-blur-xl hover:bg-black/60">
+            <span className="grid size-8 place-items-center rounded-lg bg-[#2f7bf5] text-white"><Gamepad2 className="size-4" /></span>
+            <span><span className="block text-xs font-bold">V3 Space Loaded</span><span className="block text-[10px] text-white/55">PlayStation 5</span></span>
+          </button>
+        </div>
+      )}
+
+      {!settings.hubHidden && (
+        <div className="absolute inset-x-0 top-[13%] z-[8] mx-auto w-[min(30rem,calc(100%-1.5rem))] [animation:window-in_.4s_ease-out]">
+          <p className="mb-1.5 pl-1 font-['Orbitron',sans-serif] text-[11px] font-bold tabular-nums tracking-widest text-[#f6d28b]">{timeLabel}</p>
+          <div className="rounded-2xl border border-white/20 bg-black/55 p-3 backdrop-blur-xl">
+            <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-white"><span>Private HUB</span><span className="text-[#f6d28b]">Recommended</span></div>
+            <div className="grid grid-cols-2 gap-2">
+              {MOVIES.map((movie, index) => (
+                <div key={movie.id} className={`flex gap-2 rounded-xl border p-2 text-white ${index === 0 ? "border-[#84e03a]/70 bg-[#84e03a]/10 shadow-[0_0_18px_rgb(132_224_58/.25)]" : "border-white/15 bg-white/5"}`}>
+                  <div className="h-20 w-14 shrink-0 rounded-md" style={{ background: movie.poster }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-extrabold leading-tight">{movie.title}</p>
+                    <p className="mt-0.5 text-[9px] text-white/60">{movie.genre} • {movie.year}</p>
+                    <p className="text-[9px] font-semibold text-white/80">{movie.studio}</p>
+                    <button type="button" onClick={() => openMovie(movie.id)} className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold ${index === 0 ? "bg-[#84e03a] text-black" : "border border-white/30 text-white"}`}><Play className="size-2.5 fill-current" />Watch</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {menu && (
-        <div role="menu" style={{ left: menu.x, top: menu.y }} className="glass-panel fixed z-50 w-44 rounded-lg p-1 text-xs [animation:window-in_.15s_ease-out]">
-          {menuItems.map(([label, action]) => (
-            <button key={label} type="button" role="menuitem" onClick={() => { action(); setMenu(null); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-secondary">{label}</button>
+        <div role="menu" style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 rounded-xl border border-white/10 bg-[#14161a]/90 p-1.5 text-[11px] text-white shadow-2xl backdrop-blur-xl [animation:window-in_.15s_ease-out]">
+          {menuItems.map((item, index) => (
+            <div key={item.label}>
+              {index === 4 && <div className="my-1 h-px bg-white/10" />}
+              <button type="button" role="menuitem" onClick={() => { item.action(); setMenu(null); }} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-white/10">
+                <span className={`grid size-5 place-items-center rounded ${index === 0 ? "bg-red-500" : "bg-white/10"}`}>{item.icon}</span>
+                {item.label}
+              </button>
+            </div>
           ))}
         </div>
       )}
@@ -721,20 +835,21 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section className="glass-panel absolute inset-x-0 bottom-16 z-30 mx-auto flex h-[min(34rem,calc(100dvh-6rem))] w-[min(45rem,calc(100%-1.5rem))] flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:bottom-[4.5rem] md:p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search apps" className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></div>
-        <OsButton label="Close launcher" onClick={close} className="size-10 rounded-md hover:bg-secondary"><X className="size-5" /></OsButton>
+    <section onClick={close} className="absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-16 pt-[9dvh] backdrop-blur-2xl [animation:window-in_.24s_ease-out]">
+      <div onClick={(event) => event.stopPropagation()} className="flex w-full max-w-xl items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4">
+        <Search className="size-4 text-white/60" />
+        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all apps..." className="h-11 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50" />
       </div>
-      <p className="mb-4 mt-5 text-xs font-semibold uppercase text-muted-foreground">All applications</p>
-      <div className="grid flex-1 grid-cols-3 gap-3 overflow-auto sm:grid-cols-4 md:grid-cols-6">
+      <div onClick={(event) => event.stopPropagation()} className="mt-10 grid w-full max-w-3xl flex-1 grid-cols-3 content-start gap-x-3 gap-y-6 overflow-auto sm:grid-cols-4 md:grid-cols-6">
         {filtered.map(({ id, label, icon: Icon }) => (
-          <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex min-h-24 flex-col gap-2 rounded-md p-2 transition-colors hover:bg-secondary">
-            <Icon className="size-12" /><span className="text-center text-[11px] leading-tight">{label}</span>
+          <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex flex-col items-center gap-2 rounded-2xl p-2 transition-transform hover:scale-105">
+            <Icon className="size-14 md:size-16" />
+            <span className="text-center text-[11px] font-semibold leading-tight text-white drop-shadow">{label}</span>
           </OsButton>
         ))}
       </div>
-      <ChevronDown className="mx-auto mt-3 size-4 text-muted-foreground" />
+      <div className="flex gap-1.5" aria-hidden><span className="size-1.5 rounded-full bg-white" /><span className="size-1.5 rounded-full bg-white/40" /></div>
+      <ChevronDown className="mt-3 size-5 text-white/60" />
     </section>
   );
 }
@@ -1917,8 +2032,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[] };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["browser", "beez", "minecraft", "files"] };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right" };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["browser", "beez", "minecraft", "files"], railHidden: false, hubHidden: false, bigIcons: false, dockPos: "bottom" };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2368,6 +2483,40 @@ function TodoApp({ close }: { close: () => void }) {
             <button type="button" aria-label={`Delete ${item.text}`} onClick={() => save(items.filter((entry) => entry.id !== item.id))} className="rounded p-1 hover:bg-background/60"><X className="size-4" /></button>
           </div>
         ))}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function MovieApp({ movie, onPick, onPlay, close }: { movie: Movie; onPick: (id: string) => void; onPlay: () => void; close: () => void }) {
+  const [saved, setSaved] = useState(false);
+  return (
+    <WindowFrame title="Private Hill" icon={Film} close={close}>
+      <div className="relative flex-1 overflow-auto bg-[#0d0d0f] text-white">
+        <div className="h-52 md:h-72" style={{ background: "radial-gradient(ellipse at 70% 30%, rgb(190 130 40 / .75), transparent 60%), linear-gradient(180deg,#2a1c0a,#0d0d0f)" }} />
+        <div className="relative -mt-24 px-6 pb-8">
+          <h2 className="font-['Rajdhani',sans-serif] text-4xl font-extrabold text-[#f3c74a] md:text-5xl">{movie.title.replace(/^The /, "")}</h2>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-bold">
+            <span className="rounded-md border border-[#84e03a]/60 px-2 py-0.5 text-[#c8ee2c]">★ {movie.rating}</span>
+            <span className="rounded-md border border-white/25 px-2 py-0.5">MOVIE</span>
+            <span className="rounded-md border border-white/25 px-2 py-0.5">{movie.year}</span>
+          </div>
+          <p className="mt-3 max-w-xl text-xs font-semibold text-white/85">{movie.blurb}</p>
+          <div className="mt-4 flex items-center gap-3">
+            <button type="button" onClick={onPlay} className="inline-flex items-center gap-2 rounded-lg bg-[#c8ee2c] px-6 py-2 text-xs font-extrabold text-black"><Play className="size-3 fill-current" />Play</button>
+            <button type="button" aria-label={saved ? "Remove from list" : "Add to list"} onClick={() => setSaved((value) => !value)} className="grid size-9 place-items-center rounded-full border border-white/40 text-lg leading-none">{saved ? "✓" : "+"}</button>
+          </div>
+          <p className="mt-8 text-sm font-bold">More Like This</p>
+          <div className="mt-3 flex gap-3">
+            {MOVIES.filter((item) => item.id !== movie.id).map((item) => (
+              <button key={item.id} type="button" onClick={() => onPick(item.id)} className="w-28 text-left">
+                <div className="h-36 rounded-lg" style={{ background: item.poster }} />
+                <p className="mt-1 text-[11px] font-bold leading-tight">{item.title}</p>
+              </button>
+            ))}
+          </div>
+          <p className="mt-6 text-[11px] font-semibold text-white/60">These are single feature streams.</p>
+        </div>
       </div>
     </WindowFrame>
   );

@@ -38,6 +38,7 @@ import {
   CloudSun,
   ListChecks,
   Paintbrush,
+  Play,
 } from "lucide-react";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -65,6 +66,7 @@ export const Route = createFileRoute("/")({
 const CHERRION_URL = "https://cherrion.top/";
 const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
 const BEEZ_URL = "https://beez.beez-softwares.workers.dev/";
+const YOUTUBE_URL = "https://www.youtube.com/";
 const MINECRAFT_URL = "https://eaglercraft.com/play?version=modpack-ultimate-wasm";
 
 type IconComponent = ComponentType<{ className?: string }>;
@@ -153,10 +155,13 @@ const WeatherIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 t
 const PaintIcon: IconComponent = ({ className }) => <Tile tone="from-pink-400 to-purple-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Paintbrush /></Tile>;
 const TodoIcon: IconComponent = ({ className }) => <Tile tone="from-lime-400 to-green-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><ListChecks /></Tile>;
 
+const YouTubeIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" glyph="[&>svg]:size-[52%] [&>svg]:text-white" className={className}><Play className="fill-white" /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "beez", label: "BeeZ", icon: BeeZIcon },
+  { id: "youtube", label: "YouTube", icon: YouTubeIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
@@ -166,6 +171,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "beez", label: "BeeZ", icon: BeeZIcon },
+  { id: "youtube", label: "YouTube", icon: YouTubeIcon },
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
@@ -434,6 +440,7 @@ function PrivateOS() {
       case "browser": return <PrivateBrowser key={browserStart ?? "home"} initialUrl={browserStart} close={close} />;
       case "figure": return <FigureCloudApp close={close} />;
       case "beez": return <BeeZApp close={close} />;
+      case "youtube": return <YouTubeApp close={close} />;
       case "minecraft": return <MinecraftApp close={close} />;
       case "settings": return <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} walls={allWalls} custom={customWalls} addWall={addWall} removeWall={removeWall} settings={settings} patch={patchSettings} close={close} />;
       case "files": return <FilesWindow close={close} open={openApp} />;
@@ -462,7 +469,7 @@ function PrivateOS() {
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
       <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
-        <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1.5 rounded-2xl bg-black/35 px-2 py-1.5 backdrop-blur-xl md:gap-3 md:px-4">
+        <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1 rounded-xl bg-black/50 px-2 py-1 backdrop-blur-xl md:gap-1.5 md:px-3">
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
@@ -474,26 +481,26 @@ function PrivateOS() {
               setStartMenu((value) => !value);
               setLauncher(false);
               setQuickMenu(false);
-            }} className="group relative size-9 shrink-0 rounded-xl bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20 md:size-11">
-              <ShieldCheck className="size-6 text-white md:size-7" />
+            }} className="group relative size-8 shrink-0 rounded-lg bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20 md:size-9">
+              <ShieldCheck className="size-5 text-[#f2c783] md:size-6" />
               <span className="absolute bottom-12 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
             </OsButton>
           </span>
-          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-9 shrink-0 rounded-xl hover:bg-white/10 md:size-11"><LayoutGrid className="size-5 text-white md:size-6" /></OsButton>
+          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-7 shrink-0 rounded-lg hover:bg-white/10 md:size-8"><LayoutGrid className="size-4 text-white md:size-5" /></OsButton>
           <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
-            <LayoutGrid className="size-5 text-white/70" />
+            <LayoutGrid className="size-4 text-white/70" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
           </OsButton>
           {dockApps.map(({ id, label, icon: Icon }) => (
-            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
-              <Icon className="size-6 md:size-7" />
+            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5">
+              <Icon className="size-5 md:size-6" />
               <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
               {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
             </OsButton>
           ))}
         </nav>
 
-        <div className="flex h-9 items-center gap-2 rounded-2xl bg-black/35 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3">
+        <div className="flex h-9 items-center gap-2 rounded-xl bg-black/50 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3">
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
@@ -508,10 +515,8 @@ function PrivateOS() {
         </div>
       </div>
 
-      <section className="absolute inset-x-0 top-[14%] z-10 text-center drop-shadow-lg">
-        <p className="font-['Rajdhani',sans-serif] text-lg font-bold tracking-[.35em] text-foreground/90">{dateLabel}</p>
-        <h1 className="mt-3 font-['Orbitron',sans-serif] text-4xl font-medium tabular-nums tracking-[.12em] md:text-6xl">{timeLabel}</h1>
-        <p className="mt-3 text-xs text-foreground/70">Your space. Your rules.</p>
+      <section className="absolute inset-x-0 top-[7%] z-10 text-center">
+        <p className="pl-[.3em] font-['Zen_Dots','Orbitron',sans-serif] text-lg tracking-[.3em] text-[#d27c3e] [text-shadow:0_0_14px_rgb(210_120_60/.35)] md:text-2xl">{dateLabel}</p>
       </section>
 
       {quickMenu && (
@@ -668,25 +673,34 @@ function LockScreen({ locked, unlock, day, date, clock, dim, blur }: { locked: b
       aria-label="Unlock PRIVATE OS"
       onClick={unlock}
       style={{ backgroundColor: `rgba(0,0,0,${dim / 100})`, backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)` }}
-      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center pt-[24dvh] text-center font-['Rajdhani',sans-serif] text-[#f4ecd6] transition-all duration-700 [text-shadow:0_2px_18px_rgb(0_0_0/.55)] ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
+      className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center pt-[30dvh] text-center text-[#f6d28b] transition-all duration-700 ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
     >
-      <p className="pl-[.2em] text-[clamp(2rem,10.5vw,7.5rem)] font-medium leading-none tracking-[.2em]">{day}</p>
-      <p className="mt-5 pl-[.22em] text-sm font-bold tracking-[.22em] sm:text-xl">{date}</p>
-      <p className="mt-4 pl-[.18em] font-['Orbitron',sans-serif] text-[clamp(1.5rem,7vw,3rem)] font-bold leading-none tracking-[.18em] text-[#f4ecd6]">{clock}</p>
-      <p className="absolute bottom-8 pl-[.3em] text-[11px] font-medium tracking-[.3em] text-white/60">TAP OR PRESS ANY KEY TO UNLOCK</p>
+      <p className="pl-[.1em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(2.4rem,11vw,5rem)] leading-none tracking-[.1em] [text-shadow:0_0_22px_rgb(240_170_70/.45),0_2px_12px_rgb(0_0_0/.6)]">{day.slice(0, 3)}</p>
+      <p className="mt-4 pl-[.25em] font-['Rajdhani',sans-serif] text-[11px] font-semibold tracking-[.25em] text-[#eadfc4]/90 sm:text-sm">{date}</p>
+      <p className="mt-3 pl-[.15em] font-['Orbitron',sans-serif] text-[clamp(1.1rem,5vw,1.8rem)] font-bold leading-none tracking-[.12em] text-[#f9e2ae] [text-shadow:0_0_14px_rgb(240_170_70/.4)]">{clock}</p>
+      <div className="mt-10 flex items-center gap-3" aria-hidden>
+        <span className="size-3 rounded-full border border-white/40" />
+        <span className="size-4 rounded-full bg-emerald-400" />
+        <span className="size-4 rounded-[5px] bg-lime-300" />
+        <span className="size-4 rounded-[5px] bg-cyan-300" />
+      </div>
+      <p className="absolute bottom-8 pl-[.3em] font-['Rajdhani',sans-serif] text-[11px] font-medium tracking-[.3em] text-white/50">TAP OR PRESS ANY KEY TO UNLOCK</p>
     </div>
   );
 }
 
 function StartScreen({ onStart }: { onStart: () => void }) {
   return (
-    <main className="flex h-dvh flex-col items-center justify-center bg-[linear-gradient(to_bottom,#2b323b,#5d6977_55%,#a4b4c6)] px-4 text-center text-white">
-      <h1 className="text-[clamp(2rem,10vw,5rem)] font-extrabold leading-none tracking-[.14em]">PRIVATE OS</h1>
-      <div className="mt-5 h-[3px] w-[55%] max-w-xs bg-white" />
-      <button type="button" onClick={onStart} className="mt-8 border border-white/70 px-9 py-3 text-xs font-bold tracking-[.2em] outline-none transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white">
+    <main className="flex h-dvh flex-col items-center justify-center bg-[radial-gradient(ellipse_at_50%_105%,#47525f_0%,#1a2028_42%,#000_78%)] px-4 pb-[12dvh] text-center">
+      <div className="relative [animation:window-in_.9s_ease-out]">
+        <h1 className="font-['Orbitron',sans-serif] text-[clamp(2rem,10vw,4.4rem)] font-bold leading-none tracking-[.1em] text-[#f2c783] [text-shadow:0_0_22px_rgb(240_170_70/.45)]">PRIVATE</h1>
+        <span className="absolute -right-3 -top-2 rounded-[3px] bg-[#f2c783] px-1 py-px font-['Orbitron',sans-serif] text-[8px] font-bold leading-none text-black md:-right-5">OS</span>
+      </div>
+      <div className="mt-4 h-px w-[62%] max-w-sm bg-gradient-to-r from-white/10 via-white/80 to-white/20" />
+      <button type="button" onClick={onStart} className="mt-6 border border-white/15 px-5 py-1.5 font-['Rajdhani',sans-serif] text-[11px] font-bold tracking-[.2em] text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60">
         START
       </button>
-      <p className="mt-4 text-[11px] tracking-wide text-white/60">Press ENTER twice to skip</p>
+      <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">Press ENTER twice to skip</p>
     </main>
   );
 }
@@ -1147,6 +1161,84 @@ function BeeZApp({ close }: { close: () => void }) {
           <iframe
             key="fallback"
             title="BeeZ"
+            src={fallbackSrc}
+            onLoad={() => setLoading(false)}
+            className="size-full border-0 bg-black"
+            allow={ENGINE_FRAME_PERMISSIONS}
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
+          />
+        )}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function YouTubeApp({ close }: { close: () => void }) {
+  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const controllerRef = useRef<EngineController | null>(null);
+
+  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        controllerRef.current = await startProxyEngine();
+        if (!cancelled) setMode("engine");
+      } catch {
+        let direct = true;
+        try {
+          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(YOUTUBE_URL)}`);
+          const info = (await response.json()) as { frameable?: boolean | null };
+          if (info.frameable === false) direct = false;
+        } catch {
+          // assume the site can be opened directly
+        }
+        if (cancelled) return;
+        setFallbackSrc(direct ? YOUTUBE_URL : `/api/proxy?url=${encodeURIComponent(YOUTUBE_URL)}`);
+        setMode("fallback");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (mode !== "engine") return;
+    const element = frameRef.current;
+    const controller = controllerRef.current;
+    if (element && controller) controller.createFrame(element).go(YOUTUBE_URL);
+  }, [mode]);
+
+  const openOutside = (
+    <button type="button" aria-label="Open YouTube in a new tab" onClick={() => window.open(YOUTUBE_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+      <ExternalLink className="size-3.5" />
+    </button>
+  );
+
+  return (
+    <WindowFrame title="YouTube" icon={YouTubeIcon} close={close} app startMaximized actions={openOutside}>
+      <div className="relative flex-1 overflow-hidden bg-black">
+        {loading && (
+          <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
+            <div className="text-center">
+              <YouTubeIcon className="mx-auto size-20" />
+              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">YOUTUBE</p>
+              <p className="mt-1 text-[11px] text-white/50">Loading…</p>
+              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#ff2d2d] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+            </div>
+          </div>
+        )}
+        {mode === "engine" && (
+          <iframe ref={frameRef} key="engine" title="YouTube" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
+        )}
+        {mode === "fallback" && fallbackSrc && (
+          <iframe
+            key="fallback"
+            title="YouTube"
             src={fallbackSrc}
             onLoad={() => setLoading(false)}
             className="size-full border-0 bg-black"

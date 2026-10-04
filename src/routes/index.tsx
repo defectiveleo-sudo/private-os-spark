@@ -36,7 +36,6 @@ import {
   Download,
   Upload,
   CloudSun,
-  LayoutGrid,
   ListChecks,
   Paintbrush,
 } from "lucide-react";

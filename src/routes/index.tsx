@@ -522,7 +522,7 @@ function PrivateOS() {
       </div>
 
       <section className="absolute inset-x-0 top-[5.5%] z-10 text-center">
-        <p className="pl-[.42em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(.68rem,1.35vw,1.05rem)] tracking-[.42em] text-accent [text-shadow:0_0_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]">{dateLabel}</p>
+        <p className="os-day pl-[.42em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(.68rem,1.35vw,1.05rem)] tracking-[.42em] text-accent">{dateLabel}</p>
       </section>
 
       {quickMenu && (
@@ -617,7 +617,7 @@ function PrivateOS() {
       )}
 
       {menu && (
-        <div role="menu" style={{ left: menu.x, top: menu.y }} className="glass-panel fixed z-50 w-44 rounded-lg p-1 text-xs [animation:window-in_.15s_ease-out]">
+        <div role="menu" style={{ left: menu.x, top: menu.y }} className="os-context fixed z-50 w-44 p-1 text-[10px] [animation:window-in_.15s_ease-out]">
           {menuItems.map(([label, action]) => (
             <button key={label} type="button" role="menuitem" onClick={() => { action(); setMenu(null); }} className="block w-full rounded-md px-3 py-2 text-left hover:bg-secondary">{label}</button>
           ))}
@@ -705,20 +705,21 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section className="glass-panel absolute inset-x-0 bottom-16 z-30 mx-auto flex h-[min(34rem,calc(100dvh-6rem))] w-[min(45rem,calc(100%-1.5rem))] flex-col rounded-lg p-4 [animation:window-in_.24s_ease-out] md:bottom-[4.5rem] md:p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex flex-1 items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search apps" className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground" /></div>
-        <OsButton label="Close launcher" onClick={close} className="size-10 rounded-md hover:bg-secondary"><X className="size-5" /></OsButton>
+    <section className="os-launcher absolute inset-0 z-30 flex flex-col items-center justify-center px-5 py-16 [animation:window-in_.24s_ease-out]">
+      <button type="button" aria-label="Close launcher" onClick={close} className="absolute inset-0 -z-10 cursor-default" />
+      <div className="flex w-full max-w-xl items-center gap-2 border-b border-border/60 px-1">
+        <Search className="size-3.5 text-muted-foreground" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all apps" className="h-8 min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground" />
+        <OsButton label="Close launcher" onClick={close} className="size-7 rounded-sm hover:bg-secondary"><X className="size-3.5" /></OsButton>
       </div>
-      <p className="mb-4 mt-5 text-xs font-semibold uppercase text-muted-foreground">All applications</p>
-      <div className="grid flex-1 grid-cols-3 gap-3 overflow-auto sm:grid-cols-4 md:grid-cols-6">
+      <p className="mt-5 w-full max-w-xl text-[9px] uppercase tracking-[.25em] text-muted-foreground">All applications</p>
+      <div className="mt-4 grid w-full max-w-xl grid-cols-4 gap-x-5 gap-y-6 overflow-auto sm:grid-cols-6">
         {filtered.map(({ id, label, icon: Icon }) => (
-          <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex min-h-24 flex-col gap-2 rounded-md p-2 transition-colors hover:bg-secondary">
-            <Icon className="size-12" /><span className="text-center text-[11px] leading-tight">{label}</span>
+          <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="group flex min-h-16 flex-col gap-1.5 p-1 transition-transform hover:-translate-y-1">
+            <Icon className="size-9 drop-shadow-lg transition-transform group-hover:scale-105" /><span className="text-center text-[9px] leading-tight text-foreground/85">{label}</span>
           </OsButton>
         ))}
       </div>
-      <ChevronDown className="mx-auto mt-3 size-4 text-muted-foreground" />
+      <ChevronDown className="mt-5 size-3 text-muted-foreground" />
     </section>
   );
 }
@@ -776,8 +777,8 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
     window.addEventListener("pos-snap", handler);
     return () => window.removeEventListener("pos-snap", handler);
   });
-  const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
-  const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-lg md:inset-x-[8%] md:top-6 md:bottom-20";
+  const surface = app ? (maximized ? "bg-background" : "border border-border bg-background shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "os-window";
+  const position = maximized ? "inset-x-0 top-0 bottom-11 rounded-none" : "inset-x-2 top-[7%] bottom-14 rounded-sm md:inset-x-[10%] md:top-[8%] md:bottom-[9%]";
   return (
     <section
       ref={el}
@@ -827,18 +828,18 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${surface} ${minimized ? "hidden" : ""} ${position}`}
     >
       {app ? (
-        <header className="relative flex h-9 shrink-0 items-center border-b border-white/10 bg-[#202020] px-2">
+        <header className="relative flex h-8 shrink-0 items-center border-b border-border bg-secondary/70 px-2">
           <div className="flex items-center">
-            <button type="button" aria-label="Close" onClick={close} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#ff5f57]" /></button>
-            <button type="button" aria-label="Minimize" onClick={minimize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#febc2e]" /></button>
-            <button type="button" aria-label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#28c840]" /></button>
+            <button type="button" aria-label="Close" onClick={close} className="grid size-5 place-items-center outline-none"><span className="size-2 rounded-full bg-destructive" /></button>
+            <button type="button" aria-label="Minimize" onClick={minimize} className="grid size-5 place-items-center outline-none"><span className="size-2 rounded-full bg-accent" /></button>
+            <button type="button" aria-label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="grid size-5 place-items-center outline-none"><span className="size-2 rounded-full bg-primary" /></button>
           </div>
           <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-2 text-xs font-semibold text-white/80"><Icon className="size-4" />{title}</div>
           <div className="relative z-10 ml-auto flex items-center text-white/70">{actions}</div>
         </header>
       ) : (
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
-          <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="size-4 text-primary" />{title}</div>
+        <header className="flex h-9 shrink-0 items-center justify-between border-b border-border bg-secondary/45 px-2.5">
+          <div className="flex items-center gap-2 text-[11px] font-semibold"><Icon className="size-3.5 text-primary" />{title}</div>
           <div className="flex gap-1">
             <OsButton label="Minimize" onClick={minimize} className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton>
             <OsButton label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="size-8 rounded-md hover:bg-secondary">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>

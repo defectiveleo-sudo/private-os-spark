@@ -209,9 +209,9 @@ function clockZone(date: Date) {
 }
 
 function PrivateOS() {
-  const [phase, setPhase] = useState<"start" | "boot" | "desktop">("start");
+  const [phase, setPhase] = useState<"start" | "boot" | "desktop">("desktop");
   const [wallpaper, setWallpaper] = useState(0);
-  const [locked, setLocked] = useState(true);
+  const [locked, setLocked] = useState(false);
   const [openWins, setOpenWins] = useState<string[]>([]);
   const [minWins, setMinWins] = useState<string[]>([]);
   const [launcher, setLauncher] = useState(false);
@@ -227,6 +227,7 @@ function PrivateOS() {
   const [startPos, setStartPos] = useState<{ left: number; bottom: number } | null>(null);
   const wallInput = useRef<HTMLInputElement>(null);
   const [taskView, setTaskView] = useState(false);
+  const [dockMode, setDockMode] = useState<"bottom" | "top" | "right" | "floating" | "hidden">("bottom");
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
@@ -397,6 +398,11 @@ function PrivateOS() {
   ];
 
   const menuItems: [string, () => void][] = [
+    ["Taskbar at bottom", () => setDockMode("bottom")],
+    ["Taskbar at top", () => setDockMode("top")],
+    ["Taskbar on right", () => setDockMode("right")],
+    ["Floating taskbar", () => setDockMode("floating")],
+    ["Hide taskbar", () => setDockMode("hidden")],
     ["Change wallpaper", () => setWallpaper((index) => (index + 1) % allWalls.length)],
     ["Add wallpaper…", () => wallInput.current?.click()],
     ["Files", () => openApp("files")],
@@ -468,8 +474,8 @@ function PrivateOS() {
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <div className="absolute inset-x-0 bottom-3 z-40 mx-auto flex w-max max-w-[calc(100%-1rem)] flex-wrap items-center justify-center gap-1.5 md:bottom-4 md:gap-2">
-        <nav aria-label="PRIVATE OS dock" className="flex items-center gap-1 rounded-xl bg-black/50 px-2 py-1 backdrop-blur-xl md:gap-1.5 md:px-3">
+      <div className={`os-dock-wrap ${dockMode === "top" ? "os-dock-top" : dockMode === "right" ? "os-dock-right" : dockMode === "floating" ? "os-dock-floating" : dockMode === "hidden" ? "os-dock-hidden" : "os-dock-bottom"}`}>
+        <nav aria-label="PRIVATE OS dock" className="os-dock">
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
@@ -481,26 +487,26 @@ function PrivateOS() {
               setStartMenu((value) => !value);
               setLauncher(false);
               setQuickMenu(false);
-            }} className="group relative size-8 shrink-0 rounded-lg bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20 md:size-9">
-              <ShieldCheck className="size-5 text-[#f2c783] md:size-6" />
+            }} className="group relative size-7 shrink-0 rounded-md transition-transform hover:-translate-y-0.5 hover:bg-secondary md:size-8">
+              <ShieldCheck className="size-4 text-accent md:size-5" />
               <span className="absolute bottom-12 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
             </OsButton>
           </span>
-          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-7 shrink-0 rounded-lg hover:bg-white/10 md:size-8"><LayoutGrid className="size-4 text-white md:size-5" /></OsButton>
-          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
-            <LayoutGrid className="size-4 text-white/70" />
+          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-6 shrink-0 rounded-md hover:bg-secondary md:size-7"><LayoutGrid className="size-3.5 text-foreground md:size-4" /></OsButton>
+          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5">
+            <LayoutGrid className="size-3.5 text-muted-foreground" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
           </OsButton>
           {dockApps.map(({ id, label, icon: Icon }) => (
-            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5">
-              <Icon className="size-5 md:size-6" />
+            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-1">
+              <Icon className="size-5" />
               <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
               {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
             </OsButton>
           ))}
         </nav>
 
-        <div className="flex h-9 items-center gap-2 rounded-xl bg-black/50 px-2.5 text-xs font-medium tabular-nums text-white backdrop-blur-xl md:h-10 md:gap-3 md:px-3">
+        <div className="os-status">
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
@@ -515,8 +521,8 @@ function PrivateOS() {
         </div>
       </div>
 
-      <section className="absolute inset-x-0 top-[7%] z-10 text-center">
-        <p className="pl-[.3em] font-['Zen_Dots','Orbitron',sans-serif] text-lg tracking-[.3em] text-[#d27c3e] [text-shadow:0_0_14px_rgb(210_120_60/.35)] md:text-2xl">{dateLabel}</p>
+      <section className="absolute inset-x-0 top-[5.5%] z-10 text-center">
+        <p className="pl-[.42em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(.68rem,1.35vw,1.05rem)] tracking-[.42em] text-accent [text-shadow:0_0_14px_color-mix(in_oklab,var(--accent)_50%,transparent)]">{dateLabel}</p>
       </section>
 
       {quickMenu && (
@@ -556,41 +562,19 @@ function PrivateOS() {
       <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => void addWall(file)); event.target.value = ""; }} />
 
       {startMenu && startPos && (
-        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-xl p-4 [animation:window-in_.18s_ease-out]">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Apps</p>
-            <div className="grid grid-cols-4 gap-2">
-              {launcherApps.map(({ id, label, icon: Icon }) => {
-                const pinned = settings.desktop.includes(id);
-                return (
-                  <div key={id} className="relative">
-                    <button type="button" onClick={() => { setStartMenu(false); openApp(id); }} className="flex w-full flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-secondary">
-                      <Icon className="size-10" />
-                      <span className="w-full truncate text-center">{label}</span>
-                    </button>
-                    <button type="button" aria-label={pinned ? `Remove ${label} from desktop` : `Add ${label} to desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.includes(id) ? current.desktop.filter((item) => item !== id) : [...current.desktop, id] }))} className={`absolute right-0 top-0 rounded-full px-1.5 text-[10px] ${pinned ? "bg-primary text-primary-foreground" : "bg-black/50 text-white"}`}>{pinned ? "✓" : "+"}</button>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Tap + on an app to put it on your desktop.</p>
+        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="os-feature-panel fixed z-50 w-[min(22rem,calc(100vw-1rem))] overflow-hidden [animation:window-in_.18s_ease-out]">
+          <header className="flex items-center justify-between border-b border-border px-4 py-3"><div><p className="text-[10px] uppercase tracking-[.22em] text-accent">Private space</p><h2 className="mt-1 text-sm font-semibold">Recommended</h2></div><button type="button" onClick={() => { setStartMenu(false); setLauncher(true); }} className="text-[10px] text-primary hover:underline">All apps</button></header>
+          <div className="grid grid-cols-2 gap-2 p-3">
+            {[{ id: "figure", label: "Figure Cloud", icon: CloudIcon }, { id: "cherrion", label: "Cherrion", icon: CherryIcon }, { id: "beez", label: "BeeZ", icon: BeeZIcon }, { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon }].map(({ id, label, icon: Icon }) => (
+              <button key={id} type="button" onClick={() => { setStartMenu(false); openApp(id); }} className="group overflow-hidden rounded-md border border-border bg-secondary/60 text-left hover:border-primary/50">
+                <div className="flex h-20 items-center justify-center bg-input/70"><Icon className="size-11 transition-transform group-hover:scale-105" /></div>
+                <div className="flex items-center justify-between px-2.5 py-2"><span className="truncate text-[10px] font-semibold">{label}</span><span className="rounded-sm bg-primary px-1.5 py-0.5 text-[8px] font-bold text-primary-foreground">OPEN</span></div>
+              </button>
+            ))}
           </div>
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Widgets</p>
-            <div className="flex flex-wrap gap-2">
-              {WIDGET_LIST.map((widget) => {
-                const on = settings.widgets.includes(widget.id);
-                return (
-                  <button key={widget.id} type="button" onClick={() => patchSettings((current) => ({ widgets: current.widgets.includes(widget.id) ? current.widgets.filter((item) => item !== widget.id) : [...current.widgets, widget.id] }))} className={`rounded-md px-3 py-1.5 text-xs ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                    {on ? "✓ " : "+ "}{widget.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          <div className="grid grid-cols-5 gap-1 border-t border-border pt-3 text-center text-[11px]">
+          <div className="grid grid-cols-5 gap-1 border-t border-border p-2 text-center text-[9px] text-muted-foreground">
             {startItems.map(([label, action]) => (
-              <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="rounded-md px-1 py-2 hover:bg-secondary">{label}</button>
+              <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="rounded-sm px-1 py-1.5 hover:bg-secondary hover:text-foreground">{label}</button>
             ))}
           </div>
         </aside>

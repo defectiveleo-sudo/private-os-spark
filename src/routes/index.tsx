@@ -36,7 +36,6 @@ import {
   Download,
   Upload,
   CloudSun,
-  LayoutGrid,
   ListChecks,
   Paintbrush,
 } from "lucide-react";
@@ -1872,11 +1871,11 @@ async function deleteWall(id: number) {
 }
 
 class AppBoundary extends Component<{ children: ReactNode; close: () => void }, { error: string | null }> {
-  state = { error: null as string | null };
+  override state = { error: null as string | null };
   static getDerivedStateFromError(error: unknown) {
     return { error: error instanceof Error ? error.message : String(error) };
   }
-  render() {
+  override render() {
     if (this.state.error === null) return this.props.children;
     return (
       <WindowFrame title="App error" icon={X} close={this.props.close}>

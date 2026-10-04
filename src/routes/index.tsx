@@ -35,6 +35,10 @@ import {
   Activity,
   Download,
   Upload,
+  CloudSun,
+  LayoutGrid,
+  ListChecks,
+  Paintbrush,
 } from "lucide-react";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -91,7 +95,7 @@ function PrivateBrowserIcon({ className }: { className?: string }) {
   );
 }
 
-const WindowContext = createContext<{ minimized: boolean; minimize: () => void; focus: () => void; z: number }>({ minimized: false, minimize: () => {}, focus: () => {}, z: 10 });
+const WindowContext = createContext<{ minimized: boolean; minimize: () => void; focus: () => void; z: number; top: boolean }>({ minimized: false, minimize: () => {}, focus: () => {}, z: 10, top: false });
 
 const GLYPH_WHITE = "[&>svg]:size-[56%] [&>svg]:text-white";
 
@@ -146,6 +150,10 @@ function MinecraftIcon({ className }: { className?: string }) {
 
 const TaskIcon: IconComponent = ({ className }) => <Tile tone="from-emerald-400 to-teal-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Activity /></Tile>;
 
+const WeatherIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-700" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><CloudSun /></Tile>;
+const PaintIcon: IconComponent = ({ className }) => <Tile tone="from-pink-400 to-purple-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Paintbrush /></Tile>;
+const TodoIcon: IconComponent = ({ className }) => <Tile tone="from-lime-400 to-green-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><ListChecks /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
@@ -166,6 +174,9 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "terminal", label: "Terminal", icon: TerminalIcon },
   { id: "taskmgr", label: "Task Manager", icon: TaskIcon },
+  { id: "weather", label: "Weather", icon: WeatherIcon },
+  { id: "paint", label: "Paint", icon: PaintIcon },
+  { id: "todo", label: "To-Do", icon: TodoIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -210,6 +221,7 @@ function PrivateOS() {
   const [startMenu, setStartMenu] = useState(false);
   const [startPos, setStartPos] = useState<{ left: number; bottom: number } | null>(null);
   const wallInput = useRef<HTMLInputElement>(null);
+  const [taskView, setTaskView] = useState(false);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
@@ -403,10 +415,15 @@ function PrivateOS() {
       }
       if (event.altKey && (event.key === "Tab" || event.code === "KeyW")) {
         event.preventDefault();
-        const visible = zOrder.filter((id) => openWins.includes(id) && !minWins.includes(id));
-        if (visible.length > 1) raise(visible[0]!);
-        else if (visible.length === 0 && openWins.length > 0) openApp(openWins[openWins.length - 1]!);
+        setTaskView((value) => !value);
+        return;
       }
+      if (event.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+        event.preventDefault();
+        window.dispatchEvent(new CustomEvent("pos-snap", { detail: event.key.replace("Arrow", "").toLowerCase() }));
+        return;
+      }
+      if (event.key === "Escape") setTaskView(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -424,6 +441,9 @@ function PrivateOS() {
       case "notes": return <NotesApp close={close} />;
       case "calc": return <CalculatorApp close={close} />;
       case "terminal": return <TerminalApp close={close} open={openApp} />;
+      case "weather": return <WeatherApp close={close} />;
+      case "paint": return <PaintApp close={close} />;
+      case "todo": return <TodoApp close={close} />;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       default: return null;
     }
@@ -460,6 +480,7 @@ function PrivateOS() {
               <span className="absolute bottom-12 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
             </OsButton>
           </span>
+          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-9 shrink-0 rounded-xl hover:bg-white/10 md:size-11"><LayoutGrid className="size-5 text-white md:size-6" /></OsButton>
           <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
             <LayoutGrid className="size-5 text-white/70" />
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
@@ -581,6 +602,26 @@ function PrivateOS() {
         </div>
       )}
 
+      {taskView && (
+        <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.18s_ease-out]">
+          {openWins.length === 0 && <p className="text-sm text-white/80">No open windows. Open an app from the dock.</p>}
+          {openWins.map((id) => {
+            const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
+            const Icon = app?.icon ?? Folder;
+            const label = app?.label ?? id;
+            return (
+              <div key={id} onClick={(event) => event.stopPropagation()} className="relative w-52 rounded-xl bg-white/10 p-3 text-white ring-1 ring-white/20 hover:bg-white/20">
+                <button type="button" onClick={() => { setTaskView(false); openApp(id); }} className="flex w-full flex-col items-center gap-2 py-3">
+                  <Icon className="size-14" />
+                  <span className="text-xs">{label}{minWins.includes(id) ? " (minimized)" : ""}</span>
+                </button>
+                <button type="button" aria-label={`Close ${label}`} onClick={() => closeWindow(id)} className="absolute right-2 top-2 rounded-full bg-black/50 p-1"><X className="size-3" /></button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
           {power === "off" ? "PRESS ANYTHING TO POWER ON" : ""}
@@ -597,7 +638,7 @@ function PrivateOS() {
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
       {openWins.map((id) => (
-        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)) }}>
+        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id && !minWins.includes(id) }}>
           <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
         </WindowContext.Provider>
       ))}
@@ -686,30 +727,106 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
 }
 
 function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
-  const { minimized, minimize, focus, z } = useContext(WindowContext);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const drag = useRef<{ sx: number; sy: number; ox: number; oy: number } | null>(null);
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-  const resizing = useRef<{ sx: number; sy: number; w: number; h: number; mode: string } | null>(null);
+  const { minimized, minimize, focus, z, top } = useContext(WindowContext);
+  const el = useRef<HTMLElement>(null);
+  const [rect, setRect] = useState<WinRect | null>(null);
+  const [snap, setSnap] = useState<string | null>(null);
+  const prevRect = useRef<WinRect | null>(null);
+  const live = useRef<WinRect | null>(null);
+  const gesture = useRef<{ kind: "move" | "resize"; mode: string; sx: number; sy: number; start: WinRect; ratio: number } | null>(null);
   const [maximized, setMaximized] = useState(startMaximized);
-  const toggleMaximize = () => setMaximized((value) => !value);
+  const toggleMaximize = () => {
+    setSnap(null);
+    setMaximized((value) => !value);
+  };
+  const measure = (): WinRect => {
+    const box = el.current!.getBoundingClientRect();
+    return { x: box.left, y: box.top, w: box.width, h: box.height };
+  };
+  // Move/resize by writing straight to the element (no React re-render per pointer move = smooth).
+  const place = (next: WinRect) => {
+    live.current = next;
+    const node = el.current;
+    if (!node) return;
+    node.style.left = `${next.x}px`;
+    node.style.top = `${next.y}px`;
+    node.style.width = `${next.w}px`;
+    node.style.height = `${next.h}px`;
+    node.style.right = "auto";
+    node.style.bottom = "auto";
+  };
+  const restore = () => {
+    setSnap(null);
+    setRect(prevRect.current);
+  };
+  const snapTo = (zone: string) => {
+    if (zone === "up") return setMaximized(true);
+    if (zone === "down") {
+      if (maximized) return setMaximized(false);
+      if (snap) return restore();
+      return minimize();
+    }
+    if (zone !== "left" && zone !== "right") return;
+    if (!snap && !maximized && el.current) prevRect.current = rect ?? measure();
+    const half = Math.round(window.innerWidth / 2) - 12;
+    setMaximized(false);
+    setSnap(zone);
+    setRect({ x: zone === "left" ? 8 : Math.round(window.innerWidth / 2) + 4, y: 8, w: half, h: window.innerHeight - 88 });
+  };
+  useEffect(() => {
+    if (!top) return;
+    const handler = (event: Event) => snapTo((event as CustomEvent<string>).detail);
+    window.addEventListener("pos-snap", handler);
+    return () => window.removeEventListener("pos-snap", handler);
+  });
   const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
   const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-lg md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
     <section
-      style={{ zIndex: z, transform: maximized ? undefined : `translate(${pos.x}px, ${pos.y}px)`, ...(size && !maximized ? { width: size.w, height: size.h } : {}) }}
+      ref={el}
+      style={{ zIndex: z, ...(rect && !maximized ? { left: rect.x, top: rect.y, width: rect.w, height: rect.h, right: "auto", bottom: "auto" } : {}) }}
+      onDoubleClick={(event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("header") && !target.closest("button")) toggleMaximize();
+      }}
       onPointerDown={(event) => {
         focus();
         const target = event.target as HTMLElement;
         if (maximized || event.button !== 0 || !target.closest("header") || target.closest("button")) return;
-        drag.current = { sx: event.clientX, sy: event.clientY, ox: pos.x, oy: pos.y };
+        const start = rect ?? measure();
+        const ratio = (event.clientX - start.x) / Math.max(1, start.w);
+        let base = start;
+        live.current = null;
+        if (snap && prevRect.current) {
+          base = { ...prevRect.current, x: event.clientX - prevRect.current.w * ratio, y: 8 };
+          setSnap(null);
+          place(base);
+        } else prevRect.current = start;
+        gesture.current = { kind: "move", mode: "", sx: event.clientX, sy: event.clientY, start: base, ratio };
         event.currentTarget.setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
-        const d = drag.current;
-        if (d) setPos({ x: d.ox + event.clientX - d.sx, y: d.oy + event.clientY - d.sy });
+        const g = gesture.current;
+        if (!g) return;
+        const dx = event.clientX - g.sx;
+        const dy = event.clientY - g.sy;
+        if (g.kind === "move") {
+          place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(0, g.start.y + dy)) });
+          showSnap(event.clientX <= 6 ? "left" : event.clientX >= window.innerWidth - 6 ? "right" : event.clientY <= 4 ? "max" : null);
+        } else {
+          place({ ...g.start, w: g.mode.includes("e") ? Math.max(320, g.start.w + dx) : g.start.w, h: g.mode.includes("s") ? Math.max(220, g.start.h + dy) : g.start.h });
+        }
       }}
-      onPointerUp={() => { drag.current = null; }}
+      onPointerUp={(event) => {
+        const g = gesture.current;
+        gesture.current = null;
+        if (!g) return;
+        showSnap(null);
+        if (live.current) setRect(live.current);
+        if (g.kind !== "move" || !live.current) return;
+        const zone = event.clientX <= 6 ? "left" : event.clientX >= window.innerWidth - 6 ? "right" : event.clientY <= 4 ? "up" : null;
+        if (zone) snapTo(zone);
+      }}
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.28s_ease-out] ${surface} ${minimized ? "hidden" : ""} ${position}`}
     >
       {app ? (
@@ -739,16 +856,11 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
           onPointerDown={(event) => {
             event.stopPropagation();
             focus();
-            const box = event.currentTarget.parentElement!.getBoundingClientRect();
-            resizing.current = { sx: event.clientX, sy: event.clientY, w: box.width, h: box.height, mode };
+            live.current = null;
+            setSnap(null);
+            gesture.current = { kind: "resize", mode, sx: event.clientX, sy: event.clientY, start: rect ?? measure(), ratio: 0 };
             event.currentTarget.setPointerCapture(event.pointerId);
           }}
-          onPointerMove={(event) => {
-            const r = resizing.current;
-            if (!r) return;
-            setSize({ w: r.mode.includes("e") ? Math.max(320, r.w + event.clientX - r.sx) : r.w, h: r.mode.includes("s") ? Math.max(220, r.h + event.clientY - r.sy) : r.h });
-          }}
-          onPointerUp={() => { resizing.current = null; }}
           className={`absolute z-20 touch-none ${mode === "e" ? "right-0 top-0 h-full w-1.5 cursor-e-resize" : mode === "s" ? "bottom-0 left-0 h-1.5 w-full cursor-s-resize" : "bottom-0 right-0 size-4 cursor-se-resize"}`}
         />
       ))}
@@ -1098,6 +1210,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
   const [frameTarget, setFrameTarget] = useState<string | null>(initialUrl);
   const [frameKey, setFrameKey] = useState(0);
   const [loading, setLoading] = useState(Boolean(initialUrl));
+  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean } | null>(null);
   const [engine, setEngine] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const frameRef = useRef<HTMLIFrameElement>(null);
   const controllerRef = useRef<EngineController | null>(null);
@@ -1162,6 +1275,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
   }, [engine, needsEngine, frameTarget, frameKey]);
 
   const show = (url: string) => {
+    setResults(null);
     pending.current = true;
     setFrameTarget(url);
     setFrameKey((value) => value + 1);
@@ -1169,11 +1283,21 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
     setLoading(true);
   };
 
+  const runSearch = (query: string) => {
+    setAddress(query);
+    setResults({ query, hits: null, error: false });
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+      .then((response) => response.json() as Promise<{ hits?: SearchHit[] }>)
+      .then((data) => setResults((current) => (current && current.query === query ? { query, hits: data.hits ?? [], error: !data.hits?.length } : current)))
+      .catch(() => setResults((current) => (current && current.query === query ? { query, hits: [], error: true } : current)));
+  };
+
   const navigateTo = (value: string) => {
     const clean = value.trim();
     if (!clean) return;
     const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|[\w-]+\.[a-z]{2,})([/:?#]|$)/i.test(clean);
-    const destination = isUrl ? (/^https?:\/\//i.test(clean) ? clean : `https://${clean}`) : `https://html.duckduckgo.com/html/?q=${encodeURIComponent(clean)}`;
+    if (!isUrl) return runSearch(clean);
+    const destination = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
     setNav((current) => ({ list: [...current.list.slice(0, current.index + 1), destination], index: current.index + 1 }));
     show(destination);
   };
@@ -1201,6 +1325,26 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
         <OsButton label="Open this page in a new tab" disabled={!page} onClick={() => page && window.open(page, "_blank", "noopener,noreferrer")} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ExternalLink className="size-4" /></OsButton>
       </div>
       <div className="relative flex-1 overflow-hidden bg-background">
+        {results && (
+          <div className="absolute inset-0 z-20 overflow-auto bg-background p-4">
+            <div className="mx-auto max-w-2xl">
+              <p className="text-xs text-muted-foreground">Results for “{results.query}”</p>
+              {results.hits === null && <p className="mt-6 text-sm">Searching…</p>}
+              {results.error && (
+                <p className="mt-6 text-sm">
+                  No results came back. <button type="button" className="underline" onClick={() => window.open(`https://duckduckgo.com/?q=${encodeURIComponent(results.query)}`, "_blank", "noopener,noreferrer")}>Open DuckDuckGo in a new tab</button>
+                </p>
+              )}
+              {results.hits?.map((hit) => (
+                <button key={hit.url} type="button" onClick={() => navigateTo(hit.url)} className="mt-4 block w-full text-left">
+                  <span className="block truncate text-[11px] text-muted-foreground">{hit.url}</span>
+                  <span className="block text-sm font-semibold text-primary">{hit.title}</span>
+                  <span className="block text-xs text-muted-foreground">{hit.snippet}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         {frame ? <>
           {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><RefreshCw className="mx-auto size-6 animate-spin text-primary" /><p className="mt-3 text-xs text-muted-foreground">Opening securely…</p></div></div>}
           <iframe ref={frameRef} key={frame.mode === "engine" ? "engine" : `${frame.mode}-${frameKey}`} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="fullscreen; clipboard-read; clipboard-write; autoplay" sandbox={frame.mode === "direct" ? DIRECT_SANDBOX : frame.mode === "loader" ? PROXY_SANDBOX : undefined} />
@@ -1925,5 +2069,215 @@ function StopwatchWidget() {
         <button type="button" onClick={() => { setRun(false); setMs(0); }} className="rounded-md bg-secondary px-3 py-1">Reset</button>
       </div>
     </div>
+  );
+}
+
+type WinRect = { x: number; y: number; w: number; h: number };
+type SearchHit = { title: string; url: string; snippet: string };
+
+// Windows 11 style snap preview shown while dragging a window to a screen edge.
+function showSnap(zone: "left" | "right" | "max" | null) {
+  let node = document.getElementById("snap-preview");
+  if (!zone) {
+    node?.remove();
+    return;
+  }
+  if (!node) {
+    node = document.createElement("div");
+    node.id = "snap-preview";
+    node.style.cssText = "position:fixed;z-index:60;pointer-events:none;border-radius:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(6px);transition:all .12s ease";
+    document.body.appendChild(node);
+  }
+  const width = window.innerWidth;
+  const half = Math.round(width / 2) - 12;
+  Object.assign(node.style, {
+    left: `${zone === "right" ? Math.round(width / 2) + 4 : 8}px`,
+    top: "8px",
+    width: `${zone === "max" ? width - 16 : half}px`,
+    height: `${window.innerHeight - 88}px`,
+  });
+}
+
+const WEATHER_ICONS: Record<number, string> = { 0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️", 45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️", 55: "🌧️", 61: "🌧️", 63: "🌧️", 65: "🌧️", 71: "🌨️", 73: "🌨️", 75: "❄️", 80: "🌦️", 81: "🌧️", 82: "⛈️", 95: "⛈️", 96: "⛈️", 99: "⛈️" };
+
+function WeatherApp({ close }: { close: () => void }) {
+  const [city, setCity] = useState("");
+  const [msg, setMsg] = useState("Search for a city.");
+  const [data, setData] = useState<{ place: string; temp: number; wind: number; code: number; days: { d: string; hi: number; lo: number; code: number }[] } | null>(null);
+  const load = async (name: string) => {
+    if (!name.trim()) return;
+    setMsg("Loading…");
+    try {
+      const geo = (await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1`)).json()) as { results?: { name: string; country?: string; latitude: number; longitude: number }[] };
+      const hit = geo.results?.[0];
+      if (!hit) return setMsg("City not found.");
+      const w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${hit.latitude}&longitude=${hit.longitude}&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=5`)).json()) as {
+        current: { temperature_2m: number; weather_code: number; wind_speed_10m: number };
+        daily: { time: string[]; temperature_2m_max: number[]; temperature_2m_min: number[]; weather_code: number[] };
+      };
+      setData({
+        place: `${hit.name}${hit.country ? `, ${hit.country}` : ""}`,
+        temp: w.current.temperature_2m,
+        wind: w.current.wind_speed_10m,
+        code: w.current.weather_code,
+        days: w.daily.time.map((d, i) => ({ d, hi: w.daily.temperature_2m_max[i] ?? 0, lo: w.daily.temperature_2m_min[i] ?? 0, code: w.daily.weather_code[i] ?? 0 })),
+      });
+      setMsg("");
+      try {
+        localStorage.setItem("pos-city", name);
+      } catch {
+        // storage unavailable
+      }
+    } catch {
+      setMsg("Couldn't load the weather.");
+    }
+  };
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("pos-city");
+      if (saved) {
+        setCity(saved);
+        void load(saved);
+      }
+    } catch {
+      // storage unavailable
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <WindowFrame title="Weather" icon={CloudSun} close={close}>
+      <form onSubmit={(event) => { event.preventDefault(); void load(city); }} className="flex shrink-0 gap-2 border-b border-border p-2">
+        <input value={city} onChange={(event) => setCity(event.target.value)} placeholder="City" aria-label="City" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
+        <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Search</button>
+      </form>
+      <div className="flex-1 overflow-auto p-5 text-center">
+        {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+        {data && !msg && (
+          <>
+            <p className="text-sm text-muted-foreground">{data.place}</p>
+            <p className="mt-2 text-6xl">{WEATHER_ICONS[data.code] ?? "🌡️"}</p>
+            <p className="mt-2 text-4xl font-semibold">{Math.round(data.temp)}°C</p>
+            <p className="text-xs text-muted-foreground">Wind {Math.round(data.wind)} km/h</p>
+            <div className="mx-auto mt-6 grid max-w-md grid-cols-5 gap-2 text-xs">
+              {data.days.map((day) => (
+                <div key={day.d} className="rounded-md bg-secondary p-2">
+                  <p>{new Date(`${day.d}T12:00`).toLocaleDateString("en-US", { weekday: "short" })}</p>
+                  <p className="my-1 text-lg">{WEATHER_ICONS[day.code] ?? "🌡️"}</p>
+                  <p>{Math.round(day.hi)}°</p>
+                  <p className="text-muted-foreground">{Math.round(day.lo)}°</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function PaintApp({ close }: { close: () => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const drawing = useRef(false);
+  const [color, setColor] = useState("#ffffff");
+  const [width, setWidth] = useState(4);
+  const clear = () => {
+    const c = canvas.current;
+    const ctx = c?.getContext("2d");
+    if (!c || !ctx) return;
+    ctx.fillStyle = "#111111";
+    ctx.fillRect(0, 0, c.width, c.height);
+  };
+  useEffect(() => {
+    clear();
+  }, []);
+  const point = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const box = event.currentTarget.getBoundingClientRect();
+    return { x: (event.clientX - box.left) * (event.currentTarget.width / box.width), y: (event.clientY - box.top) * (event.currentTarget.height / box.height) };
+  };
+  const draw = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!drawing.current) return;
+    const ctx = event.currentTarget.getContext("2d")!;
+    const p = point(event);
+    ctx.lineWidth = width;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = color;
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+  };
+  const save = () => {
+    const link = document.createElement("a");
+    link.href = canvas.current?.toDataURL("image/png") ?? "";
+    link.download = "painting.png";
+    link.click();
+  };
+  const btn = "rounded-md bg-secondary px-2.5 py-1.5 text-xs";
+  return (
+    <WindowFrame title="Paint" icon={Paintbrush} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border p-2">
+        <input type="color" value={color} aria-label="Colour" onChange={(event) => setColor(event.target.value)} className="h-8 w-10 rounded bg-transparent" />
+        <input type="range" min={1} max={40} value={width} aria-label="Brush size" onChange={(event) => setWidth(Number(event.target.value))} className="w-24" />
+        <button type="button" onClick={() => setColor("#111111")} className={btn}>Eraser</button>
+        <button type="button" onClick={clear} className={btn}>Clear</button>
+        <button type="button" onClick={save} className={`${btn} ml-auto bg-primary text-primary-foreground`}>Save PNG</button>
+      </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-black p-2">
+        <canvas
+          ref={canvas}
+          width={1000}
+          height={620}
+          className="max-h-full max-w-full touch-none rounded bg-[#111]"
+          onPointerDown={(event) => {
+            drawing.current = true;
+            event.currentTarget.setPointerCapture(event.pointerId);
+            const ctx = event.currentTarget.getContext("2d")!;
+            ctx.beginPath();
+            const p = point(event);
+            ctx.moveTo(p.x, p.y);
+            draw(event);
+          }}
+          onPointerMove={draw}
+          onPointerUp={() => { drawing.current = false; }}
+        />
+      </div>
+    </WindowFrame>
+  );
+}
+
+function TodoApp({ close }: { close: () => void }) {
+  const [items, setItems] = useState<{ id: number; text: string; done: boolean }[]>([]);
+  const [text, setText] = useState("");
+  useEffect(() => {
+    try {
+      setItems(JSON.parse(localStorage.getItem("pos-todos") ?? "[]") as { id: number; text: string; done: boolean }[]);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const save = (next: { id: number; text: string; done: boolean }[]) => {
+    setItems(next);
+    try {
+      localStorage.setItem("pos-todos", JSON.stringify(next));
+    } catch {
+      // storage unavailable
+    }
+  };
+  return (
+    <WindowFrame title="To-Do" icon={ListChecks} close={close}>
+      <form onSubmit={(event) => { event.preventDefault(); if (!text.trim()) return; save([...items, { id: Date.now(), text: text.trim(), done: false }]); setText(""); }} className="flex shrink-0 gap-2 border-b border-border p-2">
+        <input value={text} onChange={(event) => setText(event.target.value)} placeholder="Add a task" aria-label="New task" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
+        <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Add</button>
+      </form>
+      <div className="flex-1 overflow-auto p-3">
+        {items.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">Nothing to do. Nice.</p>}
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary">
+            <input type="checkbox" checked={item.done} aria-label={`Done: ${item.text}`} onChange={() => save(items.map((entry) => (entry.id === item.id ? { ...entry, done: !entry.done } : entry)))} />
+            <span className={`min-w-0 flex-1 truncate text-sm ${item.done ? "text-muted-foreground line-through" : ""}`}>{item.text}</span>
+            <button type="button" aria-label={`Delete ${item.text}`} onClick={() => save(items.filter((entry) => entry.id !== item.id))} className="rounded p-1 hover:bg-background/60"><X className="size-4" /></button>
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
   );
 }

@@ -40,13 +40,15 @@ import {
   Paintbrush,
   Play,
   Music,
-  Gamepad2,
+  CalendarDays,
+  Clock3,
   Bell,
   Film,
   Image as ImageIcon,
   EyeOff,
   RotateCw,
 } from "lucide-react";
+import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
 import cherryAsset from "@/assets/private-os-cherry.jpg.asset.json";
@@ -55,9 +57,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "PRIVATE OS — Your space, your rules" },
-      { name: "description", content: "A private, focused desktop with PRIVATE Browser and switchable landscapes." },
+      { name: "description", content: "PRIVATE OS: a glass desktop with browser, files, notes, calendar, photos, and familiar window controls." },
       { property: "og:title", content: "PRIVATE OS — Your space, your rules" },
-      { property: "og:description", content: "A private, focused desktop with PRIVATE Browser and switchable landscapes." },
+      { property: "og:description", content: "PRIVATE OS: a glass desktop with browser, files, notes, calendar, photos, and familiar window controls." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -164,6 +166,10 @@ const TodoIcon: IconComponent = ({ className }) => <Tile tone="from-lime-400 to-
 
 const YouTubeIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" glyph="[&>svg]:size-[52%] [&>svg]:text-white" className={className}><Play className="fill-white" /></Tile>;
 
+const CalendarIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-calendar ${className ?? ""}`}><CalendarDays /></span>;
+const ClockIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-clock ${className ?? ""}`}><Clock3 /></span>;
+const PhotosIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-photos ${className ?? ""}`}><ImageIcon /></span>;
+
 type Movie = { id: string; title: string; genre: string; year: string; studio: string; rating: string; blurb: string; poster: string };
 const MOVIES: Movie[] = [
   { id: "backrooms", title: "The Backrooms", genre: "Horror", year: "2026", studio: "A24 Productions", rating: "7.9/10", blurb: "A strange doorway appears in the basement of a furniture showroom.", poster: "linear-gradient(160deg,#f6c90e,#b07d00)" },
@@ -206,11 +212,10 @@ function ChangelogList({ limit }: { limit?: number }) {
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
-  { id: "figure", label: "Figure Cloud", icon: CloudIcon },
-  { id: "beez", label: "BeeZ", icon: BeeZIcon },
-  { id: "youtube", label: "YouTube", icon: YouTubeIcon },
-  { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Files", icon: FolderIcon },
+  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "calc", label: "Calculator", icon: CalcIcon },
+  { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 
@@ -229,6 +234,9 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "weather", label: "Weather", icon: WeatherIcon },
   { id: "paint", label: "Paint", icon: PaintIcon },
   { id: "todo", label: "To-Do", icon: TodoIcon },
+  { id: "calendar", label: "Calendar", icon: CalendarIcon },
+  { id: "clock", label: "Clock", icon: ClockIcon },
+  { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 launcherApps.push(...linkLauncher, { id: "movie", label: "Private Hill", icon: MovieIcon });
@@ -264,6 +272,7 @@ function PrivateOS() {
   const [minWins, setMinWins] = useState<string[]>([]);
   const [launcher, setLauncher] = useState(false);
   const [quickMenu, setQuickMenu] = useState(false);
+  const [sound, setSound] = useState(70);
   const [query, setQuery] = useState("");
   const [browserStart, setBrowserStart] = useState<string | null>(null);
   const [time, setTime] = useState(new Date());
@@ -514,13 +523,17 @@ function PrivateOS() {
       case "settings": return <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} walls={allWalls} custom={customWalls} addWall={addWall} removeWall={removeWall} settings={settings} patch={patchSettings} close={close} />;
       case "files": return <FilesWindow close={close} open={openApp} />;
       case "notes": return <NotesApp close={close} />;
+      case "calendar": return <WindowFrame title="Calendar" icon={CalendarIcon} close={close}><CalendarUtility /></WindowFrame>;
+      case "clock": return <WindowFrame title="Clock" icon={ClockIcon} close={close}><ClockUtility /></WindowFrame>;
+      case "photos": return <WindowFrame title="Photos" icon={PhotosIcon} close={close}><PhotosUtility initialPhotos={allWalls.map(wall => ({ label: wall.label, src: wall.thumb }))} /></WindowFrame>;
       case "calc": return <CalculatorApp close={close} />;
       case "terminal": return <TerminalApp close={close} open={openApp} />;
       case "weather": return <WeatherApp close={close} />;
       case "paint": return <PaintApp close={close} />;
       case "todo": return <TodoApp close={close} />;
       case "movie": {
-        const movie = MOVIES.find((item) => item.id === movieId) ?? MOVIES[0]!;
+        const movie = MOVIES.find((item) => item.id === movieId) ?? MOVIES[0];
+        if (!movie) return null;
         return <MovieApp movie={movie} onPick={setMovieId} onPlay={() => { setBrowserStart(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${movie.title} official trailer`)}`); openApp("browser"); }} close={close} />;
       }
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
@@ -532,7 +545,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
           <Wallpaper index={wallpaper} options={allWalls} />
@@ -576,8 +589,8 @@ function PrivateOS() {
             <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
           </OsButton>
           {dockApps.map(({ id, label, icon: Icon }) => (
-            <OsButton key={id} label={label} onClick={() => openApp(id)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5">
-              <Icon className={settings.bigIcons ? "size-7 md:size-8" : "size-5 md:size-6"} />
+            <OsButton key={id} label={label} onClick={() => openWins.includes(id) && !minWins.includes(id) && zOrder[zOrder.length - 1] === id ? setMinWins(list => [...list, id]) : openApp(id)} className="dock-app group relative size-8 shrink-0 rounded-md transition-transform hover:-translate-y-0.5 md:size-10">
+              <Icon className={settings.bigIcons ? "size-7 md:size-8" : "size-6 md:size-8"} />
               <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
               {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
             </OsButton>
@@ -599,22 +612,15 @@ function PrivateOS() {
         </div>
       </div>
 
-      <section className="absolute inset-x-0 top-[7%] z-10 text-center">
-        <p className="pl-[.3em] font-['Zen_Dots','Orbitron',sans-serif] text-lg tracking-[.3em] text-[#d27c3e] [text-shadow:0_0_14px_rgb(210_120_60/.35)] md:text-2xl">{dateLabel}</p>
-      </section>
+      <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>
 
       {quickMenu && (
-        <aside className="glass-panel absolute inset-x-0 bottom-16 z-50 mx-auto w-[min(22rem,calc(100%-1.5rem))] rounded-2xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] md:bottom-[4.5rem]">
-          <div className="mb-4 flex items-center justify-between">
-            <div><p className="text-sm font-semibold">Quick settings</p><p className="text-xs text-muted-foreground">Private by default</p></div>
-            <CircleUserRound className="size-7 text-primary" />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {[{ icon: Wifi, label: "Wi-Fi" }, { icon: Volume2, label: "Sound" }, { icon: LockKeyhole, label: "Privacy" }].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-md bg-secondary text-xs"><Icon className="size-5 text-primary" />{label}</div>
-            ))}
-          </div>
-          <div className="mt-4 flex items-center gap-3"><span className="text-xs">Display</span><div className="h-1.5 flex-1 rounded-full bg-muted"><div className="h-full w-2/3 rounded-full bg-primary" /></div></div>
+        <aside className="glass-panel quick-settings absolute bottom-20 right-3 z-50 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5">
+          <div className="mb-5 flex items-center justify-between"><p className="text-sm font-semibold">Quick settings</p><OsButton label="Open settings" onClick={() => { setQuickMenu(false); openApp("settings"); }} className="utility-icon"><Settings className="size-4" /></OsButton></div>
+          <div className="grid grid-cols-3 gap-2"><div className="quick-tile"><Wifi className="size-5" /><span>Online</span></div><OsButton onClick={() => setSound(v => v === 0 ? 70 : 0)} className="quick-tile"><Volume2 className="size-5" /><span>{sound ? "Sound" : "Muted"}</span></OsButton><OsButton onClick={() => { setQuickMenu(false); setLocked(true); }} className="quick-tile"><LockKeyhole className="size-5" /><span>Lock</span></OsButton></div>
+          <label className="mt-5 flex items-center gap-3 text-xs"><Volume2 className="size-4" /><input aria-label="OS sound level" type="range" min="0" max="100" value={sound} onChange={e => setSound(Number(e.target.value))} className="min-w-0 flex-1 accent-primary" /><span className="w-8 text-right">{sound}%</span></label>
+          <label className="mt-4 flex items-center gap-3 text-xs"><span>Dim</span><input aria-label="Desktop dimming" type="range" min="0" max="70" value={settings.dim} onChange={e => patchSettings({ dim: Number(e.target.value) })} className="min-w-0 flex-1 accent-primary" /></label>
+          <div className="mt-5 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><BatteryFull className="size-4" />{battery}%</span><span>Local session</span></div>
         </aside>
       )}
 
@@ -640,24 +646,26 @@ function PrivateOS() {
       <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => void addWall(file)); event.target.value = ""; }} />
 
       {startMenu && startPos && (
-        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel os-start-menu fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+          <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" /><span className="text-sm font-semibold">PRIVATE OS</span></div><span className="text-xs text-muted-foreground">Personal</span></div>
+          <label className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3"><Search className="size-4 text-muted-foreground" /><input aria-label="Search start menu" placeholder="Search apps" value={query} onChange={event => setQuery(event.target.value)} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Apps</p>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Pinned apps</p>
             <div className="grid grid-cols-4 gap-2">
-              {launcherApps.map(({ id, label, icon: Icon }) => {
+              {launcherApps.filter(app => app.label.toLowerCase().includes(query.toLowerCase())).map(({ id, label, icon: Icon }) => {
                 const pinned = settings.desktop.includes(id);
                 return (
                   <div key={id} className="relative">
-                    <button type="button" onClick={() => { setStartMenu(false); openApp(id); }} className="flex w-full flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-secondary">
+                    <OsButton label={`Launch ${label}`} onClick={() => { setStartMenu(false); openApp(id); }} className="flex w-full flex-col items-center gap-1 rounded-md p-2 text-[11px] hover:bg-secondary">
                       <Icon className="size-10" />
                       <span className="w-full truncate text-center">{label}</span>
-                    </button>
+                    </OsButton>
                     <button type="button" aria-label={pinned ? `Remove ${label} from desktop` : `Add ${label} to desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.includes(id) ? current.desktop.filter((item) => item !== id) : [...current.desktop, id] }))} className={`absolute right-0 top-0 rounded-full px-1.5 text-[10px] ${pinned ? "bg-primary text-primary-foreground" : "bg-black/50 text-white"}`}>{pinned ? "✓" : "+"}</button>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">Tap + on an app to put it on your desktop.</p>
+
           </div>
           <div>
             <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Widgets</p>
@@ -671,10 +679,6 @@ function PrivateOS() {
                 );
               })}
             </div>
-          </div>
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">What's new · v{OS_VERSION}</p>
-            <ChangelogList limit={2} />
           </div>
           <div className="grid grid-cols-5 gap-1 border-t border-border pt-3 text-center text-[11px]">
             {startItems.map(([label, action]) => (
@@ -717,26 +721,6 @@ function PrivateOS() {
       {power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
           {power === "off" ? "PRESS ANYTHING TO POWER ON" : ""}
-        </div>
-      )}
-
-      {!settings.railHidden && (
-        <div className="pointer-events-none absolute right-3 top-3 z-[8] flex w-56 flex-col gap-2 text-white md:w-60">
-          <div className="flex items-center justify-end gap-2 text-[10px] font-semibold text-[#f0b36a]">
-            <BatteryFull className="size-4" />
-            <span>{battery}%</span>
-            <Bell className="size-3.5" />
-          </div>
-          <p className="mt-2 text-[9px] font-bold tracking-[.15em] text-white/55">MEDIA</p>
-          <button type="button" onClick={() => openApp("spotify")} className="pointer-events-auto flex items-center gap-3 soft-glass rounded-2xl p-2.5 text-left hover:brightness-125">
-            <span className="grid size-8 place-items-center rounded-full bg-[#1ed760] text-black"><Music className="size-4" /></span>
-            <span><span className="block text-xs font-bold">Not Playing</span><span className="block text-[10px] text-white/55">Spotify</span></span>
-          </button>
-          <p className="mt-1 text-[9px] font-bold tracking-[.15em] text-white/55">CONSOLE EMULATOR</p>
-          <div className="flex items-center gap-3 soft-glass rounded-2xl p-2.5 text-left hover:brightness-125">
-            <span className="grid size-8 place-items-center rounded-lg bg-[#2f7bf5] text-white"><Gamepad2 className="size-4" /></span>
-            <span><span className="block text-xs font-bold">V3 Space Loaded</span><span className="block text-[10px] text-white/55">PlayStation 5</span></span>
-          </div>
         </div>
       )}
 
@@ -808,7 +792,7 @@ function LockScreen({ locked, unlock, day, date, clock, dim, blur }: { locked: b
       aria-hidden={!locked}
       aria-label="Unlock PRIVATE OS"
       onClick={unlock}
-      style={{ backgroundColor: `rgba(0,0,0,${dim / 100})`, backdropFilter: `blur(${blur}px)`, WebkitBackdropFilter: `blur(${blur}px)` }}
+      style={{ backgroundColor: `rgba(0,0,0,${dim / 100})`, backdropFilter: `blur(${blur}px)` }}
       className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center pt-[30dvh] text-center text-[#f6d28b] transition-all duration-700 ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
     >
       <p className="pl-[.1em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(2.4rem,11vw,5rem)] leading-none tracking-[.1em] [text-shadow:0_0_22px_rgb(240_170_70/.45),0_2px_12px_rgb(0_0_0/.6)]">{day.slice(0, 3)}</p>
@@ -885,7 +869,7 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
   );
 }
 
-function WindowFrame({ title, icon: Icon, close, children, app = false, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
+function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
   const { minimized, minimize, focus, z, top } = useContext(WindowContext);
   const el = useRef<HTMLElement>(null);
   const [rect, setRect] = useState<WinRect | null>(null);
@@ -899,7 +883,8 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
     setMaximized((value) => !value);
   };
   const measure = (): WinRect => {
-    const box = el.current!.getBoundingClientRect();
+    const box = el.current?.getBoundingClientRect();
+    if (!box) return { x: 8, y: 8, w: 640, h: 480 };
     return { x: box.left, y: box.top, w: box.width, h: box.height };
   };
   // Move/resize by writing straight to the element (no React re-render per pointer move = smooth).
@@ -938,7 +923,7 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
     window.addEventListener("pos-snap", handler);
     return () => window.removeEventListener("pos-snap", handler);
   });
-  const surface = app ? (maximized ? "bg-black" : "border border-white/10 bg-black shadow-2xl") : maximized ? "bg-card/95 backdrop-blur-xl" : "glass-panel";
+  const surface = "glass-panel os-window";
   const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-2xl md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
     <section
@@ -988,26 +973,10 @@ function WindowFrame({ title, icon: Icon, close, children, app = false, startMax
       }}
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.28s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "hidden" : ""} ${position}`}
     >
-      {app ? (
-        <header className="relative flex h-9 shrink-0 items-center border-b border-white/10 bg-[#202020] px-2">
-          <div className="flex items-center">
-            <button type="button" aria-label="Close" onClick={close} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#ff5f57]" /></button>
-            <button type="button" aria-label="Minimize" onClick={minimize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#febc2e]" /></button>
-            <button type="button" aria-label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="grid size-6 place-items-center outline-none"><span className="size-3 rounded-full bg-[#28c840]" /></button>
-          </div>
-          <div className="pointer-events-none absolute inset-x-0 flex items-center justify-center gap-2 text-xs font-semibold text-white/80"><Icon className="size-4" />{title}</div>
-          <div className="relative z-10 ml-auto flex items-center text-white/70">{actions}</div>
-        </header>
-      ) : (
-        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border px-3">
-          <div className="flex items-center gap-2 text-sm font-semibold"><Icon className="size-4 text-primary" />{title}</div>
-          <div className="flex gap-1">
-            <OsButton label="Minimize" onClick={minimize} className="size-8 rounded-md hover:bg-secondary"><Minus className="size-4" /></OsButton>
-            <OsButton label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="size-8 rounded-md hover:bg-secondary">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
-            <OsButton label="Close" onClick={close} className="size-8 rounded-md hover:bg-destructive"><X className="size-4" /></OsButton>
-          </div>
-        </header>
-      )}
+      <header className="window-titlebar flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
+        <div className="flex min-w-0 items-center gap-2 text-xs font-semibold"><Icon className="size-5 shrink-0" /><span className="truncate">{title}</span></div>
+        <div className="flex shrink-0 items-center gap-1">{actions}<OsButton label="Minimize" onClick={minimize} className="window-control"><Minus className="size-4" /></OsButton><OsButton label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="window-control">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton><OsButton label="Close" onClick={close} className="window-control hover:bg-destructive"><X className="size-4" /></OsButton></div>
+      </header>
       {children}
       {!maximized && (["e", "s", "se"] as const).map((mode) => (
         <div
@@ -2064,7 +2033,7 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
 }
 
 type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right" };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["browser", "beez", "minecraft", "files"], railHidden: false, hubHidden: false, bigIcons: false, dockPos: "bottom" };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom" };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },

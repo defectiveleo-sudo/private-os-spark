@@ -1,5 +1,9 @@
 # PRIVATE OS roadmap
 
+- [ ] Remove console decorations and refresh desktop glass, taskbar, start menu, and window chrome
+- [ ] Add Mint-style cursors and Calendar, Clock, and Photos utilities
+- [ ] Verify app flows, window controls, and narrow-screen layout
+
 - [x] Build animated startup screen
 - [x] Build clean home screen with dock, launcher, and quick menu
 - [x] Add PRIVATE Browser with address/search navigation

@@ -47,6 +47,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
+  --color-glass-highlight: var(--glass-highlight);
+  --color-glass-tint: var(--glass-tint);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -64,18 +66,18 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(0.13 0.018 145);
-  --foreground: oklch(0.97 0.02 95);
-  --card: oklch(0.17 0.015 145 / 88%);
+  --background: oklch(0.16 0.008 260);
+  --foreground: oklch(0.97 0.005 260);
+  --card: oklch(0.24 0.008 260 / 66%);
   --card-foreground: oklch(0.97 0.02 95);
-  --popover: oklch(0.15 0.014 145 / 94%);
+  --popover: oklch(0.2 0.008 260 / 75%);
   --popover-foreground: oklch(0.97 0.02 95);
   --primary: oklch(0.82 0.15 142);
   --primary-foreground: oklch(0.14 0.02 145);
-  --secondary: oklch(0.28 0.025 145 / 85%);
+  --secondary: oklch(0.85 0.01 260 / 12%);
   --secondary-foreground: oklch(0.96 0.02 95);
   --muted: oklch(0.25 0.015 145 / 86%);
-  --muted-foreground: oklch(0.77 0.03 110);
+  --muted-foreground: oklch(0.78 0.012 260);
   --accent: oklch(0.76 0.13 73);
   --accent-foreground: oklch(0.15 0.025 70);
   --destructive: oklch(0.577 0.245 27.325);
@@ -83,6 +85,13 @@
   --border: oklch(0.92 0.02 100 / 18%);
   --input: oklch(0.3 0.02 145 / 88%);
   --ring: oklch(0.82 0.15 142);
+  --glass-highlight: oklch(1 0 0 / 32%);
+  --glass-tint: oklch(0.24 0.008 260 / 43%);
+  --glass-sheen: linear-gradient(135deg, oklch(1 0 0 / 19%), oklch(1 0 0 / 3%) 48%, oklch(1 0 0 / 9%));
+  --glass-shadow: 0 18px 60px oklch(0 0 0 / 28%), inset 0 1px 0 oklch(1 0 0 / 38%), inset 0 -1px 0 oklch(1 0 0 / 7%);
+  --icon-calendar: oklch(0.63 0.21 27);
+  --icon-clock: oklch(0.48 0.1 250);
+  --icon-photos: oklch(0.65 0.16 165);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -160,24 +169,53 @@
 @keyframes window-in { from { opacity: 0; transform: translateY(14px) scale(.965); } to { opacity: 1; transform: none; } }
 
 @utility glass-panel {
-  background: linear-gradient(140deg, oklch(1 0 0 / 16%), oklch(1 0 0 / 4%) 55%, oklch(1 0 0 / 9%)), color-mix(in oklab, var(--card) 46%, transparent);
-  border: 1px solid oklch(1 0 0 / 20%);
-  box-shadow: 0 24px 70px oklch(0 0 0 / 38%), inset 0 1px 0 oklch(1 0 0 / 38%), inset 0 -1px 0 oklch(1 0 0 / 7%), inset 0 0 26px oklch(1 0 0 / 5%);
-  backdrop-filter: blur(36px) saturate(1.7) brightness(1.06);
+  background: var(--glass-sheen), var(--glass-tint);
+  border: 1px solid var(--glass-highlight);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(28px) saturate(1.5);
 }
 
 @utility soft-glass {
-  background: linear-gradient(140deg, oklch(1 0 0 / 13%), oklch(1 0 0 / 3%)), color-mix(in oklab, var(--popover) 50%, transparent);
-  border: 1px solid oklch(1 0 0 / 16%);
-  box-shadow: 0 10px 34px oklch(0 0 0 / 28%), inset 0 1px 0 oklch(1 0 0 / 30%);
-  backdrop-filter: blur(28px) saturate(1.6);
+  background: var(--glass-sheen), var(--glass-tint);
+  border: 1px solid var(--glass-highlight);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(22px) saturate(1.5);
 }
 
 @utility dock-glass {
-  background: linear-gradient(140deg, oklch(1 0 0 / 15%), oklch(1 0 0 / 4%)), color-mix(in oklab, var(--popover) 40%, transparent);
-  border: 1px solid oklch(1 0 0 / 22%);
-  box-shadow: 0 16px 50px oklch(0 0 0 / 30%), inset 0 1px 0 oklch(1 0 0 / 34%), inset 0 -1px 0 oklch(1 0 0 / 8%);
-  backdrop-filter: blur(32px) saturate(1.7);
+  background: var(--glass-sheen), color-mix(in oklab, var(--glass-tint) 65%, transparent);
+  border: 1px solid var(--glass-highlight);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(24px) saturate(1.5);
+}
+
+html, body { cursor: url('/cursors/mint-pointer.svg') 3 2, default; }
+button, a, [role="button"], input[type="range"] { cursor: url('/cursors/mint-hand.svg') 11 3, pointer; }
+input:not([type="range"]), textarea { cursor: text; }
+.desktop-status { position: absolute; top: 18px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; color: var(--foreground); font-size: 11px; text-transform: capitalize; opacity: .8; pointer-events: none; }
+.os-desktop > .pointer-events-none.absolute.left-3 { top: 64px; }
+.os-window { border-radius: 8px; }
+.window-titlebar { background: color-mix(in oklab, var(--foreground) 5%, transparent); user-select: none; touch-action: none; }
+.window-control, .utility-icon { display: inline-flex; width: 32px; height: 32px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 6px; }
+.window-control:hover, .utility-icon:hover, .dock-app:hover { background: var(--secondary); }
+.window-control:last-child:hover { background: var(--destructive); }
+.os-start-menu { border-radius: 8px; }
+.utility-layout { display: flex; flex: 1; min-height: 0; overflow: auto; }
+.utility-sidebar { width: 240px; padding: 24px; border-left: 1px solid var(--border); background: color-mix(in oklab, var(--background) 18%, transparent); }
+.utility-input { width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 6px; background: var(--secondary); padding: 10px 12px; font-size: 13px; outline: none; }
+.utility-input:focus { border-color: var(--ring); }
+.quick-tile { display: flex; min-height: 72px; flex-direction: column; justify-content: center; align-items: center; gap: 8px; background: var(--secondary); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; }
+.app-icon { display: grid; place-items: center; flex-shrink: 0; border-radius: 22%; background: var(--icon-clock); color: var(--foreground); box-shadow: var(--glass-shadow); }
+.app-icon > svg { width: 58%; height: 58%; }
+.app-icon-calendar { background: var(--icon-calendar); }
+.app-icon-photos { background: var(--icon-photos); }
+
+@media (max-width: 640px) {
+  .desktop-status { left: 16px; right: 16px; top: 14px; }
+  .utility-layout { flex-direction: column; }
+  .utility-sidebar { width: auto; border-left: none; border-top: 1px solid var(--border); padding: 16px; }
+  .os-start-menu { left: 8px !important; bottom: 105px !important; max-height: calc(100dvh - 130px); }
+  .os-window { bottom: 110px; }
 }
 
 @layer base {
@@ -187,5 +225,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

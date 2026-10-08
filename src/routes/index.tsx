@@ -45,8 +45,9 @@ import {
   Bell,
   Film,
   Image as ImageIcon,
-  EyeOff,
   RotateCw,
+  Camera,
+  Info,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -170,11 +171,6 @@ const CalendarIcon: IconComponent = ({ className }) => <span className={`app-ico
 const ClockIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-clock ${className ?? ""}`}><Clock3 /></span>;
 const PhotosIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-photos ${className ?? ""}`}><ImageIcon /></span>;
 
-type Movie = { id: string; title: string; genre: string; year: string; studio: string; rating: string; blurb: string; poster: string };
-const MOVIES: Movie[] = [
-  { id: "backrooms", title: "The Backrooms", genre: "Horror", year: "2026", studio: "A24 Productions", rating: "7.9/10", blurb: "A strange doorway appears in the basement of a furniture showroom.", poster: "linear-gradient(160deg,#f6c90e,#b07d00)" },
-  { id: "mario", title: "Super Mario Bros.", genre: "Adventure", year: "2023", studio: "Illumination Entertainment", rating: "7.0/10", blurb: "A plumber is pulled into a strange new world and has to save a kingdom.", poster: "linear-gradient(160deg,#ff5fa2,#ffb100 45%,#2bb5ff)" },
-];
 
 const LINK_APPS = [
   { id: "spotify", label: "Spotify", url: "https://open.spotify.com/", tone: "from-green-400 to-green-700", icon: Music },
@@ -184,10 +180,10 @@ const linkLauncher = LINK_APPS.map((app) => ({
   label: app.label,
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
-const MovieIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-300 to-amber-600" glyph="[&>svg]:size-[56%] [&>svg]:text-black" className={className}><Film /></Tile>;
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.1", date: "8 Oct 2026", items: ["Removed the movie HUB, PlayStation and controller cards", "New apps: Camera, Media Player and System Info", "Run dialog (Alt+R) and date in the tray", "Glassier surfaces, rounder corners and 200ms smooth motion"] },
   { v: "1.0", date: "4 Oct 2026", items: ["Liquid glass windows, menus and dock with rounder corners", "Smoother window, menu and button animations", "Changelog in the start screen and start menu", "Removed Discord, Crunchyroll, GeForce NOW and Xbox"] },
   { v: "0.9", date: "4 Oct 2026", items: ["Private HUB movie widget and Private Hill window", "Media and console cards in the top-right corner", "Video-style right-click menu and movable dock", "Full-screen app grid"] },
   { v: "0.8", date: "3 Oct 2026", items: ["Windows 11 style snapping and Task View", "Native search results", "Weather, Paint and To-Do apps"] },
@@ -209,6 +205,10 @@ function ChangelogList({ limit }: { limit?: number }) {
     </div>
   );
 }
+
+const CameraIcon: IconComponent = ({ className }) => <Tile tone="from-slate-400 to-slate-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Camera /></Tile>;
+const MediaIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-rose-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Film /></Tile>;
+const AboutIcon: IconComponent = ({ className }) => <Tile tone="from-cyan-400 to-blue-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Info /></Tile>;
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
@@ -239,7 +239,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "movie", label: "Private Hill", icon: MovieIcon });
+launcherApps.push(...linkLauncher, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -284,7 +284,8 @@ function PrivateOS() {
   const [startPos, setStartPos] = useState<{ left: number; bottom: number } | null>(null);
   const wallInput = useRef<HTMLInputElement>(null);
   const [taskView, setTaskView] = useState(false);
-  const [movieId, setMovieId] = useState("backrooms");
+  const [runOpen, setRunOpen] = useState(false);
+  const [runText, setRunText] = useState("");
   const [battery, setBattery] = useState(100);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
@@ -469,18 +470,34 @@ function PrivateOS() {
     ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
   ];
 
-  const widgetsHidden = settings.railHidden && settings.hubHidden;
+  const runCommand = () => {
+    const text = runText.trim();
+    if (!text) return;
+    const lower = text.toLowerCase();
+    const app = [...launcherApps, ...dockApps].find((item) => item.id === lower || item.label.toLowerCase() === lower);
+    setRunOpen(false);
+    setRunText("");
+    if (app) return openApp(app.id);
+    const looksLikeSite = /^[\w-]+(\.[\w-]+)+(\/|$)/.test(text);
+    setBrowserStart(/^https?:\/\//i.test(text) ? text : looksLikeSite ? `https://${text}` : `https://duckduckgo.com/?q=${encodeURIComponent(text)}`);
+    openApp("browser");
+  };
+
   const menuItems: { label: string; action: () => void; icon: ReactNode }[] = [
-    { label: "Reopen Private HUB", action: () => patchSettings({ hubHidden: false }), icon: <Film className="size-3" /> },
     { label: "Adjust Wallpaper", action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
     { label: "Expand Icons", action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
     { label: "Standard Icons", action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
-    { label: widgetsHidden ? "Show Widgets" : "Hide Widgets", action: () => patchSettings({ railHidden: !widgetsHidden, hubHidden: !widgetsHidden }), icon: <EyeOff className="size-3" /> },
+    { label: "Run… (Alt+R)", action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
     { label: "Reload", action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
   ];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.altKey && event.code === "KeyR") {
+        event.preventDefault();
+        setRunOpen((value) => !value);
+        return;
+      }
       if (event.altKey && event.code === "KeyL") {
         event.preventDefault();
         setLocked(true);
@@ -501,16 +518,15 @@ function PrivateOS() {
         window.dispatchEvent(new CustomEvent("pos-snap", { detail: event.key.replace("Arrow", "").toLowerCase() }));
         return;
       }
-      if (event.key === "Escape") setTaskView(false);
+      if (event.key === "Escape") {
+        setTaskView(false);
+        setRunOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const openMovie = (id: string) => {
-    setMovieId(id);
-    openApp("movie");
-  };
 
   const renderWindow = (id: string) => {
     const close = () => closeWindow(id);
@@ -531,11 +547,9 @@ function PrivateOS() {
       case "weather": return <WeatherApp close={close} />;
       case "paint": return <PaintApp close={close} />;
       case "todo": return <TodoApp close={close} />;
-      case "movie": {
-        const movie = MOVIES.find((item) => item.id === movieId) ?? MOVIES[0];
-        if (!movie) return null;
-        return <MovieApp movie={movie} onPick={setMovieId} onPlay={() => { setBrowserStart(`https://www.youtube.com/results?search_query=${encodeURIComponent(`${movie.title} official trailer`)}`); openApp("browser"); }} close={close} />;
-      }
+      case "camera": return <CameraApp close={close} />;
+      case "media": return <MediaApp close={close} />;
+      case "about": return <AboutApp close={close} />;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       default: return null;
     }
@@ -602,7 +616,7 @@ function PrivateOS() {
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
             <BatteryFull className="size-4" />
-            <span>{timeLabel}</span>
+            <span className="flex flex-col items-end leading-tight"><span>{timeLabel}</span><span className="text-[9px] text-white/60">{time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span></span>
           </button>
           {canFullscreen && (
             <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="size-6 shrink-0 rounded-md hover:bg-white/15">
@@ -646,7 +660,7 @@ function PrivateOS() {
       <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => void addWall(file)); event.target.value = ""; }} />
 
       {startMenu && startPos && (
-        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel os-start-menu fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel os-start-menu fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" /><span className="text-sm font-semibold">PRIVATE OS</span></div><span className="text-xs text-muted-foreground">Personal</span></div>
           <label className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3"><Search className="size-4 text-muted-foreground" /><input aria-label="Search start menu" placeholder="Search apps" value={query} onChange={event => setQuery(event.target.value)} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
           <div>
@@ -699,7 +713,7 @@ function PrivateOS() {
       )}
 
       {taskView && (
-        <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+        <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           {openWins.length === 0 && <p className="text-sm text-white/80">No open windows. Open an app from the dock.</p>}
           {openWins.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
@@ -718,41 +732,34 @@ function PrivateOS() {
         </div>
       )}
 
+      {runOpen && (
+        <div onClick={() => setRunOpen(false)} className="absolute inset-0 z-[46] flex items-end justify-center bg-black/30 pb-24 backdrop-blur-sm">
+          <form onClick={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); runCommand(); }} className="glass-panel w-[min(28rem,calc(100%-1.5rem))] rounded-2xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
+            <p className="text-xs font-semibold">Run</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Type an app name, a website or a search.</p>
+            <input autoFocus value={runText} onChange={(event) => setRunText(event.target.value)} aria-label="Run command" placeholder="e.g. notes, weather, youtube.com" className="utility-input mt-3" />
+            <div className="mt-3 flex justify-end gap-2">
+              <button type="button" onClick={() => setRunOpen(false)} className="rounded-md bg-secondary px-3 py-1.5 text-xs">Cancel</button>
+              <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Open</button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
           {power === "off" ? "PRESS ANYTHING TO POWER ON" : ""}
         </div>
       )}
 
-      {!settings.hubHidden && (
-        <div className="absolute inset-x-0 top-[13%] z-[8] mx-auto w-[min(30rem,calc(100%-1.5rem))] [animation:window-in_.4s_cubic-bezier(.22,1,.36,1)]">
-          <p className="mb-1.5 pl-1 font-['Orbitron',sans-serif] text-[11px] font-bold tabular-nums tracking-widest text-[#f6d28b]">{timeLabel}</p>
-          <div className="glass-panel rounded-3xl p-3">
-            <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-white"><span>Private HUB</span><span className="text-[#f6d28b]">Recommended</span></div>
-            <div className="grid grid-cols-2 gap-2">
-              {MOVIES.map((movie, index) => (
-                <div key={movie.id} className={`flex gap-2 rounded-xl border p-2 text-white ${index === 0 ? "border-[#84e03a]/70 bg-[#84e03a]/10 shadow-[0_0_18px_rgb(132_224_58/.25)]" : "border-white/15 bg-white/5"}`}>
-                  <div className="h-20 w-14 shrink-0 rounded-md" style={{ background: movie.poster }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] font-extrabold leading-tight">{movie.title}</p>
-                    <p className="mt-0.5 text-[9px] text-white/60">{movie.genre} • {movie.year}</p>
-                    <p className="text-[9px] font-semibold text-white/80">{movie.studio}</p>
-                    <button type="button" onClick={() => openMovie(movie.id)} className={`mt-1.5 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold ${index === 0 ? "bg-[#84e03a] text-black" : "border border-white/30 text-white"}`}><Play className="size-2.5 fill-current" />Watch</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       {menu && (
-        <div role="menu" style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 soft-glass rounded-2xl p-1.5 text-[11px] text-white shadow-2xl [animation:window-in_.15s_cubic-bezier(.22,1,.36,1)]">
+        <div role="menu" style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 soft-glass rounded-2xl p-1.5 text-[11px] text-white shadow-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           {menuItems.map((item, index) => (
             <div key={item.label}>
               {index === 4 && <div className="my-1 h-px bg-white/10" />}
               <button type="button" role="menuitem" onClick={() => { item.action(); setMenu(null); }} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-white/10">
-                <span className={`grid size-5 place-items-center rounded ${index === 0 ? "bg-red-500" : "bg-white/10"}`}>{item.icon}</span>
+                <span className={`grid size-5 place-items-center rounded bg-white/10`}>{item.icon}</span>
                 {item.label}
               </button>
             </div>
@@ -813,7 +820,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
   const [showLog, setShowLog] = useState(false);
   return (
     <main className="flex h-dvh flex-col items-center justify-center bg-[radial-gradient(ellipse_at_50%_105%,#47525f_0%,#1a2028_42%,#000_78%)] px-4 pb-[12dvh] text-center">
-      <div className="relative [animation:window-in_.9s_cubic-bezier(.22,1,.36,1)]">
+      <div className="relative [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
         <h1 className="font-['Orbitron',sans-serif] text-[clamp(2rem,10vw,4.4rem)] font-bold leading-none tracking-[.1em] text-[#f2c783] [text-shadow:0_0_22px_rgb(240_170_70/.45)]">PRIVATE</h1>
         <span className="absolute -right-3 -top-2 rounded-[3px] bg-[#f2c783] px-1 py-px font-['Orbitron',sans-serif] text-[8px] font-bold leading-none text-black md:-right-5">OS</span>
       </div>
@@ -825,7 +832,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         {showLog ? "HIDE CHANGELOG" : `WHAT'S NEW · v${OS_VERSION}`}
       </button>
       {showLog && (
-        <div className="glass-panel mt-3 max-h-[34dvh] w-[min(24rem,calc(100%-1rem))] overflow-auto rounded-3xl p-4 [animation:window-in_.3s_cubic-bezier(.22,1,.36,1)]">
+        <div className="glass-panel mt-3 max-h-[34dvh] w-[min(24rem,calc(100%-1rem))] overflow-auto rounded-3xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           <ChangelogList />
         </div>
       )}
@@ -850,7 +857,7 @@ function BootScreen() {
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
   const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
   return (
-    <section onClick={close} className="absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-16 pt-[9dvh] backdrop-blur-2xl [animation:window-in_.24s_cubic-bezier(.22,1,.36,1)]">
+    <section onClick={close} className="absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-16 pt-[9dvh] backdrop-blur-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
       <div onClick={(event) => event.stopPropagation()} className="flex w-full max-w-xl items-center gap-2 soft-glass rounded-2xl px-4">
         <Search className="size-4 text-white/60" />
         <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all apps..." className="h-11 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50" />
@@ -971,7 +978,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         const zone = event.clientX <= 6 ? "left" : event.clientX >= window.innerWidth - 6 ? "right" : event.clientY <= 4 ? "up" : null;
         if (zone) snapTo(zone);
       }}
-      className={`absolute flex flex-col overflow-hidden [animation:window-in_.28s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "hidden" : ""} ${position}`}
+      className={`absolute flex flex-col overflow-hidden [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "pointer-events-none translate-y-8 scale-90 opacity-0" : ""} ${position}`}
     >
       <header className="window-titlebar flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2 text-xs font-semibold"><Icon className="size-5 shrink-0" /><span className="truncate">{title}</span></div>
@@ -2488,35 +2495,95 @@ function TodoApp({ close }: { close: () => void }) {
   );
 }
 
-function MovieApp({ movie, onPick, onPlay, close }: { movie: Movie; onPick: (id: string) => void; onPlay: () => void; close: () => void }) {
-  const [saved, setSaved] = useState(false);
+function CameraApp({ close }: { close: () => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const stream = useRef<MediaStream | null>(null);
+  const [error, setError] = useState("");
+  const [shots, setShots] = useState<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    (navigator.mediaDevices?.getUserMedia({ video: true }) ?? Promise.reject(new Error("no camera")))
+      .then((media) => {
+        if (cancelled) return media.getTracks().forEach((track) => track.stop());
+        stream.current = media;
+        if (video.current) video.current.srcObject = media;
+      })
+      .catch(() => setError("Camera access was blocked or no camera was found."));
+    return () => {
+      cancelled = true;
+      stream.current?.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+  const shoot = () => {
+    const v = video.current;
+    if (!v || !v.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = v.videoWidth;
+    canvas.height = v.videoHeight;
+    canvas.getContext("2d")?.drawImage(v, 0, 0);
+    setShots((list) => [canvas.toDataURL("image/jpeg", 0.9), ...list].slice(0, 12));
+  };
   return (
-    <WindowFrame title="Private Hill" icon={Film} close={close}>
-      <div className="relative flex-1 overflow-auto bg-[#0d0d0f] text-white">
-        <div className="h-52 md:h-72" style={{ background: "radial-gradient(ellipse at 70% 30%, rgb(190 130 40 / .75), transparent 60%), linear-gradient(180deg,#2a1c0a,#0d0d0f)" }} />
-        <div className="relative -mt-24 px-6 pb-8">
-          <h2 className="font-['Rajdhani',sans-serif] text-4xl font-extrabold text-[#f3c74a] md:text-5xl">{movie.title.replace(/^The /, "")}</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] font-bold">
-            <span className="rounded-md border border-[#84e03a]/60 px-2 py-0.5 text-[#c8ee2c]">★ {movie.rating}</span>
-            <span className="rounded-md border border-white/25 px-2 py-0.5">MOVIE</span>
-            <span className="rounded-md border border-white/25 px-2 py-0.5">{movie.year}</span>
-          </div>
-          <p className="mt-3 max-w-xl text-xs font-semibold text-white/85">{movie.blurb}</p>
-          <div className="mt-4 flex items-center gap-3">
-            <button type="button" onClick={onPlay} className="inline-flex items-center gap-2 rounded-lg bg-[#c8ee2c] px-6 py-2 text-xs font-extrabold text-black"><Play className="size-3 fill-current" />Play</button>
-            <button type="button" aria-label={saved ? "Remove from list" : "Add to list"} onClick={() => setSaved((value) => !value)} className="grid size-9 place-items-center rounded-full border border-white/40 text-lg leading-none">{saved ? "✓" : "+"}</button>
-          </div>
-          <p className="mt-8 text-sm font-bold">More Like This</p>
-          <div className="mt-3 flex gap-3">
-            {MOVIES.filter((item) => item.id !== movie.id).map((item) => (
-              <button key={item.id} type="button" onClick={() => onPick(item.id)} className="w-28 text-left">
-                <div className="h-36 rounded-lg" style={{ background: item.poster }} />
-                <p className="mt-1 text-[11px] font-bold leading-tight">{item.title}</p>
-              </button>
+    <WindowFrame title="Camera" icon={CameraIcon} close={close}>
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-3 bg-black/40 p-3">
+        {error ? <p className="m-auto text-sm text-muted-foreground">{error}</p> : <video ref={video} autoPlay playsInline muted className="min-h-0 w-full flex-1 rounded-xl bg-black object-contain" />}
+        <button type="button" onClick={shoot} disabled={Boolean(error)} aria-label="Take photo" className="grid size-12 shrink-0 place-items-center rounded-full border-4 border-white/70 bg-white/90 disabled:opacity-40" />
+        {shots.length > 0 && (
+          <div className="flex w-full gap-2 overflow-x-auto">
+            {shots.map((shot, index) => (
+              <a key={index} href={shot} download={`photo-${index + 1}.jpg`} className="shrink-0"><img src={shot} alt={`Photo ${index + 1}`} className="h-14 rounded-md" /></a>
             ))}
           </div>
-          <p className="mt-6 text-[11px] font-semibold text-white/60">These are single feature streams.</p>
-        </div>
+        )}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function MediaApp({ close }: { close: () => void }) {
+  const [item, setItem] = useState<{ name: string; url: string; type: string } | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => () => { if (item) URL.revokeObjectURL(item.url); }, [item]);
+  return (
+    <WindowFrame title="Media Player" icon={MediaIcon} close={close}>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
+        <button type="button" onClick={() => input.current?.click()} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Open file</button>
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{item?.name ?? "Play music, video or view a picture from this device"}</span>
+        <input ref={input} type="file" accept="audio/*,video/*,image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) setItem({ name: file.name, url: URL.createObjectURL(file), type: file.type }); event.target.value = ""; }} />
+      </div>
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-black/40 p-3">
+        {!item && <p className="text-sm text-muted-foreground">Nothing open yet.</p>}
+        {item?.type.startsWith("video/") && <video src={item.url} controls autoPlay className="max-h-full max-w-full rounded-xl" />}
+        {item?.type.startsWith("audio/") && <audio src={item.url} controls autoPlay className="w-full max-w-md" />}
+        {item?.type.startsWith("image/") && <img src={item.url} alt={item.name} className="max-h-full max-w-full rounded-xl object-contain" />}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function AboutApp({ close }: { close: () => void }) {
+  const [storage, setStorage] = useState("…");
+  useEffect(() => {
+    navigator.storage?.estimate?.().then((info) => setStorage(`${((info.usage ?? 0) / 1048576).toFixed(1)} MB used`)).catch(() => setStorage("Unavailable"));
+  }, []);
+  const nav = typeof navigator === "undefined" ? null : (navigator as Navigator & { deviceMemory?: number });
+  const rows: [string, string][] = [
+    ["System", `PRIVATE OS ${OS_VERSION}`],
+    ["Browser", nav?.userAgent.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/)?.[0] ?? "Unknown"],
+    ["Screen", typeof window === "undefined" ? "" : `${window.screen.width} × ${window.screen.height}`],
+    ["Language", nav?.language ?? ""],
+    ["Time zone", Intl.DateTimeFormat().resolvedOptions().timeZone],
+    ["CPU threads", String(nav?.hardwareConcurrency ?? "?")],
+    ["Memory", nav?.deviceMemory ? `${nav.deviceMemory} GB` : "Unknown"],
+    ["Local storage", storage],
+  ];
+  return (
+    <WindowFrame title="System Info" icon={AboutIcon} close={close}>
+      <div className="flex-1 overflow-auto p-6">
+        <div className="mb-5 flex items-center gap-3"><ShieldCheck className="size-10 text-primary" /><div><p className="text-lg font-semibold">PRIVATE OS</p><p className="text-xs text-muted-foreground">Everything stays in this browser.</p></div></div>
+        <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 text-sm">
+          {rows.map(([label, value]) => (<div key={label} className="contents"><dt className="text-muted-foreground">{label}</dt><dd className="truncate">{value}</dd></div>))}
+        </dl>
       </div>
     </WindowFrame>
   );

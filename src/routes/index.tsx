@@ -48,6 +48,8 @@ import {
   RotateCw,
   Camera,
   Info,
+  Palette,
+  Save,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -470,6 +472,10 @@ function PrivateOS() {
     ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
   ];
 
+  const themeStyle = (settings.accent
+    ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
+    : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) as React.CSSProperties;
+
   const runCommand = () => {
     const text = runText.trim();
     if (!text) return;
@@ -559,7 +565,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
           <Wallpaper index={wallpaper} options={allWalls} />
@@ -1599,25 +1605,9 @@ function FigureCloudApp({ close }: { close: () => void }) {
   );
 }
 
-function WallpaperSettings({ wallpaper, setWallpaper, walls, custom, addWall, removeWall, settings, patch, close }: { wallpaper: number; setWallpaper: (value: number) => void; walls: WallpaperOption[]; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void; settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; close: () => void }) {
-  return (
-    <WindowFrame title="Appearance" icon={Settings} close={close}>
-      <div className="flex-1 overflow-auto p-5 md:p-8">
-        <h2 className="text-xl font-semibold">Choose your landscape</h2><p className="mt-1 text-sm text-muted-foreground">Changes appear instantly across your home screen.</p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {walls.map((item, index) => (
-            <OsButton key={item.label} label={`Use ${item.label} wallpaper`} onClick={() => setWallpaper(index)} className={`group relative aspect-video overflow-hidden rounded-md border-2 ${wallpaper === index ? "border-primary" : "border-border"}`}>
-              <img src={item.thumb} alt={item.label} onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} className="size-full object-cover transition-transform group-hover:scale-105" /><span className="absolute inset-x-0 bottom-0 bg-background/75 p-3 text-left text-xs font-semibold backdrop-blur-md">{item.label}{wallpaper === index && <span className="float-right text-primary">Selected</span>}</span>
-            </OsButton>
-          ))}
-        </div>
-        <Personalize settings={settings} patch={patch} custom={custom} addWall={addWall} removeWall={removeWall} />
-        <NetworkPrivacy />
-      </div>
-    </WindowFrame>
-  );
+function WallpaperSettings(props: { wallpaper: number; setWallpaper: (value: number) => void; walls: WallpaperOption[]; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void; settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; close: () => void }) {
+  return <SettingsCenter {...props} />;
 }
-
 
 type FsNode = string | null; // string = file, null = folder
 const FS_KEY = "pos-fs";
@@ -2039,8 +2029,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right" };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom" };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2100,60 +2090,6 @@ class AppBoundary extends Component<{ children: ReactNode; close: () => void }, 
       </WindowFrame>
     );
   }
-}
-
-function Personalize({ settings, patch, custom, addWall, removeWall }: { settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const slider = (label: string, key: "blur" | "dim" | "lockBlur" | "lockDim", max: number, unit: string) => (
-    <label className="block text-xs">
-      <span className="flex justify-between"><span>{label}</span><span className="text-muted-foreground">{settings[key]}{unit}</span></span>
-      <input type="range" min={0} max={max} value={settings[key]} onChange={(event) => patch({ [key]: Number(event.target.value) } as Partial<OsSettings>)} className="mt-2 w-full" />
-    </label>
-  );
-  const chip = "rounded-md px-3 py-1.5 text-xs";
-  return (
-    <div className="mt-8 space-y-6 text-sm">
-      <section>
-        <h3 className="font-semibold">Your wallpapers</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Add any image from this device. It stays only in this browser.</p>
-        <button type="button" onClick={() => fileRef.current?.click()} className="mt-3 rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Add from device</button>
-        <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => addWall(file)); event.target.value = ""; }} />
-        {custom.map((wall) => (
-          <div key={wall.id} className="mt-2 flex items-center gap-3 text-xs">
-            <img src={wall.url} alt="" className="h-8 w-14 rounded object-cover" />
-            <span className="min-w-0 flex-1 truncate">{wall.label}</span>
-            <button type="button" onClick={() => removeWall(wall.id)} className="rounded-md bg-secondary px-2 py-1">Remove</button>
-          </div>
-        ))}
-      </section>
-      <section className="space-y-4">
-        <h3 className="font-semibold">Look and feel</h3>
-        {slider("Wallpaper blur", "blur", 24, "px")}
-        {slider("Wallpaper darkness", "dim", 80, "%")}
-        {slider("Lock screen blur", "lockBlur", 30, "px")}
-        {slider("Lock screen darkness", "lockDim", 100, "%")}
-        <div className="flex items-center justify-between text-xs">
-          <span>24-hour clock</span>
-          <button type="button" onClick={() => patch({ clock24: !settings.clock24 })} className={`${chip} ${settings.clock24 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>{settings.clock24 ? "On" : "Off"}</button>
-        </div>
-      </section>
-      <section>
-        <h3 className="font-semibold">Widgets</h3>
-        <p className="mt-1 text-xs text-muted-foreground">Add widgets to the desktop and drag them by their title.</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {WIDGET_LIST.map((widget) => {
-            const on = settings.widgets.includes(widget.id);
-            return (
-              <button key={widget.id} type="button" onClick={() => patch({ widgets: on ? settings.widgets.filter((id) => id !== widget.id) : [...settings.widgets, widget.id] })} className={`${chip} ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                {on ? "✓ " : "+ "}{widget.label}
-              </button>
-            );
-          })}
-        </div>
-        <button type="button" onClick={() => patch(DEFAULT_SETTINGS)} className="mt-4 rounded-md bg-secondary px-3 py-1.5 text-xs">Reset look and widgets</button>
-      </section>
-    </div>
-  );
 }
 
 function WidgetShell({ title, offset, onMove, onRemove, children }: { title: string; offset: { x: number; y: number }; onMove: (pos: { x: number; y: number }) => void; onRemove: () => void; children: ReactNode }) {
@@ -2584,6 +2520,312 @@ function AboutApp({ close }: { close: () => void }) {
         <dl className="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 text-sm">
           {rows.map(([label, value]) => (<div key={label} className="contents"><dt className="text-muted-foreground">{label}</dt><dd className="truncate">{value}</dd></div>))}
         </dl>
+      </div>
+    </WindowFrame>
+  );
+}
+
+type ThemeDef = { id: string; name: string; sub: string; accent: string };
+const THEMES: ThemeDef[] = [
+  { id: "private", name: "Private", sub: "Original gold", accent: "" },
+  { id: "signature", name: "Signature", sub: "Brand purple", accent: "#7c6cff" },
+  { id: "iris", name: "Iris", sub: "Deep violet-blue", accent: "#6d5efc" },
+  { id: "midnight", name: "Midnight", sub: "Deep space indigo", accent: "#4f6bff" },
+  { id: "cobalt", name: "Cobalt", sub: "Saturated electric blue", accent: "#3b82f6" },
+  { id: "aurora", name: "Aurora", sub: "Teal boreal cyan", accent: "#2dd4bf" },
+  { id: "sage", name: "Sage", sub: "Muted herbal green", accent: "#7fc58a" },
+  { id: "mint", name: "Mint", sub: "Linux Mint green", accent: "#87cf3e" },
+  { id: "honey", name: "Honey", sub: "Liquid gold amber", accent: "#fbbf24" },
+  { id: "ember", name: "Ember", sub: "Warm orange ember", accent: "#fb923c" },
+  { id: "coral", name: "Coral", sub: "Soft coral pink", accent: "#fb7185" },
+  { id: "plasma", name: "Plasma", sub: "Hot pink plasma", accent: "#f43f9d" },
+];
+
+function readableOn(hex: string) {
+  const value = hex.replace("#", "");
+  if (value.length !== 6) return "#ffffff";
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(value.slice(i, i + 2), 16));
+  return (0.299 * (r ?? 0) + 0.587 * (g ?? 0) + 0.114 * (b ?? 0)) / 255 > 0.6 ? "#0b0b0f" : "#ffffff";
+}
+
+type ConfigData = { theme: string; accent: string; scrollAccent: string; particles: boolean; blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; widgets: string[]; wallpaper: number };
+type SavedConfig = { id: string; name: string; desc: string; tags: string[]; mine: boolean; data: ConfigData };
+
+const PUBLIC_CONFIGS: SavedConfig[] = [
+  { id: "pub-clean", name: "Clean Glass", desc: "Light blur, bright desktop, mint accent.", tags: ["Mint", "Glass"], mine: false, data: { theme: "mint", accent: "#87cf3e", scrollAccent: "", particles: false, blur: 6, dim: 8, lockBlur: 10, lockDim: 45, clock24: true, bigIcons: false, dockPos: "bottom", widgets: [], wallpaper: 0 } },
+  { id: "pub-night", name: "Night Mode", desc: "Dark and calm with a deep indigo accent.", tags: ["Midnight", "Dark"], mine: false, data: { theme: "midnight", accent: "#4f6bff", scrollAccent: "", particles: true, blur: 0, dim: 45, lockBlur: 12, lockDim: 85, clock24: true, bigIcons: false, dockPos: "bottom", widgets: ["calendar"], wallpaper: 0 } },
+];
+
+function Switch({ on, onChange, label }: { on: boolean; onChange: (value: boolean) => void; label: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)} className={`relative h-5 w-9 shrink-0 rounded-full ${on ? "bg-primary" : "bg-white/15"}`}>
+      <span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] duration-200 ${on ? "left-[18px]" : "left-0.5"}`} />
+    </button>
+  );
+}
+
+function CfgCard({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />{title}</h4>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function CfgRow({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div className="min-w-0"><p className="text-xs font-medium">{title}</p>{sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}</div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function CfgSlider({ label, value, max, unit, onChange }: { label: string; value: number; max: number; unit: string; onChange: (value: number) => void }) {
+  return (
+    <label className="block text-xs">
+      <span className="flex justify-between"><span className="font-medium">{label}</span><span className="text-muted-foreground">{value}{unit}</span></span>
+      <input type="range" min={0} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-2 w-full accent-[var(--primary)]" />
+    </label>
+  );
+}
+
+function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, removeWall, settings, patch, close }: { wallpaper: number; setWallpaper: (value: number) => void; walls: WallpaperOption[]; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void; settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; close: () => void }) {
+  const NAV: { id: string; label: string; sub: string; icon: IconComponent; title: string; heading: string }[] = [
+    { id: "appearance", label: "Appearance", sub: "Wallpaper and glass", icon: ImageIcon, title: "Appearance", heading: "Wallpapers, blur and darkness" },
+    { id: "themes", label: "Themes", sub: "Choose your color story", icon: Palette, title: "Themes", heading: "Choose your color story" },
+    { id: "configs", label: "Configs", sub: "Save your loadouts", icon: Save, title: "Configs", heading: "Save your loadouts" },
+    { id: "widgets", label: "Widgets", sub: "Desktop widgets", icon: LayoutGrid, title: "Widgets", heading: "Add things to your desktop" },
+    { id: "network", label: "Network", sub: "Proxy servers", icon: Wifi, title: "Network", heading: "Proxy and privacy" },
+    { id: "settings", label: "Settings", sub: "Customize your OS", icon: Settings, title: "Settings", heading: "Customize your OS" },
+  ];
+  const [page, setPage] = useState("themes");
+  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"all" | "mine" | "public">("all");
+  const [cfgQuery, setCfgQuery] = useState("");
+  const [configs, setConfigs] = useState<SavedConfig[]>([]);
+  const [logs, setLogs] = useState<string[]>(["Initialized PRIVATE OS", "Settings loaded from this browser"]);
+  const wallInput = useRef<HTMLInputElement>(null);
+  const log = (line: string) => setLogs((list) => [...list, line].slice(-40));
+  useEffect(() => {
+    try {
+      setConfigs(JSON.parse(localStorage.getItem("pos-configs") ?? "[]") as SavedConfig[]);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const saveConfigs = (next: SavedConfig[]) => {
+    setConfigs(next);
+    try {
+      localStorage.setItem("pos-configs", JSON.stringify(next));
+    } catch {
+      // storage unavailable
+    }
+  };
+  const snapshot = (): ConfigData => ({ theme: settings.theme, accent: settings.accent, scrollAccent: settings.scrollAccent, particles: settings.particles, blur: settings.blur, dim: settings.dim, lockBlur: settings.lockBlur, lockDim: settings.lockDim, clock24: settings.clock24, bigIcons: settings.bigIcons, dockPos: settings.dockPos, widgets: settings.widgets, wallpaper });
+  const applyConfig = (config: SavedConfig) => {
+    const { wallpaper: wp, ...rest } = config.data;
+    patch(rest);
+    setWallpaper(wp);
+    log(`Applied config "${config.name}"`);
+  };
+  const newConfig = () => {
+    const name = window.prompt("Name for this config")?.trim();
+    if (!name) return;
+    const desc = window.prompt("Short description (optional)")?.trim() ?? "";
+    const theme = THEMES.find((item) => item.id === settings.theme);
+    saveConfigs([{ id: `cfg-${Date.now()}`, name, desc, tags: [theme?.name ?? "Custom", settings.dockPos === "bottom" ? "Dock bottom" : `Dock ${settings.dockPos}`, settings.blur > 0 ? "Blur" : "Sharp"], mine: true, data: snapshot() }, ...configs]);
+    log(`Saved config "${name}"`);
+  };
+  const importConfig = () => {
+    const code = window.prompt("Paste a config code")?.trim();
+    if (!code) return;
+    try {
+      const parsed = JSON.parse(decodeURIComponent(escape(atob(code.replace(/^POS1:/, ""))))) as SavedConfig;
+      if (!parsed.name || !parsed.data) throw new Error("bad config");
+      saveConfigs([{ ...parsed, id: `cfg-${Date.now()}`, mine: true }, ...configs]);
+      log(`Imported config "${parsed.name}"`);
+    } catch {
+      window.alert("That config code isn't valid.");
+    }
+  };
+  const shareConfig = (config: SavedConfig) => {
+    const code = `POS1:${btoa(unescape(encodeURIComponent(JSON.stringify(config))))}`;
+    navigator.clipboard?.writeText(code).then(() => log(`Copied code for "${config.name}"`)).catch(() => window.prompt("Copy this config code", code));
+  };
+  const editConfig = (config: SavedConfig) => {
+    const name = window.prompt("Config name", config.name)?.trim();
+    if (!name) return;
+    const desc = window.prompt("Description", config.desc) ?? config.desc;
+    saveConfigs(configs.map((item) => (item.id === config.id ? { ...item, name, desc } : item)));
+  };
+  const chooseTheme = (theme: ThemeDef) => {
+    patch({ theme: theme.id, accent: theme.accent });
+    log(`Theme set to ${theme.name}`);
+  };
+  const shown = [...configs, ...PUBLIC_CONFIGS].filter((item) => (tab === "all" || (tab === "mine" ? item.mine : !item.mine)) && `${item.name} ${item.tags.join(" ")}`.toLowerCase().includes(cfgQuery.toLowerCase()));
+  const current = NAV.find((item) => item.id === page) ?? NAV[0]!;
+  const navShown = NAV.filter((item) => `${item.label} ${item.sub}`.toLowerCase().includes(query.toLowerCase()));
+  const btn = "rounded-lg px-3 py-1.5 text-[11px] font-semibold";
+  return (
+    <WindowFrame title="Settings" icon={SettingsIcon} close={close}>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+        {settings.particles && (
+          <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            {Array.from({ length: 16 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%`, animationDelay: `${-(i * 1.7) % 9}s`, animationDuration: `${8 + (i % 5) * 2}s` }} />)}
+          </div>
+        )}
+        <aside className="relative z-10 flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 p-2 md:w-60 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:p-3">
+          <div className="hidden items-center gap-3 px-2 pb-3 md:flex">
+            <span className="grid size-10 place-items-center rounded-xl bg-primary/20 text-primary"><ShieldCheck className="size-5" /></span>
+            <div><p className="font-['Playfair_Display',serif] text-base font-bold leading-tight">PRIVATE</p><p className="text-[10px] italic text-muted-foreground">Custom Edition {OS_VERSION}</p></div>
+          </div>
+          <label className="hidden items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 md:flex"><Search className="size-3.5 text-muted-foreground" /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search features..." className="h-9 w-full bg-transparent text-xs outline-none" /></label>
+          {navShown.map((item) => {
+            const Icon = item.icon;
+            const active = item.id === page;
+            return (
+              <button key={item.id} type="button" onClick={() => setPage(item.id)} className={`flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left md:mt-0.5 ${active ? "bg-primary/15 shadow-[inset_2px_0_0_var(--primary)]" : "hover:bg-white/5"}`}>
+                <span className={`grid size-7 place-items-center rounded-lg ${active ? "bg-primary/25 text-primary" : "bg-white/5 text-muted-foreground"}`}><Icon className="size-4" /></span>
+                <span className="min-w-0"><span className="block text-xs font-semibold">{item.label}</span><span className="hidden text-[10px] text-muted-foreground md:block">{item.sub}</span></span>
+              </button>
+            );
+          })}
+          <div className="mt-auto hidden rounded-xl border border-white/10 bg-black/20 p-3 md:block">
+            <p className="flex items-center gap-2 text-xs font-semibold"><span className="size-1.5 rounded-full bg-green-400" />PRIVATE OS</p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">Data stored: <span className="text-primary">Locally</span></p>
+          </div>
+        </aside>
+
+        <div className="relative z-10 min-h-0 flex-1 overflow-auto p-4 md:p-6">
+          <h2 className="font-['Playfair_Display',serif] text-2xl font-bold">{current.title}</h2>
+          <p className="mb-4 text-xs text-muted-foreground">{current.heading}</p>
+
+          {page === "themes" && (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {THEMES.map((theme) => {
+                const active = settings.theme === theme.id;
+                const color = theme.accent || "#f2c783";
+                return (
+                  <button key={theme.id} type="button" onClick={() => chooseTheme(theme)} className="relative flex h-28 flex-col rounded-2xl p-3 text-left" style={{ background: `linear-gradient(180deg, color-mix(in oklab, ${color} 16%, transparent), rgb(0 0 0 / .25) 75%)`, border: `1px solid ${active ? color : `color-mix(in oklab, ${color} 22%, transparent)`}`, boxShadow: active ? `0 0 0 1px ${color}, 0 0 24px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
+                    <span className="flex items-start justify-between"><span className="text-xs font-bold">{theme.name}</span>{active && <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: `color-mix(in oklab, ${color} 30%, transparent)`, color }}>Active</span>}</span>
+                    <span className="mt-0.5 text-[10px] text-muted-foreground">{theme.sub}</span>
+                    <span className="mt-auto flex gap-2">
+                      <span className="size-3.5 rounded-full" style={{ background: color }} />
+                      <span className="size-3.5 rounded-full bg-[#1b1d22] ring-1 ring-white/10" />
+                      <span className="size-3.5 rounded-full" style={{ background: `color-mix(in oklab, ${color} 55%, white)` }} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {page === "configs" && (
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3"><Search className="size-3.5 text-muted-foreground" /><input aria-label="Search configs" value={cfgQuery} onChange={(event) => setCfgQuery(event.target.value)} placeholder="Search configs by name or tag..." className="h-9 w-full bg-transparent text-xs outline-none" /></label>
+                <button type="button" onClick={importConfig} className={`${btn} border border-white/15 bg-white/5`}>Import</button>
+                <button type="button" onClick={newConfig} className={`${btn} bg-primary text-primary-foreground`}>+ New</button>
+              </div>
+              <div className="mt-3 flex gap-4 border-b border-white/10 text-[11px]">
+                {(["all", "mine", "public"] as const).map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`-mb-px border-b-2 pb-2 font-semibold capitalize ${tab === item ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>{item}</button>)}
+              </div>
+              <div className="mt-3 space-y-2">
+                {shown.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No configs here yet. Press + New to save your current setup.</p>}
+                {shown.map((config) => (
+                  <div key={config.id} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0"><p className="text-xs font-bold">{config.name}</p>{config.desc && <p className="mt-0.5 text-[11px] text-muted-foreground">{config.desc}</p>}</div>
+                      <div className="flex shrink-0 gap-1.5">
+                        <button type="button" onClick={() => applyConfig(config)} className={`${btn} bg-primary text-primary-foreground`}>Apply</button>
+                        <button type="button" onClick={() => shareConfig(config)} className={`${btn} bg-white/10`}>Share</button>
+                        {config.mine && <button type="button" onClick={() => editConfig(config)} className={`${btn} bg-white/10`}>Edit</button>}
+                        {config.mine && <button type="button" onClick={() => saveConfigs(configs.filter((item) => item.id !== config.id))} className={`${btn} bg-red-500/80 text-white`}>Delete</button>}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-1.5">{config.tags.map((tag) => <span key={tag} className="rounded-md bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">{tag}</span>)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {page === "appearance" && (
+            <div className="space-y-4">
+              <CfgCard title="Wallpaper">
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {walls.map((item, index) => (
+                    <button key={`${item.label}-${index}`} type="button" onClick={() => { setWallpaper(index); log(`Wallpaper: ${item.label}`); }} className={`overflow-hidden rounded-xl border-2 text-left ${wallpaper === index ? "border-primary" : "border-transparent"}`}>
+                      <img src={item.thumb} alt="" className="aspect-video w-full object-cover" />
+                      <span className="block truncate px-2 py-1 text-[10px]">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => wallInput.current?.click()} className={`${btn} bg-primary text-primary-foreground`}>Add from device</button>
+                  <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => addWall(file)); event.target.value = ""; }} />
+                </div>
+                {custom.map((wall) => (
+                  <div key={wall.id} className="flex items-center gap-3 text-xs"><img src={wall.url} alt="" className="h-8 w-14 rounded object-cover" /><span className="min-w-0 flex-1 truncate">{wall.label}</span><button type="button" onClick={() => removeWall(wall.id)} className={`${btn} bg-white/10`}>Remove</button></div>
+                ))}
+              </CfgCard>
+              <CfgCard title="Glass and darkness">
+                <CfgSlider label="Wallpaper blur" value={settings.blur} max={24} unit="px" onChange={(value) => patch({ blur: value })} />
+                <CfgSlider label="Wallpaper darkness" value={settings.dim} max={80} unit="%" onChange={(value) => patch({ dim: value })} />
+                <CfgSlider label="Lock screen blur" value={settings.lockBlur} max={30} unit="px" onChange={(value) => patch({ lockBlur: value })} />
+                <CfgSlider label="Lock screen darkness" value={settings.lockDim} max={100} unit="%" onChange={(value) => patch({ lockDim: value })} />
+              </CfgCard>
+            </div>
+          )}
+
+          {page === "widgets" && (
+            <CfgCard title="Desktop widgets">
+              {WIDGET_LIST.map((widget) => {
+                const on = settings.widgets.includes(widget.id);
+                return (
+                  <CfgRow key={widget.id} title={widget.label} sub={on ? "Shown on the desktop. Drag it by its title." : "Hidden"}>
+                    <Switch on={on} label={widget.label} onChange={(value) => { patch({ widgets: value ? [...settings.widgets, widget.id] : settings.widgets.filter((id) => id !== widget.id) }); log(`${widget.label} widget ${value ? "added" : "removed"}`); }} />
+                  </CfgRow>
+                );
+              })}
+            </CfgCard>
+          )}
+
+          {page === "network" && <NetworkPrivacy />}
+
+          {page === "settings" && (
+            <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
+              <div className="space-y-4">
+                <CfgCard title="General">
+                  <CfgRow title="Run key" sub="Opens the Run dialog"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Alt + R</kbd></CfgRow>
+                  <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
+                </CfgCard>
+                <CfgCard title="Appearance">
+                  <CfgRow title="Main color" sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
+                  <CfgRow title="Scroll bar color" sub="Tint applied to scroll bars"><input type="color" aria-label="Scroll bar color" value={settings.scrollAccent || "#9aa4ff"} onChange={(event) => patch({ scrollAccent: event.target.value })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
+                  <CfgRow title="Particles" sub="Soft dots drifting behind settings"><Switch on={settings.particles} label="Particles" onChange={(value) => patch({ particles: value })} /></CfgRow>
+                </CfgCard>
+                <CfgCard title="Interface">
+                  <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
+                  <CfgRow title="Dock position" sub="Or drag the handle above the dock">
+                    <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
+                  </CfgRow>
+                </CfgCard>
+                <CfgCard title="Reset">
+                  <button type="button" onClick={() => { patch({ ...DEFAULT_SETTINGS }); log("Appearance reset to defaults"); }} className={`${btn} w-full bg-white/10 py-2`}>Reset look and widgets</button>
+                  <button type="button" onClick={() => { if (!window.confirm("Erase all PRIVATE OS data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ } window.setTimeout(() => window.location.reload(), 200); }} className="w-full rounded-lg bg-red-600 py-2.5 text-xs font-bold text-white">Clear all data</button>
+                  <p className="text-[10px] text-muted-foreground">Wipes wallpapers, files, notes and settings stored in this browser.</p>
+                </CfgCard>
+              </div>
+              <aside className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />System Logs</h4>
+                <ol className="space-y-1 font-mono text-[10px] text-muted-foreground">{logs.map((line, index) => <li key={index}><span className="mr-2 opacity-50">{String(index + 1).padStart(4, "0")}</span>{line}</li>)}</ol>
+              </aside>
+            </div>
+          )}
+        </div>
       </div>
     </WindowFrame>
   );

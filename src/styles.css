@@ -189,9 +189,6 @@
   backdrop-filter: blur(38px) saturate(1.9);
 }
 
-html, body { cursor: url('/cursors/mint-pointer.svg') 3 2, default; }
-button, a, [role="button"], input[type="range"] { cursor: url('/cursors/mint-hand.svg') 11 3, pointer; }
-input:not([type="range"]), textarea { cursor: text; }
 .desktop-status { position: absolute; top: 18px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; color: var(--foreground); font-size: 11px; text-transform: capitalize; opacity: .8; pointer-events: none; }
 .os-desktop > .pointer-events-none.absolute.left-3 { top: 64px; }
 .os-window { border-radius: 18px; }
@@ -230,3 +227,19 @@ section.os-window { transition: opacity .2s cubic-bezier(.22, 1, .36, 1), transf
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+html, body { cursor: url('/cursors/mint-pointer.svg') 6 3, default; }
+button, a, [role="button"], [role="menuitem"], [role="switch"], summary, select, label[for], input[type="range"], input[type="checkbox"], input[type="radio"], input[type="color"], input[type="file"], .cursor-pointer { cursor: url('/cursors/mint-hand.svg') 15 3, pointer; }
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]), textarea, .cursor-text { cursor: url('/cursors/mint-text.svg') 16 16, text; }
+.cursor-grab { cursor: url('/cursors/mint-grab.svg') 16 16, grab; }
+.cursor-grabbing { cursor: url('/cursors/mint-grabbing.svg') 16 16, grabbing; }
+:disabled, [aria-disabled="true"], .cursor-not-allowed { cursor: url('/cursors/mint-no.svg') 6 3, not-allowed; }
+.cursor-help { cursor: url('/cursors/mint-help.svg') 6 3, help; }
+.cursor-wait, .cursor-progress { cursor: url('/cursors/mint-wait.svg') 6 3, progress; }
+.cursor-e-resize, .cursor-w-resize, .cursor-ew-resize, .cursor-col-resize { cursor: url('/cursors/mint-ew.svg') 16 16, ew-resize; }
+.cursor-s-resize, .cursor-n-resize, .cursor-ns-resize, .cursor-row-resize { cursor: url('/cursors/mint-ns.svg') 16 16, ns-resize; }
+.cursor-crosshair { cursor: url('/cursors/mint-cross.svg') 16 16, crosshair; }
+.cursor-move { cursor: url('/cursors/mint-move.svg') 16 16, move; }
+* { scrollbar-width: thin; scrollbar-color: var(--scroll, rgba(255,255,255,.28)) transparent; }
+.particle { position: absolute; width: 3px; height: 3px; border-radius: 9999px; background: var(--primary); opacity: .55; animation: drift 10s linear infinite; }
+@keyframes drift { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: .6; } 100% { transform: translate(24px, -90px); opacity: 0; } }

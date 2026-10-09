@@ -50,6 +50,7 @@ import {
   Info,
   Palette,
   Save,
+  Gamepad2,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -212,6 +213,8 @@ const CameraIcon: IconComponent = ({ className }) => <Tile tone="from-slate-400 
 const MediaIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-rose-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Film /></Tile>;
 const AboutIcon: IconComponent = ({ className }) => <Tile tone="from-cyan-400 to-blue-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Info /></Tile>;
 
+const GamesIcon: IconComponent = ({ className }) => <Tile tone="from-violet-500 to-fuchsia-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Gamepad2 /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
@@ -241,7 +244,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
+launcherApps.push(...linkLauncher, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -553,6 +556,7 @@ function PrivateOS() {
       case "weather": return <WeatherApp close={close} />;
       case "paint": return <PaintApp close={close} />;
       case "todo": return <TodoApp close={close} />;
+      case "games": return <GamesApp close={close} launch={(url) => { setBrowserStart(url); openApp("browser"); }} />;
       case "camera": return <CameraApp close={close} />;
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
@@ -2826,6 +2830,73 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             </div>
           )}
         </div>
+      </div>
+    </WindowFrame>
+  );
+}
+
+const FREE_GAMES = [
+  { name: "Hedgewars", sub: "Open-source artillery strategy", url: "https://webwars.link/" },
+  { name: "Diablo (shareware)", sub: "Browser port of the free shareware version", url: "https://johnimril.github.io/diablo_web/" },
+];
+
+function GamesApp({ close, launch }: { close: () => void; launch: (url: string) => void }) {
+  const [custom, setCustom] = useState<{ name: string; url: string }[]>([]);
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    try {
+      setCustom(JSON.parse(localStorage.getItem("pos-games") ?? "[]") as { name: string; url: string }[]);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const save = (next: { name: string; url: string }[]) => {
+    setCustom(next);
+    try {
+      localStorage.setItem("pos-games", JSON.stringify(next));
+    } catch {
+      // storage unavailable
+    }
+  };
+  const add = () => {
+    const link = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
+    if (!name.trim() || !url.trim() || !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(link)) return;
+    save([...custom, { name: name.trim(), url: link }]);
+    setName("");
+    setUrl("");
+  };
+  const card = "flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-left hover:bg-white/10";
+  return (
+    <WindowFrame title="Games" icon={GamesIcon} close={close}>
+      <div className="flex-1 overflow-auto p-4">
+        <p className="text-xs font-semibold text-muted-foreground">FREE TO PLAY</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {FREE_GAMES.map((game) => (
+            <button key={game.url} type="button" onClick={() => launch(game.url)} className={card}>
+              <GamesIcon className="size-10 shrink-0" />
+              <span className="min-w-0"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.sub}</span></span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-6 text-xs font-semibold text-muted-foreground">YOUR GAMES</p>
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {custom.length === 0 && <p className="text-xs text-muted-foreground">Nothing added yet. Add a game you can play in the browser below.</p>}
+          {custom.map((game) => (
+            <div key={game.url} className={card}>
+              <button type="button" onClick={() => launch(game.url)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                <GamesIcon className="size-10 shrink-0" />
+                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.url}</span></span>
+              </button>
+              <button type="button" aria-label={`Remove ${game.name}`} onClick={() => save(custom.filter((item) => item.url !== game.url))} className="rounded p-1 hover:bg-white/10"><X className="size-4" /></button>
+            </div>
+          ))}
+        </div>
+        <form onSubmit={(event) => { event.preventDefault(); add(); }} className="mt-4 flex flex-wrap gap-2">
+          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Game name" aria-label="Game name" className="utility-input min-w-0 flex-1" />
+          <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Web address" aria-label="Game web address" className="utility-input min-w-0 flex-[2]" />
+          <button type="submit" className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground">Add game</button>
+        </form>
       </div>
     </WindowFrame>
   );

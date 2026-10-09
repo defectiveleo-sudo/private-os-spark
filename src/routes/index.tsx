@@ -186,6 +186,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.2", date: "9 Oct 2026", items: ["Settings center with Themes, Configs and Settings pages", "New cursor set", "Games app with your own game list", "Ambient glow, page transitions, staggered entrances and hover glow"] },
   { v: "1.1", date: "8 Oct 2026", items: ["Removed the movie HUB, PlayStation and controller cards", "New apps: Camera, Media Player and System Info", "Run dialog (Alt+R) and date in the tray", "Glassier surfaces, rounder corners and 200ms smooth motion"] },
   { v: "1.0", date: "4 Oct 2026", items: ["Liquid glass windows, menus and dock with rounder corners", "Smoother window, menu and button animations", "Changelog in the start screen and start menu", "Removed Discord, Crunchyroll, GeForce NOW and Xbox"] },
   { v: "0.9", date: "4 Oct 2026", items: ["Private HUB movie widget and Private Hill window", "Media and console cards in the top-right corner", "Video-style right-click menu and movable dock", "Full-screen app grid"] },
@@ -576,6 +577,12 @@ function PrivateOS() {
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
+      {settings.ambient && (
+        <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
+          <div className="aurora" />
+          {Array.from({ length: 14 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 41 + 7) % 100}%`, top: `${(i * 59 + 20) % 100}%`, animationDelay: `${-(i * 2.3) % 12}s`, animationDuration: `${12 + (i % 5) * 3}s` }} />)}
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
       <div className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
@@ -723,7 +730,7 @@ function PrivateOS() {
       )}
 
       {taskView && (
-        <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
+        <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] stagger flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           {openWins.length === 0 && <p className="text-sm text-white/80">No open windows. Open an app from the dock.</p>}
           {openWins.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
@@ -2033,8 +2040,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2570,7 +2577,7 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (value: boolea
 
 function CfgCard({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-2xl border border-white/10 bg-black/20 p-4">
+    <section className="fx-card rounded-2xl border border-white/10 bg-black/20 p-4">
       <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />{title}</h4>
       <div className="space-y-3">{children}</div>
     </section>
@@ -2702,17 +2709,17 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           </div>
         </aside>
 
-        <div className="relative z-10 min-h-0 flex-1 overflow-auto p-4 md:p-6">
+        <div key={page} className="page-in relative z-10 min-h-0 flex-1 overflow-auto p-4 md:p-6">
           <h2 className="font-['Playfair_Display',serif] text-2xl font-bold">{current.title}</h2>
           <p className="mb-4 text-xs text-muted-foreground">{current.heading}</p>
 
           {page === "themes" && (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {THEMES.map((theme) => {
                 const active = settings.theme === theme.id;
                 const color = theme.accent || "#f2c783";
                 return (
-                  <button key={theme.id} type="button" onClick={() => chooseTheme(theme)} className="relative flex h-28 flex-col rounded-2xl p-3 text-left" style={{ background: `linear-gradient(180deg, color-mix(in oklab, ${color} 16%, transparent), rgb(0 0 0 / .25) 75%)`, border: `1px solid ${active ? color : `color-mix(in oklab, ${color} 22%, transparent)`}`, boxShadow: active ? `0 0 0 1px ${color}, 0 0 24px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
+                  <button key={theme.id} type="button" onClick={() => chooseTheme(theme)} className={`fx-card relative flex h-28 flex-col overflow-hidden rounded-2xl p-3 text-left ${active ? "shine" : ""}`} style={{ background: `linear-gradient(180deg, color-mix(in oklab, ${color} 16%, transparent), rgb(0 0 0 / .25) 75%)`, border: `1px solid ${active ? color : `color-mix(in oklab, ${color} 22%, transparent)`}`, boxShadow: active ? `0 0 0 1px ${color}, 0 0 24px color-mix(in oklab, ${color} 35%, transparent)` : undefined }}>
                     <span className="flex items-start justify-between"><span className="text-xs font-bold">{theme.name}</span>{active && <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: `color-mix(in oklab, ${color} 30%, transparent)`, color }}>Active</span>}</span>
                     <span className="mt-0.5 text-[10px] text-muted-foreground">{theme.sub}</span>
                     <span className="mt-auto flex gap-2">
@@ -2736,10 +2743,10 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
               <div className="mt-3 flex gap-4 border-b border-white/10 text-[11px]">
                 {(["all", "mine", "public"] as const).map((item) => <button key={item} type="button" onClick={() => setTab(item)} className={`-mb-px border-b-2 pb-2 font-semibold capitalize ${tab === item ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>{item}</button>)}
               </div>
-              <div className="mt-3 space-y-2">
+              <div className="stagger mt-3 space-y-2">
                 {shown.length === 0 && <p className="p-6 text-center text-xs text-muted-foreground">No configs here yet. Press + New to save your current setup.</p>}
                 {shown.map((config) => (
-                  <div key={config.id} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <div key={config.id} className="fx-card rounded-2xl border border-white/10 bg-black/20 p-3">
                     <div className="flex flex-wrap items-start justify-between gap-2">
                       <div className="min-w-0"><p className="text-xs font-bold">{config.name}</p>{config.desc && <p className="mt-0.5 text-[11px] text-muted-foreground">{config.desc}</p>}</div>
                       <div className="flex shrink-0 gap-1.5">
@@ -2757,7 +2764,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           )}
 
           {page === "appearance" && (
-            <div className="space-y-4">
+            <div className="stagger space-y-4">
               <CfgCard title="Wallpaper">
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {walls.map((item, index) => (
@@ -2801,7 +2808,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "settings" && (
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
-              <div className="space-y-4">
+              <div className="stagger space-y-4">
                 <CfgCard title="General">
                   <CfgRow title="Run key" sub="Opens the Run dialog"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Alt + R</kbd></CfgRow>
                   <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
@@ -2810,6 +2817,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <CfgRow title="Main color" sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
                   <CfgRow title="Scroll bar color" sub="Tint applied to scroll bars"><input type="color" aria-label="Scroll bar color" value={settings.scrollAccent || "#9aa4ff"} onChange={(event) => patch({ scrollAccent: event.target.value })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
                   <CfgRow title="Particles" sub="Soft dots drifting behind settings"><Switch on={settings.particles} label="Particles" onChange={(value) => patch({ particles: value })} /></CfgRow>
+                  <CfgRow title="Ambient glow" sub="Slow colour glow and floating dots on the desktop"><Switch on={settings.ambient} label="Ambient glow" onChange={(value) => patch({ ambient: value })} /></CfgRow>
                 </CfgCard>
                 <CfgCard title="Interface">
                   <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
@@ -2866,7 +2874,7 @@ function GamesApp({ close, launch }: { close: () => void; launch: (url: string) 
     setName("");
     setUrl("");
   };
-  const card = "flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-left hover:bg-white/10";
+  const card = "fx-card flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-left hover:bg-white/10";
   return (
     <WindowFrame title="Games" icon={GamesIcon} close={close}>
       <div className="flex-1 overflow-auto p-4">

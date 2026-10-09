@@ -243,3 +243,20 @@ input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="
 * { scrollbar-width: thin; scrollbar-color: var(--scroll, rgba(255,255,255,.28)) transparent; }
 .particle { position: absolute; width: 3px; height: 3px; border-radius: 9999px; background: var(--primary); opacity: .55; animation: drift 10s linear infinite; }
 @keyframes drift { 0% { transform: translate(0, 0); opacity: 0; } 15% { opacity: .6; } 100% { transform: translate(24px, -90px); opacity: 0; } }
+
+/* ---- extra motion and visuals (timings measured from the reference video: ~150-250ms, ease-out) ---- */
+@keyframes rise { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes aurora { 0% { transform: translate(-4%, -3%) scale(1); } 100% { transform: translate(5%, 4%) scale(1.15); } }
+@keyframes sweep { 0% { transform: translateX(-120%); } 60%, 100% { transform: translateX(120%); } }
+.page-in { animation: rise .26s cubic-bezier(.22, 1, .36, 1) both; }
+.stagger > * { animation: rise .34s cubic-bezier(.22, 1, .36, 1) both; }
+.stagger > *:nth-child(2) { animation-delay: .03s; } .stagger > *:nth-child(3) { animation-delay: .06s; } .stagger > *:nth-child(4) { animation-delay: .09s; }
+.stagger > *:nth-child(5) { animation-delay: .12s; } .stagger > *:nth-child(6) { animation-delay: .15s; } .stagger > *:nth-child(7) { animation-delay: .18s; }
+.stagger > *:nth-child(8) { animation-delay: .21s; } .stagger > *:nth-child(9) { animation-delay: .24s; } .stagger > *:nth-child(n+10) { animation-delay: .27s; }
+.fx-card { transition: transform .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s ease, border-color .25s ease, background-color .2s ease; }
+.fx-card:hover { transform: translateY(-2px); box-shadow: 0 14px 34px color-mix(in oklab, var(--primary) 20%, transparent); }
+.shine::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / .16) 50%, transparent 65%); animation: sweep 3.6s ease-in-out infinite; }
+.aurora { position: absolute; inset: -20%; filter: blur(34px); mix-blend-mode: screen; opacity: .65; animation: aurora 22s ease-in-out infinite alternate; background: radial-gradient(40% 40% at 20% 30%, color-mix(in oklab, var(--primary, #f2c783) 24%, transparent), transparent 70%), radial-gradient(36% 36% at 80% 70%, color-mix(in oklab, var(--primary, #f2c783) 18%, transparent), transparent 70%); }
+section.os-window { box-shadow: 0 30px 80px rgb(0 0 0 / .45), 0 0 70px color-mix(in oklab, var(--primary) 9%, transparent), inset 0 1px 0 oklch(1 0 0 / 35%); }
+.dock-app:hover { filter: drop-shadow(0 6px 14px color-mix(in oklab, var(--primary) 40%, transparent)); }
+@media (prefers-reduced-motion: reduce) { .page-in, .stagger > *, .aurora, .particle, .shine::after { animation: none !important; } }

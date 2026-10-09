@@ -186,6 +186,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.3", date: "9 Oct 2026", items: ["Settings animations now run in every app", "New settings: glass blur and opacity, wallpaper slideshow, dock size, reduce motion, system or Mint cursors", "Backup page to export and import your setup", "About page with shortcuts and changelog"] },
   { v: "1.2", date: "9 Oct 2026", items: ["Settings center with Themes, Configs and Settings pages", "New cursor set", "Games app with your own game list", "Ambient glow, page transitions, staggered entrances and hover glow"] },
   { v: "1.1", date: "8 Oct 2026", items: ["Removed the movie HUB, PlayStation and controller cards", "New apps: Camera, Media Player and System Info", "Run dialog (Alt+R) and date in the tray", "Glassier surfaces, rounder corners and 200ms smooth motion"] },
   { v: "1.0", date: "4 Oct 2026", items: ["Liquid glass windows, menus and dock with rounder corners", "Smoother window, menu and button animations", "Changelog in the start screen and start menu", "Removed Discord, Crunchyroll, GeForce NOW and Xbox"] },
@@ -444,6 +445,12 @@ function PrivateOS() {
 
   const allWalls: WallpaperOption[] = [...wallpaperOptions, ...customWalls.map((wall) => ({ label: wall.label, thumb: wall.url, src: wall.url }))];
 
+  useEffect(() => {
+    if (!settings.slideshow || allWalls.length < 2) return;
+    const timer = window.setInterval(() => setWallpaper((index) => (index + 1) % allWalls.length), settings.slideshow * 60000);
+    return () => window.clearInterval(timer);
+  }, [settings.slideshow, allWalls.length]);
+
   const closeWindow = (id: string) => {
     setOpenWins((list) => list.filter((item) => item !== id));
     setMinWins((list) => list.filter((item) => item !== id));
@@ -476,9 +483,13 @@ function PrivateOS() {
     ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
   ];
 
-  const themeStyle = (settings.accent
+  const extraStyle = {
+    ...(settings.glassBlur !== 42 ? { "--glass-blur": `${settings.glassBlur}px` } : {}),
+    ...(settings.glassOpacity > 0 ? { "--glass-tint": `color-mix(in oklab, var(--card) ${settings.glassOpacity}%, transparent)` } : {}),
+  };
+  const themeStyle = ({ ...extraStyle, ...(settings.accent
     ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
-    : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) as React.CSSProperties;
+    : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
 
   const runCommand = () => {
     const text = runText.trim();
@@ -570,7 +581,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
           <Wallpaper index={wallpaper} options={allWalls} />
@@ -585,7 +596,7 @@ function PrivateOS() {
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <div className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
+      <div style={{ zoom: settings.dockScale / 100 }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
           role="separator"
           aria-label="Drag to move the dock to another edge"
@@ -633,7 +644,7 @@ function PrivateOS() {
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
             <BatteryFull className="size-4" />
-            <span className="flex flex-col items-end leading-tight"><span>{timeLabel}</span><span className="text-[9px] text-white/60">{time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span></span>
+            <span className="flex flex-col items-end leading-tight"><span>{timeLabel}</span>{settings.showDate && <span className="text-[9px] text-white/60">{time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>}</span>
           </button>
           {canFullscreen && (
             <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="size-6 shrink-0 rounded-md hover:bg-white/15">
@@ -655,7 +666,7 @@ function PrivateOS() {
         </aside>
       )}
 
-      {settings.desktop.length > 0 && (
+      {settings.showIcons && settings.desktop.length > 0 && (
         <div className="pointer-events-none absolute left-3 top-3 z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap content-start gap-2">
           {settings.desktop.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
@@ -2040,8 +2051,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0 };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2593,11 +2604,11 @@ function CfgRow({ title, sub, children }: { title: string; sub?: string; childre
   );
 }
 
-function CfgSlider({ label, value, max, unit, onChange }: { label: string; value: number; max: number; unit: string; onChange: (value: number) => void }) {
+function CfgSlider({ label, value, max, unit, onChange, min = 0 }: { label: string; value: number; max: number; unit: string; onChange: (value: number) => void; min?: number }) {
   return (
     <label className="block text-xs">
       <span className="flex justify-between"><span className="font-medium">{label}</span><span className="text-muted-foreground">{value}{unit}</span></span>
-      <input type="range" min={0} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-2 w-full accent-[var(--primary)]" />
+      <input type="range" min={min} max={max} value={value} onChange={(event) => onChange(Number(event.target.value))} className="mt-2 w-full accent-[var(--primary)]" />
     </label>
   );
 }
@@ -2610,6 +2621,8 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     { id: "widgets", label: "Widgets", sub: "Desktop widgets", icon: LayoutGrid, title: "Widgets", heading: "Add things to your desktop" },
     { id: "network", label: "Network", sub: "Proxy servers", icon: Wifi, title: "Network", heading: "Proxy and privacy" },
     { id: "settings", label: "Settings", sub: "Customize your OS", icon: Settings, title: "Settings", heading: "Customize your OS" },
+    { id: "backup", label: "Backup", sub: "Export and import", icon: Download, title: "Backup", heading: "Move your setup between browsers" },
+    { id: "about", label: "About", sub: "Version and changelog", icon: Info, title: "About", heading: "What this OS is and what's new" },
   ];
   const [page, setPage] = useState("themes");
   const [query, setQuery] = useState("");
@@ -2618,6 +2631,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
   const [configs, setConfigs] = useState<SavedConfig[]>([]);
   const [logs, setLogs] = useState<string[]>(["Initialized PRIVATE OS", "Settings loaded from this browser"]);
   const wallInput = useRef<HTMLInputElement>(null);
+  const backupInput = useRef<HTMLInputElement>(null);
   const log = (line: string) => setLogs((list) => [...list, line].slice(-40));
   useEffect(() => {
     try {
@@ -2670,6 +2684,28 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     if (!name) return;
     const desc = window.prompt("Description", config.desc) ?? config.desc;
     saveConfigs(configs.map((item) => (item.id === config.id ? { ...item, name, desc } : item)));
+  };
+  const exportAll = () => {
+    const data: Record<string, string> = {};
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("pos-")) data[key] = localStorage.getItem(key) ?? "";
+    }
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+    link.download = "private-os-backup.json";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    log("Exported a backup");
+  };
+  const importAll = (file: File) => {
+    file.text().then((text) => {
+      const data = JSON.parse(text) as Record<string, unknown>;
+      Object.entries(data).forEach(([key, value]) => {
+        if (key.startsWith("pos-") && typeof value === "string") localStorage.setItem(key, value);
+      });
+      window.location.reload();
+    }).catch(() => window.alert("That backup file isn't valid."));
   };
   const chooseTheme = (theme: ThemeDef) => {
     patch({ theme: theme.id, accent: theme.accent });
@@ -2787,6 +2823,13 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 <CfgSlider label="Wallpaper darkness" value={settings.dim} max={80} unit="%" onChange={(value) => patch({ dim: value })} />
                 <CfgSlider label="Lock screen blur" value={settings.lockBlur} max={30} unit="px" onChange={(value) => patch({ lockBlur: value })} />
                 <CfgSlider label="Lock screen darkness" value={settings.lockDim} max={100} unit="%" onChange={(value) => patch({ lockDim: value })} />
+                <CfgSlider label="Glass blur" value={settings.glassBlur} max={80} unit="px" onChange={(value) => patch({ glassBlur: value })} />
+                <CfgSlider label="Glass opacity (0 = default)" value={settings.glassOpacity} max={90} unit="%" onChange={(value) => patch({ glassOpacity: value })} />
+                <CfgRow title="Wallpaper slideshow" sub="Change the wallpaper automatically">
+                  <select aria-label="Wallpaper slideshow" value={settings.slideshow} onChange={(event) => patch({ slideshow: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs">
+                    <option value={0}>Off</option><option value={1}>Every minute</option><option value={5}>Every 5 minutes</option><option value={15}>Every 15 minutes</option>
+                  </select>
+                </CfgRow>
               </CfgCard>
             </div>
           )}
@@ -2806,12 +2849,42 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "network" && <NetworkPrivacy />}
 
+          {page === "backup" && (
+            <div className="stagger space-y-4">
+              <CfgCard title="Backup">
+                <p className="text-xs text-muted-foreground">Saves your settings, themes, configs, notes, files and to-dos to one file. Custom wallpapers and music are not included.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={exportAll} className={`${btn} bg-primary text-primary-foreground`}>Export backup</button>
+                  <button type="button" onClick={() => backupInput.current?.click()} className={`${btn} bg-white/10`}>Import backup</button>
+                  <input ref={backupInput} type="file" accept="application/json" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) importAll(file); event.target.value = ""; }} />
+                </div>
+              </CfgCard>
+            </div>
+          )}
+
+          {page === "about" && (
+            <div className="stagger space-y-4">
+              <CfgCard title="PRIVATE OS">
+                <CfgRow title="Version">{OS_VERSION}</CfgRow>
+                <CfgRow title="Data">Stored only in this browser</CfgRow>
+              </CfgCard>
+              <CfgCard title="Keyboard shortcuts">
+                {([["Alt + R", "Run dialog"], ["Alt + W", "Task view"], ["Alt + L", "Lock"], ["Ctrl + Space", "App launcher"], ["Alt + Arrows", "Snap, maximize or minimize a window"], ["Esc", "Close overlays"]] as const).map(([keys, what]) => (
+                  <CfgRow key={keys} title={what}><kbd className="rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold">{keys}</kbd></CfgRow>
+                ))}
+              </CfgCard>
+              <CfgCard title="Changelog"><ChangelogList /></CfgCard>
+            </div>
+          )}
+
           {page === "settings" && (
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
                 <CfgCard title="General">
                   <CfgRow title="Run key" sub="Opens the Run dialog"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Alt + R</kbd></CfgRow>
                   <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
+                  <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
+                  <CfgRow title="Desktop icons" sub="Show app shortcuts on the desktop"><Switch on={settings.showIcons} label="Desktop icons" onChange={(value) => patch({ showIcons: value })} /></CfgRow>
                 </CfgCard>
                 <CfgCard title="Appearance">
                   <CfgRow title="Main color" sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
@@ -2821,9 +2894,14 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 </CfgCard>
                 <CfgCard title="Interface">
                   <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
+                  <CfgSlider label="Dock size" value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
                   <CfgRow title="Dock position" sub="Or drag the handle above the dock">
                     <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
                   </CfgRow>
+                </CfgCard>
+                <CfgCard title="Accessibility">
+                  <CfgRow title="Reduce motion" sub="Turns off animations and transitions"><Switch on={settings.reduceMotion} label="Reduce motion" onChange={(value) => patch({ reduceMotion: value })} /></CfgRow>
+                  <CfgRow title="Mint cursors" sub="Off uses your system cursor"><Switch on={!settings.nativeCursor} label="Mint cursors" onChange={(value) => patch({ nativeCursor: !value })} /></CfgRow>
                 </CfgCard>
                 <CfgCard title="Reset">
                   <button type="button" onClick={() => { patch({ ...DEFAULT_SETTINGS }); log("Appearance reset to defaults"); }} className={`${btn} w-full bg-white/10 py-2`}>Reset look and widgets</button>

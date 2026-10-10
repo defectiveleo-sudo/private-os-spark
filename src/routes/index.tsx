@@ -53,6 +53,8 @@ import {
   Gamepad2,
   Layers,
   PanelsTopLeft,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -188,6 +190,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.6", date: "10 Oct 2026", items: ["Slim window title bar: app icon, back and forward arrows, title, and tiny minimize, expand and close buttons"] },
   { v: "1.5", date: "10 Oct 2026", items: ["Drag a window to the top edge to expand it, with a preview and a smooth glide", "Pull a maximized window down by its title bar to restore it", "Easier snap zones on the screen edges"] },
   { v: "1.4", date: "10 Oct 2026", items: ["New dock: one floating glass bar with menu, apps, pinned apps and Task view", "Right-click a dock app to open, close or pin it", "Dock page in Settings: pin, reorder, auto-hide and resize", "Ctrl+K search for apps, files and commands"] },
   { v: "1.3", date: "9 Oct 2026", items: ["Settings animations now run in every app", "New settings: glass blur and opacity, wallpaper slideshow, dock size, reduce motion, system or Mint cursors", "Backup page to export and import your setup", "About page with shortcuts and changelog"] },
@@ -1016,6 +1019,16 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     node.style.right = "auto";
     node.style.bottom = "auto";
   };
+  // Back / forward for windows that show a web page (works for proxied pages, which live on this origin).
+  const frameNav = (direction: "back" | "forward") => {
+    try {
+      const frame = el.current?.querySelector("iframe");
+      if (direction === "back") frame?.contentWindow?.history.back();
+      else frame?.contentWindow?.history.forward();
+    } catch {
+      // cross-origin frame: the browser does not allow this
+    }
+  };
   // Dragging to the top edge: glide the window out to full size, then switch to the maximized layout.
   const expand = () => {
     const node = el.current;
@@ -1128,9 +1141,21 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       }}
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "pointer-events-none translate-y-8 scale-90 opacity-0" : ""} ${position}`}
     >
-      <header className="window-titlebar flex h-11 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
-        <div className="flex min-w-0 items-center gap-2 text-xs font-semibold"><Icon className="size-5 shrink-0" /><span className="truncate">{title}</span></div>
-        <div className="flex shrink-0 items-center gap-1">{actions}<OsButton label="Minimize" onClick={minimize} className="window-control"><Minus className="size-4" /></OsButton><OsButton label={maximized ? "Restore" : "Maximize"} onClick={toggleMaximize} className="window-control">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton><OsButton label="Close" onClick={close} className="window-control hover:bg-destructive"><X className="size-4" /></OsButton></div>
+      <header className="window-titlebar flex h-8 shrink-0 items-center justify-between gap-2 px-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="size-5 shrink-0" />
+          <span className="nav-chev flex items-center">
+            <OsButton label="Back" onClick={() => frameNav("back")} className="win-ctl"><ChevronLeft className="size-3.5" /></OsButton>
+            <OsButton label="Forward" onClick={() => frameNav("forward")} className="win-ctl"><ChevronRight className="size-3.5" /></OsButton>
+          </span>
+          <span className="truncate text-[11px] font-medium text-white/85">{title}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {actions}
+          <OsButton label="Minimize" onClick={minimize} className="win-ctl"><Minus className="size-3.5" /></OsButton>
+          <OsButton label={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="win-ctl">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
+          <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
+        </div>
       </header>
       {children}
       {!maximized && (["e", "s", "se"] as const).map((mode) => (

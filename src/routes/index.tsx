@@ -65,6 +65,9 @@ import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/deskt
 import { OsButton } from "@/components/os-button";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
 import cherryAsset from "@/assets/private-os-cherry.jpg.asset.json";
+import inkEyeAsset from "@/assets/ink-eye.jpg.asset.json";
+import wukongSnowAsset from "@/assets/wukong-snow.jpg.asset.json";
+import moonlitTreeAsset from "@/assets/moonlit-tree.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -274,6 +277,9 @@ const wallpaperOptions: WallpaperOption[] = [
   { label: "Snowy Campfire", thumb: "/wallpaper-poster.jpg", video: "/wallpaper.mp4" },
   { label: "Alpine Lake", thumb: mountainAsset.url, src: mountainAsset.url },
   { label: "Cherry Village", thumb: cherryAsset.url, src: cherryAsset.url },
+  { label: "Ink Eye", thumb: inkEyeAsset.url, src: inkEyeAsset.url },
+  { label: "Snow Fisher", thumb: wukongSnowAsset.url, src: wukongSnowAsset.url },
+  { label: "Moonlit Tree", thumb: moonlitTreeAsset.url, src: moonlitTreeAsset.url },
 ];
 
 // Morocco moved to permanent GMT (UTC+0) on 20 Sep 2026. Some browsers still carry the old

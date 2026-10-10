@@ -1641,7 +1641,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
   const [frameTarget, setFrameTarget] = useState<string | null>(startUrl);
   const [frameKey, setFrameKey] = useState(0);
   const [loading, setLoading] = useState(Boolean(startUrl));
-  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean; note?: string } | null>(null);
+  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean; note?: string | undefined } | null>(null);
   const [engine, setEngine] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const frameRef = useRef<HTMLIFrameElement>(null);
   const controllerRef = useRef<EngineController | null>(null);
@@ -3506,7 +3506,7 @@ const LIBS = {
   pdfWorker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
 };
 const scriptCache = new Map<string, Promise<void>>();
-function loadScript(src: string) {
+function loadLibScript(src: string) {
   let task = scriptCache.get(src);
   if (!task) {
     task = new Promise<void>((resolve, reject) => {
@@ -3600,10 +3600,10 @@ function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffe
   }, [appId]);
 }
 
-const WriterIcon: IconComponent = ({ className }) => <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>;
-const SlidesIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>;
-const SheetsIcon: IconComponent = ({ className }) => <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>;
-const PdfIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>;
+function WriterIcon({ className }: { className?: string }) { return <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>; }
+function SlidesIcon({ className }: { className?: string }) { return <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>; }
+function SheetsIcon({ className }: { className?: string }) { return <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>; }
+function PdfIcon({ className }: { className?: string }) { return <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
 const tbPrimary = "rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground";
@@ -3624,7 +3624,7 @@ function WriterApp({ close }: { close: () => void }) {
     try {
       let html: string;
       if (/\.docx$/i.test(fileName)) {
-        await loadScript(LIBS.mammoth);
+        await loadLibScript(LIBS.mammoth);
         html = (await lib("mammoth").convertToHtml({ arrayBuffer: buffer })).value as string;
       } else {
         const text = new TextDecoder().decode(buffer);
@@ -3716,7 +3716,7 @@ function SlidesApp({ close }: { close: () => void }) {
   };
   const importPptx = async (fileName: string, buffer: ArrayBuffer) => {
     try {
-      await loadScript(LIBS.jszip);
+      await loadLibScript(LIBS.jszip);
       const zip = await lib("JSZip").loadAsync(buffer);
       const files = Object.keys(zip.files).filter((file) => /^ppt\/slides\/slide\d+\.xml$/.test(file)).sort((a, b) => parseInt(a.replace(/\D/g, ""), 10) - parseInt(b.replace(/\D/g, ""), 10));
       const decode = (text: string) => text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
@@ -3737,7 +3737,7 @@ function SlidesApp({ close }: { close: () => void }) {
   };
   useOpenFromFiles("slides", importPptx);
   const build = async () => {
-    await loadScript(LIBS.pptx);
+    await loadLibScript(LIBS.pptx);
     const pptx = new (lib("PptxGenJS"))();
     slides.forEach((item) => {
       const s = pptx.addSlide();
@@ -3868,7 +3868,7 @@ function SheetsApp({ close }: { close: () => void }) {
   const setCell = (r: number, c: number, value: string) => setData((grid) => grid.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)));
   const importBuffer = async (fileName: string, buffer: ArrayBuffer) => {
     try {
-      await loadScript(LIBS.xlsx);
+      await loadLibScript(LIBS.xlsx);
       const XLSX = lib("XLSX");
       const wb = XLSX.read(buffer, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -3889,7 +3889,7 @@ function SheetsApp({ close }: { close: () => void }) {
   };
   useOpenFromFiles("sheets", importBuffer);
   const workbook = async () => {
-    await loadScript(LIBS.xlsx);
+    await loadLibScript(LIBS.xlsx);
     const XLSX = lib("XLSX");
     const values = data.map((row, r) => row.map((_cell, c) => (data[r]![c]!.startsWith("=") ? "" : data[r]![c]!)));
     const ws = XLSX.utils.aoa_to_sheet(values);
@@ -3974,7 +3974,7 @@ function PdfApp({ close }: { close: () => void }) {
   const load = async (fileName: string, buffer: ArrayBuffer) => {
     try {
       setMsg("Opening…");
-      await loadScript(LIBS.pdf);
+      await loadLibScript(LIBS.pdf);
       const pdfjs = lib("pdfjsLib");
       pdfjs.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
       const pdf = await pdfjs.getDocument({ data: buffer.slice(0) }).promise;
@@ -4037,7 +4037,7 @@ const ZONES: string[] = (() => {
   return ["UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Africa/Casablanca", "Africa/Cairo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland"];
 })();
 
-function LiveTime({ zone, hour12 }: { zone?: string; hour12: boolean }) {
+function LiveTime({ zone, hour12 }: { zone?: string | undefined; hour12: boolean }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());

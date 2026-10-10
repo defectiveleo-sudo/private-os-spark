@@ -197,7 +197,7 @@ section.os-window { transition: opacity .2s cubic-bezier(.22, 1, .36, 1), transf
 .window-control, .utility-icon { display: inline-flex; width: 32px; height: 32px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 6px; }
 .window-control:hover, .utility-icon:hover, .dock-app:hover { background: var(--secondary); }
 .dock-app { transition: transform .2s cubic-bezier(.22, 1, .36, 1), background-color .15s ease; }
-.dock-app:hover { transform: translateY(-3px) scale(1.08); }
+.dock-app:hover { transform: translateY(-6px) scale(1.28); }
 .window-control:last-child:hover { background: var(--destructive); }
 .os-start-menu { border-radius: 20px; }
 .utility-layout { display: flex; flex: 1; min-height: 0; overflow: auto; }
@@ -273,3 +273,6 @@ section.os-window .rounded-2xl.border:hover { transform: translateY(-2px); box-s
 main[data-reduce] *, main[data-reduce] *::before, main[data-reduce] *::after { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; }
 main[data-native-cursor], main[data-native-cursor] * { cursor: revert !important; }
 @media (prefers-reduced-motion: reduce) { section.os-window > *, section.os-window .overflow-auto > * { animation: none !important; } }
+
+.dock-bar { box-shadow: 0 18px 50px rgb(0 0 0 / .4), 0 0 40px color-mix(in oklab, var(--primary, #f2c783) 10%, transparent), inset 0 1px 0 oklch(1 0 0 / 36%); }
+.dock-app:active { transform: translateY(-2px) scale(1.1); }

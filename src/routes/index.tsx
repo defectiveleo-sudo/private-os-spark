@@ -51,6 +51,8 @@ import {
   Palette,
   Save,
   Gamepad2,
+  Layers,
+  PanelsTopLeft,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -186,6 +188,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.4", date: "10 Oct 2026", items: ["New dock: one floating glass bar with menu, apps, pinned apps and Task view", "Right-click a dock app to open, close or pin it", "Dock page in Settings: pin, reorder, auto-hide and resize", "Ctrl+K search for apps, files and commands"] },
   { v: "1.3", date: "9 Oct 2026", items: ["Settings animations now run in every app", "New settings: glass blur and opacity, wallpaper slideshow, dock size, reduce motion, system or Mint cursors", "Backup page to export and import your setup", "About page with shortcuts and changelog"] },
   { v: "1.2", date: "9 Oct 2026", items: ["Settings center with Themes, Configs and Settings pages", "New cursor set", "Games app with your own game list", "Ambient glow, page transitions, staggered entrances and hover glow"] },
   { v: "1.1", date: "8 Oct 2026", items: ["Removed the movie HUB, PlayStation and controller cards", "New apps: Camera, Media Player and System Info", "Run dialog (Alt+R) and date in the tray", "Glassier surfaces, rounder corners and 200ms smooth motion"] },
@@ -293,6 +296,9 @@ function PrivateOS() {
   const [taskView, setTaskView] = useState(false);
   const [runOpen, setRunOpen] = useState(false);
   const [runText, setRunText] = useState("");
+  const [runIndex, setRunIndex] = useState(0);
+  const [dockShown, setDockShown] = useState(false);
+  const [dockMenu, setDockMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [battery, setBattery] = useState(100);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
@@ -491,30 +497,57 @@ function PrivateOS() {
     ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
     : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
 
-  const runCommand = () => {
-    const text = runText.trim();
-    if (!text) return;
-    const lower = text.toLowerCase();
-    const app = [...launcherApps, ...dockApps].find((item) => item.id === lower || item.label.toLowerCase() === lower);
-    setRunOpen(false);
-    setRunText("");
-    if (app) return openApp(app.id);
+  const lookupApp = (id: string) => launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
+  const dockList = [...settings.dockPins, ...openWins.filter((id) => !settings.dockPins.includes(id))].flatMap((id) => {
+    const app = lookupApp(id);
+    return app ? [{ id, app }] : [];
+  });
+  const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !launcher && !taskView && !quickMenu;
+  const hideShift = settings.dockPos === "right" ? "translateX(160%)" : settings.dockPos === "top" ? "translateY(-160%)" : "translateY(160%)";
+
+  const webSearch = (text: string) => {
     const looksLikeSite = /^[\w-]+(\.[\w-]+)+(\/|$)/.test(text);
     setBrowserStart(/^https?:\/\//i.test(text) ? text : looksLikeSite ? `https://${text}` : `https://duckduckgo.com/?q=${encodeURIComponent(text)}`);
     openApp("browser");
+  };
+  const commands: { label: string; run: () => void }[] = [
+    { label: "Lock screen", run: () => setLocked(true) },
+    { label: "Sleep", run: () => setPower("sleep") },
+    { label: "Toggle ambient glow", run: () => patchSettings((current) => ({ ambient: !current.ambient })) },
+    { label: "Toggle reduce motion", run: () => patchSettings((current) => ({ reduceMotion: !current.reduceMotion })) },
+    { label: "Toggle dock auto-hide", run: () => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide })) },
+    { label: "Reload PRIVATE OS", run: () => window.location.reload() },
+  ];
+  const spotQuery = runText.trim().toLowerCase();
+  const spotlight: { key: string; label: string; hint: string; run: () => void }[] = !runOpen
+    ? []
+    : [
+        ...launcherApps.filter((item) => !spotQuery || item.label.toLowerCase().includes(spotQuery)).slice(0, 8).map((item) => ({ key: `app-${item.id}`, label: item.label, hint: "App", run: () => openApp(item.id) })),
+        ...commands.filter((item) => spotQuery && item.label.toLowerCase().includes(spotQuery)).map((item) => ({ key: `cmd-${item.label}`, label: item.label, hint: "Command", run: item.run })),
+        ...(spotQuery.length >= 2
+          ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: "File", run: () => { try { localStorage.setItem("pos-note-path", path); } catch { /* ignore */ } window.dispatchEvent(new Event("pos-note")); openApp("notes"); } }))
+          : []),
+        ...(spotQuery ? [{ key: "web", label: `Search the web for “${runText.trim()}”`, hint: "Web", run: () => webSearch(runText.trim()) }] : []),
+      ];
+  const runSpotlight = (hit?: { run: () => void }) => {
+    if (!hit) return;
+    setRunOpen(false);
+    setRunText("");
+    setRunIndex(0);
+    hit.run();
   };
 
   const menuItems: { label: string; action: () => void; icon: ReactNode }[] = [
     { label: "Adjust Wallpaper", action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
     { label: "Expand Icons", action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
     { label: "Standard Icons", action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
-    { label: "Run… (Alt+R)", action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
+    { label: "Search… (Ctrl+K)", action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
     { label: "Reload", action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
   ];
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.altKey && event.code === "KeyR") {
+      if ((event.altKey && event.code === "KeyR") || ((event.ctrlKey || event.metaKey) && event.code === "KeyK")) {
         event.preventDefault();
         setRunOpen((value) => !value);
         return;
@@ -581,7 +614,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
           <Wallpaper index={wallpaper} options={allWalls} />
@@ -596,7 +629,8 @@ function PrivateOS() {
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
 
-      <div style={{ zoom: settings.dockScale / 100 }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
+      {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed z-30 ${settings.dockPos === "right" ? "inset-y-0 right-0 w-3" : settings.dockPos === "top" ? "inset-x-0 top-0 h-3" : "inset-x-0 bottom-0 h-3"}`} />}
+      <div onMouseEnter={() => setDockShown(true)} onMouseLeave={() => setDockShown(false)} style={{ zoom: settings.dockScale / 100, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? hideShift : undefined }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
           role="separator"
           aria-label="Drag to move the dock to another edge"
@@ -608,9 +642,9 @@ function PrivateOS() {
           }}
           className={`absolute cursor-grab touch-none rounded-full bg-white/50 ${settings.dockPos === "right" ? "-left-2.5 top-1/2 h-8 w-1 -translate-y-1/2" : settings.dockPos === "top" ? "-bottom-2 left-1/2 h-1 w-8 -translate-x-1/2" : "-top-2 left-1/2 h-1 w-8 -translate-x-1/2"}`}
         />
-        <nav aria-label="PRIVATE OS dock" className={`dock-glass flex items-center gap-1 rounded-2xl px-2 py-1 md:gap-1.5 md:px-3 ${settings.dockPos === "right" ? "flex-col" : ""}`}>
+        <nav aria-label="PRIVATE OS dock" className={`dock-bar dock-glass flex items-center gap-3.5 rounded-2xl px-4 py-2.5 ${settings.dockPos === "right" ? "flex-col" : ""}`}>
           <span data-start id="start-anchor" className="inline-flex">
-            <OsButton label="PRIVATE OS menu (lock, sleep, power)" onClick={() => {
+            <OsButton label="Menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
               if (anchor) {
                 const box = anchor.getBoundingClientRect();
@@ -620,23 +654,34 @@ function PrivateOS() {
               setStartMenu((value) => !value);
               setLauncher(false);
               setQuickMenu(false);
-            }} className="group relative size-8 shrink-0 rounded-lg bg-white/10 transition-transform hover:-translate-y-0.5 hover:bg-white/20 md:size-9">
-              <ShieldCheck className="size-5 text-[#f2c783] md:size-6" />
-              <span className="absolute bottom-12 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">PRIVATE OS</span>
+            }} className="dock-app group relative size-7 shrink-0 rounded-lg">
+              <Layers className="size-6 text-white" />
+              <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Menu</span>
             </OsButton>
           </span>
-          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="size-7 shrink-0 rounded-lg hover:bg-white/10 md:size-8"><LayoutGrid className="size-4 text-white md:size-5" /></OsButton>
-          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="group relative size-6 shrink-0 transition-transform hover:-translate-y-0.5 md:size-7">
-            <LayoutGrid className="size-4 text-white/70" />
-            <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
+          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="dock-app group relative size-7 shrink-0 rounded-lg">
+            <LayoutGrid className="size-5 text-white/80" />
+            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
           </OsButton>
-          {dockApps.map(({ id, label, icon: Icon }) => (
-            <OsButton key={id} label={label} onClick={() => openWins.includes(id) && !minWins.includes(id) && zOrder[zOrder.length - 1] === id ? setMinWins(list => [...list, id]) : openApp(id)} className="dock-app group relative size-8 shrink-0 rounded-md transition-transform hover:-translate-y-0.5 md:size-10">
-              <Icon className={settings.bigIcons ? "size-7 md:size-8" : "size-6 md:size-8"} />
-              <span className="absolute bottom-9 left-0 z-50 hidden whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{label}</span>
-              {openWins.includes(id) && <span className="absolute -bottom-1 size-1 rounded-full bg-white" />}
-            </OsButton>
-          ))}
+          {dockList.map(({ id, app }) => {
+            const Icon = app.icon;
+            const open = openWins.includes(id);
+            const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
+            return (
+              <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
+                <OsButton label={app.label} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className="dock-app group relative size-7 shrink-0 rounded-lg md:size-8">
+                  <Icon className={settings.bigIcons ? "size-8 md:size-9" : "size-7 md:size-8"} />
+                  <span className="absolute bottom-11 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{app.label}</span>
+                  {open && <span className={`absolute -bottom-2 left-1/2 size-1 -translate-x-1/2 rounded-full ${focused ? "bg-white" : "bg-white/50"}`} />}
+                </OsButton>
+              </span>
+            );
+          })}
+          <span aria-hidden className={`bg-white/15 ${settings.dockPos === "right" ? "h-px w-5" : "h-5 w-px"}`} />
+          <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="dock-app group relative size-7 shrink-0 rounded-lg">
+            <PanelsTopLeft className="size-5 text-white/80" />
+            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Task view</span>
+          </OsButton>
         </nav>
 
         <div className={`dock-glass flex h-9 items-center gap-2 rounded-2xl px-2.5 text-xs font-medium tabular-nums text-white md:h-10 md:gap-3 md:px-3 ${settings.dockPos === "right" ? "hidden" : ""}`}>
@@ -761,18 +806,53 @@ function PrivateOS() {
       )}
 
       {runOpen && (
-        <div onClick={() => setRunOpen(false)} className="absolute inset-0 z-[46] flex items-end justify-center bg-black/30 pb-24 backdrop-blur-sm">
-          <form onClick={(event) => event.stopPropagation()} onSubmit={(event) => { event.preventDefault(); runCommand(); }} className="glass-panel w-[min(28rem,calc(100%-1.5rem))] rounded-2xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
-            <p className="text-xs font-semibold">Run</p>
-            <p className="mt-1 text-[11px] text-muted-foreground">Type an app name, a website or a search.</p>
-            <input autoFocus value={runText} onChange={(event) => setRunText(event.target.value)} aria-label="Run command" placeholder="e.g. notes, weather, youtube.com" className="utility-input mt-3" />
-            <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setRunOpen(false)} className="rounded-md bg-secondary px-3 py-1.5 text-xs">Cancel</button>
-              <button type="submit" className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Open</button>
+        <div onClick={() => setRunOpen(false)} className="absolute inset-0 z-[46] flex items-start justify-center bg-black/30 px-3 pt-[14dvh] backdrop-blur-sm">
+          <div onClick={(event) => event.stopPropagation()} className="glass-panel w-[min(34rem,100%)] overflow-hidden rounded-3xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
+            <div className="flex items-center gap-3 border-b border-white/10 px-4">
+              <Search className="size-4 text-white/60" />
+              <input
+                autoFocus
+                value={runText}
+                aria-label="Search"
+                placeholder="Search apps, files and commands..."
+                onChange={(event) => { setRunText(event.target.value); setRunIndex(0); }}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown") { event.preventDefault(); setRunIndex((value) => Math.min(value + 1, spotlight.length - 1)); }
+                  else if (event.key === "ArrowUp") { event.preventDefault(); setRunIndex((value) => Math.max(value - 1, 0)); }
+                  else if (event.key === "Enter") { event.preventDefault(); runSpotlight(spotlight[runIndex]); }
+                }}
+                className="h-12 w-full bg-transparent text-sm outline-none"
+              />
             </div>
-          </form>
+            <ul className="stagger max-h-[50dvh] overflow-auto p-1.5">
+              {spotlight.map((hit, index) => (
+                <li key={hit.key}>
+                  <button type="button" onClick={() => runSpotlight(hit)} onMouseEnter={() => setRunIndex(index)} className={`flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left text-xs ${index === runIndex ? "bg-primary/20" : ""}`}>
+                    <span className="truncate font-medium">{hit.label}</span>
+                    <span className="shrink-0 text-[10px] text-white/50">{hit.hint}</span>
+                  </button>
+                </li>
+              ))}
+              {spotlight.length === 0 && <li className="p-4 text-center text-xs text-white/50">No results</li>}
+            </ul>
+          </div>
         </div>
       )}
+
+      {dockMenu && (() => {
+        const app = lookupApp(dockMenu.id);
+        const open = openWins.includes(dockMenu.id);
+        const pinned = settings.dockPins.includes(dockMenu.id);
+        const item = "block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10";
+        return (
+          <div role="menu" onClick={(event) => event.stopPropagation()} style={{ left: Math.max(8, Math.min(dockMenu.x - 80, window.innerWidth - 184)), ...(settings.dockPos === "top" ? { top: dockMenu.y + 16 } : { bottom: window.innerHeight - dockMenu.y + 12 }) }} className="soft-glass fixed z-50 w-44 rounded-2xl p-1.5 text-[11px] text-white [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+            <p className="px-3 py-1.5 text-[10px] font-semibold text-white/50">{app?.label}</p>
+            <button type="button" role="menuitem" className={item} onClick={() => { openApp(dockMenu.id); setDockMenu(null); }}>Open</button>
+            {open && <button type="button" role="menuitem" className={item} onClick={() => { closeWindow(dockMenu.id); setDockMenu(null); }}>Close window</button>}
+            <button type="button" role="menuitem" className={item} onClick={() => { patchSettings((current) => ({ dockPins: current.dockPins.includes(dockMenu.id) ? current.dockPins.filter((entry) => entry !== dockMenu.id) : [...current.dockPins, dockMenu.id] })); setDockMenu(null); }}>{pinned ? "Unpin from dock" : "Pin to dock"}</button>
+          </div>
+        );
+      })()}
 
       {power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
@@ -2051,8 +2131,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0 };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2621,6 +2701,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     { id: "widgets", label: "Widgets", sub: "Desktop widgets", icon: LayoutGrid, title: "Widgets", heading: "Add things to your desktop" },
     { id: "network", label: "Network", sub: "Proxy servers", icon: Wifi, title: "Network", heading: "Proxy and privacy" },
     { id: "settings", label: "Settings", sub: "Customize your OS", icon: Settings, title: "Settings", heading: "Customize your OS" },
+    { id: "dock", label: "Dock", sub: "Pinned apps and behaviour", icon: Layers, title: "Dock", heading: "Pin, reorder and hide" },
     { id: "backup", label: "Backup", sub: "Export and import", icon: Download, title: "Backup", heading: "Move your setup between browsers" },
     { id: "about", label: "About", sub: "Version and changelog", icon: Info, title: "About", heading: "What this OS is and what's new" },
   ];
@@ -2849,6 +2930,46 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "network" && <NetworkPrivacy />}
 
+          {page === "dock" && (
+            <div className="stagger space-y-4">
+              <CfgCard title="Behaviour">
+                <CfgRow title="Auto-hide" sub="Slides away until you move to the screen edge"><Switch on={settings.dockAutoHide} label="Auto-hide the dock" onChange={(value) => patch({ dockAutoHide: value })} /></CfgRow>
+                <CfgRow title="Position" sub="Or drag the handle above the dock">
+                  <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
+                </CfgRow>
+                <CfgSlider label="Dock size" value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
+                <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
+              </CfgCard>
+              <CfgCard title="Pinned apps">
+                {settings.dockPins.map((id, index) => {
+                  const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
+                  if (!app) return null;
+                  const Icon = app.icon;
+                  const move = (delta: number) => {
+                    const next = [...settings.dockPins];
+                    const target = index + delta;
+                    if (target < 0 || target >= next.length) return;
+                    [next[index], next[target]] = [next[target]!, next[index]!];
+                    patch({ dockPins: next });
+                  };
+                  return (
+                    <div key={id} className="flex items-center gap-3">
+                      <Icon className="size-8 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{app.label}</span>
+                      <button type="button" aria-label={`Move ${app.label} left`} disabled={index === 0} onClick={() => move(-1)} className={`${btn} bg-white/10`}>↑</button>
+                      <button type="button" aria-label={`Move ${app.label} right`} disabled={index === settings.dockPins.length - 1} onClick={() => move(1)} className={`${btn} bg-white/10`}>↓</button>
+                      <button type="button" onClick={() => patch({ dockPins: settings.dockPins.filter((entry) => entry !== id) })} className={`${btn} bg-white/10`}>Unpin</button>
+                    </div>
+                  );
+                })}
+                <select aria-label="Pin an app" value="" onChange={(event) => { if (event.target.value) patch({ dockPins: [...settings.dockPins, event.target.value] }); }} className="w-full rounded-md bg-white/10 px-2 py-2 text-xs">
+                  <option value="">Pin another app…</option>
+                  {launcherApps.filter((item) => !settings.dockPins.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                </select>
+              </CfgCard>
+            </div>
+          )}
+
           {page === "backup" && (
             <div className="stagger space-y-4">
               <CfgCard title="Backup">
@@ -2869,7 +2990,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 <CfgRow title="Data">Stored only in this browser</CfgRow>
               </CfgCard>
               <CfgCard title="Keyboard shortcuts">
-                {([["Alt + R", "Run dialog"], ["Alt + W", "Task view"], ["Alt + L", "Lock"], ["Ctrl + Space", "App launcher"], ["Alt + Arrows", "Snap, maximize or minimize a window"], ["Esc", "Close overlays"]] as const).map(([keys, what]) => (
+                {([["Ctrl + K", "Search apps, files and commands"], ["Alt + W", "Task view"], ["Alt + L", "Lock"], ["Ctrl + Space", "App launcher"], ["Alt + Arrows", "Snap, maximize or minimize a window"], ["Esc", "Close overlays"]] as const).map(([keys, what]) => (
                   <CfgRow key={keys} title={what}><kbd className="rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold">{keys}</kbd></CfgRow>
                 ))}
               </CfgCard>
@@ -2881,7 +3002,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
                 <CfgCard title="General">
-                  <CfgRow title="Run key" sub="Opens the Run dialog"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Alt + R</kbd></CfgRow>
+                  <CfgRow title="Search key" sub="Search apps, files and commands"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Ctrl + K</kbd></CfgRow>
                   <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
                   <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
                   <CfgRow title="Desktop icons" sub="Show app shortcuts on the desktop"><Switch on={settings.showIcons} label="Desktop icons" onChange={(value) => patch({ showIcons: value })} /></CfgRow>

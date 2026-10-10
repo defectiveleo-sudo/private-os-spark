@@ -291,3 +291,13 @@ main[data-ctl="compact"] .win-ctl { width: 26px; height: 22px; border-radius: 6p
 main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px; }
 .window-titlebar { min-height: 38px; }
 .win-ctl.win-close { margin-left: 4px; }
+
+/* document pages (Writer) */
+.doc-page h1 { font-size: 2rem; font-weight: 700; margin: .6em 0; }
+.doc-page h2 { font-size: 1.5rem; font-weight: 700; margin: .6em 0; }
+.doc-page ul { list-style: disc; padding-left: 1.5rem; }
+.doc-page ol { list-style: decimal; padding-left: 1.5rem; }
+.doc-page p { margin: .4em 0; }
+.doc-page a { color: #2563eb; text-decoration: underline; }
+.doc-page table { border-collapse: collapse; }
+.doc-page td, .doc-page th { border: 1px solid #bbb; padding: 4px 8px; }

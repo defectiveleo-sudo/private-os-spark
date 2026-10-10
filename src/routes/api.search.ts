@@ -97,6 +97,25 @@ async function bing(q: string): Promise<Hit[]> {
   return hits;
 }
 
+async function mojeek(q: string): Promise<Hit[]> {
+  const res = await fetch(`https://www.mojeek.com/search?q=${encodeURIComponent(q)}`, { headers: { "user-agent": UA, "accept-language": "en-US,en;q=0.9" }, signal: AbortSignal.timeout(9000) });
+  const html = await res.text();
+  const anchors = [...html.matchAll(/<a[^>]*class="[^"]*title[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g), ...html.matchAll(/<a[^>]*href="([^"]+)"[^>]*class="[^"]*title[^"]*"[^>]*>([\s\S]*?)<\/a>/g)];
+  const hits: Hit[] = [];
+  anchors.forEach((m, i) => {
+    const chunk = html.slice(m.index ?? 0, anchors[i + 1]?.index ?? html.length);
+    const snippet = /<p class="s"[^>]*>([\s\S]*?)<\/p>/.exec(chunk);
+    if (ok(m[1]!)) hits.push({ title: clean(m[2]!), url: m[1]!.replace(/&amp;/g, "&"), snippet: snippet ? clean(snippet[1]!) : "" });
+  });
+  return hits;
+}
+
+async function wikipedia(q: string): Promise<Hit[]> {
+  const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&format=json&srlimit=10`, { headers: { "user-agent": UA }, signal: AbortSignal.timeout(9000) });
+  const data = (await res.json()) as { query?: { search?: { title: string; snippet: string; pageid: number }[] } };
+  return (data.query?.search ?? []).map((item) => ({ title: item.title, url: `https://en.wikipedia.org/?curid=${item.pageid}`, snippet: clean(item.snippet) }));
+}
+
 export const Route = createFileRoute("/api/search")({
   server: {
     handlers: {
@@ -104,15 +123,17 @@ export const Route = createFileRoute("/api/search")({
         const q = new URL(request.url).searchParams.get("q")?.trim().slice(0, 300) ?? "";
         const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
         if (!q) return new Response(JSON.stringify({ hits: [] }), { headers });
-        for (const [engine, run] of [["duckduckgo", ddgHtml], ["duckduckgo-lite", ddgLite], ["bing", bing]] as const) {
+        const errors: string[] = [];
+        for (const [engine, run] of [["duckduckgo", ddgHtml], ["duckduckgo-lite", ddgLite], ["bing", bing], ["mojeek", mojeek], ["wikipedia", wikipedia]] as const) {
           try {
             const hits = (await run(q)).slice(0, 12);
             if (hits.length > 0) return new Response(JSON.stringify({ engine, hits }), { headers });
-          } catch {
-            // try the next engine
+            errors.push(`${engine}: no results`);
+          } catch (error) {
+            errors.push(`${engine}: ${error instanceof Error ? error.message : "failed"}`);
           }
         }
-        return new Response(JSON.stringify({ hits: [] }), { headers });
+        return new Response(JSON.stringify({ hits: [], errors }), { headers });
       },
     },
   },

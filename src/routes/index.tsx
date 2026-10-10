@@ -59,6 +59,7 @@ import {
   Ruler,
   KeyRound,
   Mic,
+  Globe,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -192,8 +193,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "1.0";
+const OS_VERSION = "1.8";
 const CHANGELOG = [
+  { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
   { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
   { v: "1.6", date: "10 Oct 2026", items: ["Slim window title bar: app icon, back and forward arrows, title, and tiny minimize, expand and close buttons"] },
   { v: "1.5", date: "10 Oct 2026", items: ["Drag a window to the top edge to expand it, with a preview and a smooth glide", "Pull a maximized window down by its title bar to restore it", "Easier snap zones on the screen edges"] },
@@ -264,7 +266,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
+launcherApps.push(...linkLauncher, { id: "writer", label: "Writer", icon: WriterIcon }, { id: "sheets", label: "Sheets", icon: SheetsIcon }, { id: "slides", label: "Slides", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -278,7 +280,8 @@ const wallpaperOptions: WallpaperOption[] = [
 // time-zone rules (UTC+1), so those zones are pinned to the real offset.
 const MOROCCO_GMT_FROM = Date.UTC(2026, 8, 20, 1, 0, 0);
 
-function clockZone(date: Date) {
+function clockZone(date: Date, override = "") {
+  if (override) return override;
   let zone = "UTC";
   try {
     zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -361,7 +364,7 @@ function PrivateOS() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, locked]);
 
-  const zone = clockZone(time);
+  const zone = clockZone(time, settings.timeZone);
   const dateLabel = useMemo(
     () => time.toLocaleDateString("en-US", { weekday: "long", timeZone: zone }).toUpperCase(),
     [time, zone],
@@ -542,7 +545,7 @@ function PrivateOS() {
 
   const webSearch = (text: string) => {
     const looksLikeSite = /^[\w-]+(\.[\w-]+)+(\/|$)/.test(text);
-    setBrowserStart(/^https?:\/\//i.test(text) ? text : looksLikeSite ? `https://${text}` : `https://duckduckgo.com/?q=${encodeURIComponent(text)}`);
+    setBrowserStart(/^https?:\/\//i.test(text) ? text : looksLikeSite ? `https://${text}` : `search:${encodeURIComponent(text)}`);
     openApp("browser");
   };
   const commands: { label: string; run: () => void }[] = [
@@ -560,7 +563,7 @@ function PrivateOS() {
         ...launcherApps.filter((item) => !spotQuery || item.label.toLowerCase().includes(spotQuery)).slice(0, 8).map((item) => ({ key: `app-${item.id}`, label: item.label, hint: "App", run: () => openApp(item.id) })),
         ...commands.filter((item) => spotQuery && item.label.toLowerCase().includes(spotQuery)).map((item) => ({ key: `cmd-${item.label}`, label: item.label, hint: "Command", run: item.run })),
         ...(spotQuery.length >= 2
-          ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: "File", run: () => { try { localStorage.setItem("pos-note-path", path); } catch { /* ignore */ } window.dispatchEvent(new Event("pos-note")); openApp("notes"); } }))
+          ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: "File", run: () => openPathInApp(path, openApp) }))
           : []),
         ...(spotQuery ? [{ key: "web", label: `Search the web for “${runText.trim()}”`, hint: "Web", run: () => webSearch(runText.trim()) }] : []),
       ];
@@ -641,6 +644,10 @@ function PrivateOS() {
       case "convert": return <ConvertApp close={close} />;
       case "passwords": return <PasswordApp close={close} />;
       case "recorder": return <RecorderApp close={close} />;
+      case "writer": return <WriterApp close={close} />;
+      case "sheets": return <SheetsApp close={close} />;
+      case "slides": return <SlidesApp close={close} />;
+      case "pdfreader": return <PdfApp close={close} />;
       case "games": return <GamesApp close={close} launch={(url) => { setBrowserStart(url); openApp("browser"); }} />;
       case "camera": return <CameraApp close={close} />;
       case "media": return <MediaApp close={close} />;
@@ -1627,12 +1634,14 @@ function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; clos
 }
 
 function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active: boolean }) {
-  const [address, setAddress] = useState(initialUrl ?? "");
-  const [nav, setNav] = useState<{ list: string[]; index: number }>({ list: initialUrl ? [initialUrl] : [], index: initialUrl ? 0 : -1 });
-  const [frameTarget, setFrameTarget] = useState<string | null>(initialUrl);
+  const searchStart = initialUrl?.startsWith("search:") ? decodeURIComponent(initialUrl.slice(7)) : null;
+  const startUrl = searchStart ? null : initialUrl;
+  const [address, setAddress] = useState(startUrl ?? "");
+  const [nav, setNav] = useState<{ list: string[]; index: number }>({ list: startUrl ? [startUrl] : [], index: startUrl ? 0 : -1 });
+  const [frameTarget, setFrameTarget] = useState<string | null>(startUrl);
   const [frameKey, setFrameKey] = useState(0);
-  const [loading, setLoading] = useState(Boolean(initialUrl));
-  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean } | null>(null);
+  const [loading, setLoading] = useState(Boolean(startUrl));
+  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean; note?: string } | null>(null);
   const [engine, setEngine] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const frameRef = useRef<HTMLIFrameElement>(null);
   const controllerRef = useRef<EngineController | null>(null);
@@ -1708,11 +1717,25 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
   const runSearch = (query: string) => {
     setAddress(query);
     setResults({ query, hits: null, error: false });
+    const show = (hits: SearchHit[], note?: string) => setResults((current) => (current && current.query === query ? { query, hits, error: hits.length === 0, note } : current));
+    const wiki = () =>
+      fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&format=json&srlimit=10&origin=*`)
+        .then((response) => response.json() as Promise<{ query?: { search?: { title: string; snippet: string; pageid: number }[] } }>)
+        .then((data) => (data.query?.search ?? []).map((item) => ({ title: item.title, url: `https://en.wikipedia.org/?curid=${item.pageid}`, snippet: item.snippet.replace(/<[^>]+>/g, "").replace(/&quot;/g, '"').replace(/&amp;/g, "&") })));
+    const fallback = "Web engines weren't reachable, so these results come from Wikipedia.";
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
-      .then((response) => response.json() as Promise<{ hits?: SearchHit[] }>)
-      .then((data) => setResults((current) => (current && current.query === query ? { query, hits: data.hits ?? [], error: !data.hits?.length } : current)))
-      .catch(() => setResults((current) => (current && current.query === query ? { query, hits: [], error: true } : current)));
+      .then((response) => response.json() as Promise<{ hits?: SearchHit[]; engine?: string }>)
+      .then(async (data) => {
+        if (data.hits?.length) return show(data.hits, data.engine ? `Results from ${data.engine}` : undefined);
+        show(await wiki(), fallback);
+      })
+      .catch(() => { wiki().then((hits) => show(hits, fallback)).catch(() => show([])); });
   };
+
+  useEffect(() => {
+    if (searchStart) runSearch(searchStart);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const navigateTo = (value: string) => {
     const clean = value.trim();
@@ -1751,6 +1774,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
           <div className="absolute inset-0 z-20 overflow-auto bg-background p-4">
             <div className="mx-auto max-w-2xl">
               <p className="text-xs text-muted-foreground">Results for “{results.query}”</p>
+              {results.note && <p className="mt-1 text-[11px] text-muted-foreground/80">{results.note}</p>}
               {results.hits === null && <p className="mt-6 text-sm">Searching…</p>}
               {results.error && (
                 <p className="mt-6 text-sm">
@@ -1775,10 +1799,10 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
             <div className="flex size-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xl"><ShieldCheck className="size-8" /></div>
             <h2 className="mt-5 text-2xl font-semibold">Browse without being followed.</h2>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">Search privately or open a website directly. Use the external-open button when a site does not allow an embedded view.</p>
-            <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="mt-6 flex w-full max-w-lg items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 shrink-0 text-muted-foreground" /><input aria-label="Search DuckDuckGo or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or enter address" className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" /></form>
+            <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="mt-6 flex w-full max-w-lg items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 shrink-0 text-muted-foreground" /><input id="home-search" aria-label="Search DuckDuckGo or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or enter address" className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" /></form>
             <div className="mt-3 grid w-full max-w-lg grid-cols-2 gap-2">
               <OsButton label="Open Cherrion" onClick={() => navigateTo(CHERRION_URL)} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><Cherry className="size-5" /></span><span><strong className="block text-xs">Cherrion</strong><span className="text-[10px] text-muted-foreground">Recommended app</span></span></OsButton>
-              <OsButton label="Search with DuckDuckGo" onClick={() => { setAddress("https://html.duckduckgo.com/html/"); navigateTo("https://html.duckduckgo.com/html/"); }} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">DuckDuckGo</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
+              <OsButton label="Search with DuckDuckGo" onClick={() => document.getElementById("home-search")?.focus()} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">DuckDuckGo</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
             </div>
             <div className="mt-8 grid w-full max-w-lg grid-cols-3 gap-2">
               {["Private search", "Block trackers", "Clear session"].map((text, index) => <div key={text} className="rounded-md border border-border bg-card p-3 text-xs"><span className="mb-2 block text-primary">{index === 0 ? <Search className="mx-auto size-5" /> : index === 1 ? <ShieldCheck className="mx-auto size-5" /> : <Sparkles className="mx-auto size-5" />}</span>{text}</div>)}
@@ -1924,13 +1948,7 @@ function FilesWindow({ close, open }: { close: () => void; open: (id: string) =>
                 className="flex min-w-0 flex-1 items-center gap-3 text-left text-sm"
                 onClick={() => {
                   if (folder) return setDir(path);
-                  try {
-                    localStorage.setItem("pos-note-path", path);
-                  } catch {
-                    // storage unavailable
-                  }
-                  window.dispatchEvent(new Event("pos-note"));
-                  open("notes");
+                  openPathInApp(path, open);
                 }}
               >
                 {folder ? <Folder className="size-4 shrink-0 text-primary" /> : <StickyNote className="size-4 shrink-0 text-muted-foreground" />}
@@ -2232,8 +2250,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2809,6 +2827,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     { id: "widgets", label: "Widgets", sub: "Desktop widgets", icon: LayoutGrid, title: "Widgets", heading: "Add things to your desktop" },
     { id: "network", label: "Network", sub: "Proxy servers", icon: Wifi, title: "Network", heading: "Proxy and privacy" },
     { id: "settings", label: "Settings", sub: "Customize your OS", icon: Settings, title: "Settings", heading: "Customize your OS" },
+    { id: "time", label: "Date & time", sub: "Time zone and clocks", icon: Globe, title: "Date & time", heading: "Time zone, world clocks and format" },
     { id: "dock", label: "Dock", sub: "Pinned apps and behaviour", icon: Layers, title: "Dock", heading: "Pin, reorder and hide" },
     { id: "backup", label: "Backup", sub: "Export and import", icon: Download, title: "Backup", heading: "Move your setup between browsers" },
     { id: "about", label: "About", sub: "Version and changelog", icon: Info, title: "About", heading: "What this OS is and what's new" },
@@ -3037,6 +3056,32 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           )}
 
           {page === "network" && <NetworkPrivacy />}
+
+          {page === "time" && (
+            <div className="stagger space-y-4">
+              <CfgCard title="Time zone">
+                <CfgRow title="Current time" sub={settings.timeZone || "Automatic (this device)"}><LiveTime zone={settings.timeZone || undefined} hour12={!settings.clock24} /></CfgRow>
+                <select aria-label="Time zone" value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="w-full rounded-md bg-white/10 px-2 py-2 text-xs">
+                  <option value="">Automatic (this device)</option>
+                  {ZONES.map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
+                </select>
+                <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
+                <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
+              </CfgCard>
+              <CfgCard title="World clocks">
+                {settings.worldClocks.length === 0 && <p className="text-xs text-muted-foreground">Add cities to see their time here.</p>}
+                {settings.worldClocks.map((zone) => (
+                  <CfgRow key={zone} title={(zone.split("/").pop() ?? zone).replace(/_/g, " ")} sub={zone}>
+                    <span className="flex items-center gap-2"><LiveTime zone={zone} hour12={!settings.clock24} /><button type="button" aria-label={`Remove ${zone}`} onClick={() => patch({ worldClocks: settings.worldClocks.filter((item) => item !== zone) })} className={`${btn} bg-white/10`}>Remove</button></span>
+                  </CfgRow>
+                ))}
+                <select aria-label="Add a world clock" value="" onChange={(event) => { if (event.target.value) patch({ worldClocks: [...settings.worldClocks, event.target.value] }); }} className="w-full rounded-md bg-white/10 px-2 py-2 text-xs">
+                  <option value="">Add a city…</option>
+                  {ZONES.filter((zone) => !settings.worldClocks.includes(zone)).map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
+                </select>
+              </CfgCard>
+            </div>
+          )}
 
           {page === "dock" && (
             <div className="stagger space-y-4">
@@ -3449,4 +3494,562 @@ function RecorderApp({ close }: { close: () => void }) {
       </div>
     </WindowFrame>
   );
+}
+
+// ---------- Office-style apps (Writer, Slides, Sheets, PDF Reader) ----------
+const LIBS = {
+  xlsx: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js",
+  mammoth: "https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js",
+  pptx: "https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js",
+  jszip: "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js",
+  pdf: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+  pdfWorker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
+};
+const scriptCache = new Map<string, Promise<void>>();
+function loadScript(src: string) {
+  let task = scriptCache.get(src);
+  if (!task) {
+    task = new Promise<void>((resolve, reject) => {
+      const el = document.createElement("script");
+      el.src = src;
+      el.async = true;
+      el.onload = () => resolve();
+      el.onerror = () => {
+        scriptCache.delete(src);
+        reject(new Error("Couldn't load a file-format helper. Check your connection."));
+      };
+      document.head.appendChild(el);
+    });
+    scriptCache.set(src, task);
+  }
+  return task;
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lib = (name: string): any => (window as unknown as Record<string, any>)[name];
+
+function appForFile(path: string) {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = { doc: "writer", docx: "writer", html: "writer", htm: "writer", xlsx: "sheets", xls: "sheets", csv: "sheets", pptx: "slides", pdf: "pdfreader" };
+  return map[ext] ?? "notes";
+}
+
+function openPathInApp(path: string, openApp: (id: string) => void) {
+  const target = appForFile(path);
+  try {
+    localStorage.setItem(target === "notes" ? "pos-note-path" : "pos-open", path);
+  } catch {
+    // storage unavailable
+  }
+  window.dispatchEvent(new Event(target === "notes" ? "pos-note" : "pos-open"));
+  openApp(target);
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function saveToFiles(name: string, blob: Blob) {
+  const url = await blobToDataUrl(blob);
+  const fs = { ...readFs() };
+  if (!("/Documents" in fs)) fs["/Documents"] = null;
+  fs[`/Documents/${name}`] = url;
+  const ok = writeFs(fs);
+  if (!ok) window.alert("Browser storage is full, so this file couldn't be saved. Use Download instead.");
+  return ok;
+}
+
+function downloadBlob(name: string, blob: Blob) {
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = name;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1500);
+}
+
+// Lets Files / search open a document straight into the right app.
+function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffer) => void) {
+  const callback = useRef(onLoad);
+  callback.current = onLoad;
+  useEffect(() => {
+    const pull = async () => {
+      let path: string | null = null;
+      try {
+        path = localStorage.getItem("pos-open");
+      } catch {
+        // storage unavailable
+      }
+      if (!path || appForFile(path) !== appId) return;
+      try {
+        localStorage.removeItem("pos-open");
+      } catch {
+        // storage unavailable
+      }
+      const value = readFs()[path];
+      if (typeof value !== "string") return;
+      const data = value.startsWith("data:") ? await (await fetch(value)).arrayBuffer() : (new TextEncoder().encode(value).buffer as ArrayBuffer);
+      callback.current(path.slice(path.lastIndexOf("/") + 1), data);
+    };
+    void pull();
+    window.addEventListener("pos-open", pull);
+    return () => window.removeEventListener("pos-open", pull);
+  }, [appId]);
+}
+
+const WriterIcon: IconComponent = ({ className }) => <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>;
+const SlidesIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>;
+const SheetsIcon: IconComponent = ({ className }) => <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>;
+const PdfIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>;
+
+const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
+const tbPrimary = "rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground";
+
+function WriterApp({ close }: { close: () => void }) {
+  const page = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const [name, setName] = useState("Untitled");
+  const [words, setWords] = useState(0);
+  const [msg, setMsg] = useState("");
+  const count = () => setWords(page.current?.innerText.trim().split(/\s+/).filter(Boolean).length ?? 0);
+  const cmd = (command: string, value?: string) => {
+    page.current?.focus();
+    document.execCommand(command, false, value);
+    count();
+  };
+  const loadBuffer = async (fileName: string, buffer: ArrayBuffer) => {
+    try {
+      let html: string;
+      if (/\.docx$/i.test(fileName)) {
+        await loadScript(LIBS.mammoth);
+        html = (await lib("mammoth").convertToHtml({ arrayBuffer: buffer })).value as string;
+      } else {
+        const text = new TextDecoder().decode(buffer);
+        html = /\.html?$|\.doc$/i.test(fileName) ? (/<body[^>]*>([\s\S]*)<\/body>/i.exec(text)?.[1] ?? text) : `<p>${text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/\n/g, "</p><p>")}</p>`;
+      }
+      if (page.current) page.current.innerHTML = html || "<p><br></p>";
+      setName(fileName.replace(/\.[^.]+$/, ""));
+      setMsg(`Opened ${fileName}`);
+      count();
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
+    }
+  };
+  useOpenFromFiles("writer", loadBuffer);
+  const html = () => page.current?.innerHTML ?? "";
+  const docBlob = () => new Blob([`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${name}</title></head><body style="font-family:Calibri,Arial,sans-serif">${html()}</body></html>`], { type: "application/msword" });
+  const print = () => {
+    const win = window.open("", "_blank");
+    if (!win) return setMsg("Allow pop-ups to save as PDF.");
+    win.document.write(`<title>${name}</title><body style="font-family:Calibri,Arial,sans-serif;max-width:800px;margin:40px auto;line-height:1.5">${html()}</body>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+  const keep = (event: React.MouseEvent) => event.preventDefault();
+  return (
+    <WindowFrame title={`Writer – ${name}`} icon={WriterIcon} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
+        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
+        <button type="button" className={tbBtn} onClick={() => void saveToFiles(`${name}.doc`, docBlob()).then((ok) => ok && setMsg(`Saved ${name}.doc to Documents`))}>Save</button>
+        <button type="button" className={tbBtn} onClick={() => downloadBlob(`${name}.doc`, docBlob())}>Download .doc</button>
+        <button type="button" className={tbBtn} onClick={print}>PDF</button>
+        <input ref={input} type="file" accept=".docx,.doc,.html,.htm,.txt" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => loadBuffer(file.name, buffer)); event.target.value = ""; }} />
+        <span className="mx-1 h-5 w-px bg-white/15" />
+        <button type="button" className={`${tbBtn} font-black`} onMouseDown={keep} onClick={() => cmd("bold")}>B</button>
+        <button type="button" className={`${tbBtn} italic`} onMouseDown={keep} onClick={() => cmd("italic")}>I</button>
+        <button type="button" className={`${tbBtn} underline`} onMouseDown={keep} onClick={() => cmd("underline")}>U</button>
+        <select aria-label="Style" defaultValue="p" onChange={(event) => cmd("formatBlock", event.target.value)} className="rounded-lg bg-white/10 px-2 py-1.5 text-[11px]"><option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option></select>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("insertUnorderedList")}>• List</button>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("insertOrderedList")}>1. List</button>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyLeft")}>Left</button>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyCenter")}>Center</button>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyRight")}>Right</button>
+        <input type="color" aria-label="Text colour" defaultValue="#111111" onChange={(event) => cmd("foreColor", event.target.value)} className="h-7 w-9 rounded bg-transparent" />
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("undo")}>Undo</button>
+        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("redo")}>Redo</button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto bg-black/30 p-4">
+        <div ref={page} contentEditable suppressContentEditableWarning spellCheck onInput={count} dangerouslySetInnerHTML={{ __html: "<p><br></p>" }} className="doc-page mx-auto min-h-[60vh] w-full max-w-3xl rounded-sm bg-white p-10 text-zinc-900 shadow-2xl outline-none" style={{ fontFamily: "Calibri, Arial, sans-serif" }} />
+      </div>
+      <p className="flex h-6 shrink-0 items-center justify-between px-3 text-[11px] text-muted-foreground"><span>{msg}</span><span>{words} words</span></p>
+    </WindowFrame>
+  );
+}
+
+type SlideData = { title: string; body: string; bg: string };
+const SLIDE_BGS = ["#1e293b", "#0f766e", "#7c2d12", "#4c1d95", "#9f1239", "#ffffff"];
+
+function SlideView({ slide, className = "" }: { slide: SlideData; className?: string }) {
+  const light = readableOn(slide.bg) === "#ffffff";
+  return (
+    <div className={`flex aspect-video w-full flex-col overflow-hidden rounded-lg p-[6%] ${className}`} style={{ background: slide.bg, color: light ? "#fff" : "#111" }}>
+      <p className="font-bold leading-tight" style={{ fontSize: "clamp(.7rem, 3.4cqw, 2.2rem)" }}>{slide.title || "Title"}</p>
+      <ul className="mt-[4%] space-y-[2%] pl-[4%]" style={{ fontSize: "clamp(.5rem, 2.2cqw, 1.4rem)", listStyle: "disc" }}>
+        {slide.body.split("\n").filter(Boolean).map((line, index) => <li key={index}>{line}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+function SlidesApp({ close }: { close: () => void }) {
+  const [slides, setSlides] = useState<SlideData[]>([{ title: "My presentation", body: "Click to edit the text\nAdd slides on the left", bg: SLIDE_BGS[0]! }]);
+  const [index, setIndex] = useState(0);
+  const [name, setName] = useState("Presentation");
+  const [present, setPresent] = useState(false);
+  const [msg, setMsg] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  const slide = slides[Math.min(index, slides.length - 1)]!;
+  const update = (patch: Partial<SlideData>) => setSlides((list) => list.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const move = (delta: number) => {
+    const target = index + delta;
+    if (target < 0 || target >= slides.length) return;
+    setSlides((list) => {
+      const next = [...list];
+      [next[index], next[target]] = [next[target]!, next[index]!];
+      return next;
+    });
+    setIndex(target);
+  };
+  const importPptx = async (fileName: string, buffer: ArrayBuffer) => {
+    try {
+      await loadScript(LIBS.jszip);
+      const zip = await lib("JSZip").loadAsync(buffer);
+      const files = Object.keys(zip.files).filter((file) => /^ppt\/slides\/slide\d+\.xml$/.test(file)).sort((a, b) => parseInt(a.replace(/\D/g, ""), 10) - parseInt(b.replace(/\D/g, ""), 10));
+      const decode = (text: string) => text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+      const loaded: SlideData[] = [];
+      for (const file of files) {
+        const xml = (await zip.file(file).async("string")) as string;
+        const paragraphs = xml.split("</a:p>").map((chunk) => decode([...chunk.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).join(""))).filter((text) => text.trim());
+        loaded.push({ title: paragraphs[0] ?? "", body: paragraphs.slice(1).join("\n"), bg: SLIDE_BGS[loaded.length % 5]! });
+      }
+      if (!loaded.length) throw new Error("No slides found in that file.");
+      setSlides(loaded);
+      setIndex(0);
+      setName(fileName.replace(/\.[^.]+$/, ""));
+      setMsg(`Opened ${fileName} (text only, layouts and pictures aren't imported)`);
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
+    }
+  };
+  useOpenFromFiles("slides", importPptx);
+  const build = async () => {
+    await loadScript(LIBS.pptx);
+    const pptx = new (lib("PptxGenJS"))();
+    slides.forEach((item) => {
+      const s = pptx.addSlide();
+      s.background = { color: item.bg.slice(1) };
+      const color = readableOn(item.bg) === "#ffffff" ? "FFFFFF" : "111111";
+      s.addText(item.title, { x: 0.6, y: 0.4, w: 8.8, h: 1, fontSize: 32, bold: true, color });
+      const lines = item.body.split("\n").filter(Boolean);
+      if (lines.length) s.addText(lines.map((text) => ({ text, options: { bullet: true, breakLine: true } })), { x: 0.8, y: 1.6, w: 8.4, h: 3.6, fontSize: 20, color, valign: "top" });
+    });
+    return (await pptx.write({ outputType: "blob" })) as Blob;
+  };
+  useEffect(() => {
+    if (!present) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "ArrowRight" || event.key === " " || event.key === "Enter") setIndex((value) => Math.min(value + 1, slides.length - 1));
+      else if (event.key === "ArrowLeft") setIndex((value) => Math.max(value - 1, 0));
+      else if (event.key === "Escape") setPresent(false);
+      else return;
+      event.stopPropagation();
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [present, slides.length]);
+  return (
+    <WindowFrame title={`Slides – ${name}`} icon={SlidesIcon} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
+        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
+        <button type="button" className={tbBtn} onClick={() => void build().then((blob) => saveToFiles(`${name}.pptx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.pptx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
+        <button type="button" className={tbBtn} onClick={() => void build().then((blob) => downloadBlob(`${name}.pptx`, blob)).catch((error: Error) => setMsg(error.message))}>Download .pptx</button>
+        <input ref={input} type="file" accept=".pptx" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => importPptx(file.name, buffer)); event.target.value = ""; }} />
+        <span className="mx-1 h-5 w-px bg-white/15" />
+        <button type="button" className={tbBtn} onClick={() => { setSlides((list) => [...list, { title: "New slide", body: "", bg: slide.bg }]); setIndex(slides.length); }}>+ Slide</button>
+        <button type="button" className={tbBtn} onClick={() => { setSlides((list) => [...list.slice(0, index + 1), { ...slide }, ...list.slice(index + 1)]); setIndex(index + 1); }}>Duplicate</button>
+        <button type="button" className={tbBtn} disabled={slides.length < 2} onClick={() => { setSlides((list) => list.filter((_, i) => i !== index)); setIndex(Math.max(0, index - 1)); }}>Delete</button>
+        <button type="button" className={tbBtn} onClick={() => move(-1)}>↑</button>
+        <button type="button" className={tbBtn} onClick={() => move(1)}>↓</button>
+        <button type="button" className={`${tbPrimary} ml-auto`} onClick={() => setPresent(true)}>▶ Present</button>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+        <div className="stagger flex shrink-0 gap-2 overflow-auto border-b border-border p-2 md:w-44 md:flex-col md:border-b-0 md:border-r">
+          {slides.map((item, i) => (
+            <button key={i} type="button" onClick={() => setIndex(i)} className={`w-32 shrink-0 rounded-lg border-2 p-0.5 md:w-full ${i === index ? "border-primary" : "border-transparent"}`} style={{ containerType: "inline-size" }}>
+              <SlideView slide={item} />
+              <span className="block text-[10px] text-muted-foreground">{i + 1}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4">
+          <div className="mx-auto w-full max-w-3xl" style={{ containerType: "inline-size" }}><SlideView slide={slide} className="shadow-2xl" /></div>
+          <div className="mx-auto w-full max-w-3xl space-y-2">
+            <input aria-label="Slide title" value={slide.title} onChange={(event) => update({ title: event.target.value })} placeholder="Slide title" className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold outline-none" />
+            <textarea aria-label="Slide text" value={slide.body} onChange={(event) => update({ body: event.target.value })} placeholder="One bullet per line" rows={4} className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm outline-none" />
+            <div className="flex items-center gap-2">{SLIDE_BGS.map((color) => <button key={color} type="button" aria-label={`Background ${color}`} onClick={() => update({ bg: color })} className={`size-6 rounded-full border-2 ${slide.bg === color ? "border-primary" : "border-white/20"}`} style={{ background: color }} />)}<input aria-label="Presentation name" value={name} onChange={(event) => setName(event.target.value)} className="ml-auto w-40 rounded-lg bg-white/10 px-2 py-1 text-xs outline-none" /></div>
+            <p className="text-[11px] text-muted-foreground">{msg}</p>
+          </div>
+        </div>
+      </div>
+      {present && (
+        <div onClick={() => setIndex((value) => Math.min(value + 1, slides.length - 1))} className="fixed inset-0 z-[90] flex cursor-pointer items-center justify-center bg-black p-4">
+          <div key={index} className="w-full max-w-[min(100%,calc((100dvh-2rem)*16/9))] [animation:rise_.4s_cubic-bezier(.22,1,.36,1)_both]" style={{ containerType: "inline-size" }}><SlideView slide={slide} /></div>
+          <button type="button" aria-label="Exit presentation" onClick={(event) => { event.stopPropagation(); setPresent(false); }} className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white"><X className="size-4" /></button>
+          <p className="absolute bottom-3 text-[11px] text-white/50">{index + 1} / {slides.length} · arrows or click to move · Esc to exit</p>
+        </div>
+      )}
+    </WindowFrame>
+  );
+}
+
+function colName(index: number) {
+  let n = index + 1;
+  let out = "";
+  while (n > 0) {
+    out = String.fromCharCode(65 + ((n - 1) % 26)) + out;
+    n = Math.floor((n - 1) / 26);
+  }
+  return out;
+}
+function colIndex(name: string) {
+  return [...name].reduce((total, ch) => total * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+}
+
+function cellValue(data: string[][], r: number, c: number, depth = 0): string {
+  const raw = data[r]?.[c] ?? "";
+  if (!raw.startsWith("=")) return raw;
+  if (depth > 20) return "#CYCLE";
+  let expr = raw.slice(1).toUpperCase();
+  const toRC = (ref: string) => {
+    const m = /^([A-Z]+)(\d+)$/.exec(ref)!;
+    return { c: colIndex(m[1]!), r: parseInt(m[2]!, 10) - 1 };
+  };
+  expr = expr.replace(/(SUM|AVERAGE|MIN|MAX|COUNT)\(([A-Z]+\d+):([A-Z]+\d+)\)/g, (_match, fn: string, a: string, b: string) => {
+    const A = toRC(a);
+    const B = toRC(b);
+    const nums: number[] = [];
+    for (let rr = Math.min(A.r, B.r); rr <= Math.max(A.r, B.r); rr += 1) {
+      for (let cc = Math.min(A.c, B.c); cc <= Math.max(A.c, B.c); cc += 1) {
+        const v = parseFloat(cellValue(data, rr, cc, depth + 1));
+        if (Number.isFinite(v)) nums.push(v);
+      }
+    }
+    if (fn === "COUNT") return String(nums.length);
+    if (!nums.length) return "0";
+    const sum = nums.reduce((x, y) => x + y, 0);
+    return String(fn === "SUM" ? sum : fn === "AVERAGE" ? sum / nums.length : fn === "MIN" ? Math.min(...nums) : Math.max(...nums));
+  });
+  expr = expr.replace(/\b([A-Z]{1,2})(\d+)\b/g, (_match, col: string, row: string) => {
+    const v = parseFloat(cellValue(data, parseInt(row, 10) - 1, colIndex(col), depth + 1));
+    return Number.isFinite(v) ? String(v) : "0";
+  });
+  if (!/^[\d\s+\-*/().]+$/.test(expr)) return "#ERR";
+  try {
+    const value = Function(`"use strict";return (${expr})`)() as number;
+    return Number.isFinite(value) ? String(+value.toFixed(8)) : "#ERR";
+  } catch {
+    return "#ERR";
+  }
+}
+
+function SheetsApp({ close }: { close: () => void }) {
+  const make = (rows: number, cols: number) => Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
+  const [data, setData] = useState<string[][]>(() => make(30, 10));
+  const [sel, setSel] = useState<{ r: number; c: number }>({ r: 0, c: 0 });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [name, setName] = useState("Spreadsheet");
+  const [msg, setMsg] = useState("");
+  const input = useRef<HTMLInputElement>(null);
+  const cols = data[0]?.length ?? 10;
+  const setCell = (r: number, c: number, value: string) => setData((grid) => grid.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)));
+  const importBuffer = async (fileName: string, buffer: ArrayBuffer) => {
+    try {
+      await loadScript(LIBS.xlsx);
+      const XLSX = lib("XLSX");
+      const wb = XLSX.read(buffer, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1:A1");
+      const grid = make(Math.max(30, range.e.r + 1), Math.max(10, range.e.c + 1));
+      for (let r = range.s.r; r <= range.e.r; r += 1) {
+        for (let c = range.s.c; c <= range.e.c; c += 1) {
+          const cell = ws[XLSX.utils.encode_cell({ r, c })];
+          if (cell) grid[r]![c] = cell.f ? `=${cell.f}` : String(cell.w ?? cell.v ?? "");
+        }
+      }
+      setData(grid);
+      setName(fileName.replace(/\.[^.]+$/, ""));
+      setMsg(`Opened ${fileName}`);
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
+    }
+  };
+  useOpenFromFiles("sheets", importBuffer);
+  const workbook = async () => {
+    await loadScript(LIBS.xlsx);
+    const XLSX = lib("XLSX");
+    const values = data.map((row, r) => row.map((_cell, c) => (data[r]![c]!.startsWith("=") ? "" : data[r]![c]!)));
+    const ws = XLSX.utils.aoa_to_sheet(values);
+    data.forEach((row, r) => row.forEach((raw, c) => { if (raw.startsWith("=")) ws[XLSX.utils.encode_cell({ r, c })] = { t: "n", f: raw.slice(1), v: Number(cellValue(data, r, c)) || 0 }; }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    return { XLSX, wb, ws };
+  };
+  const xlsxBlob = async () => {
+    const { XLSX, wb } = await workbook();
+    return new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  };
+  const csvBlob = async () => {
+    const { XLSX, ws } = await workbook();
+    return new Blob([XLSX.utils.sheet_to_csv(ws)], { type: "text/csv" });
+  };
+  const raw = data[sel.r]?.[sel.c] ?? "";
+  return (
+    <WindowFrame title={`Sheets – ${name}`} icon={SheetsIcon} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
+        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
+        <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => saveToFiles(`${name}.xlsx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.xlsx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
+        <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => downloadBlob(`${name}.xlsx`, blob)).catch((error: Error) => setMsg(error.message))}>Download .xlsx</button>
+        <button type="button" className={tbBtn} onClick={() => void csvBlob().then((blob) => downloadBlob(`${name}.csv`, blob)).catch((error: Error) => setMsg(error.message))}>.csv</button>
+        <input ref={input} type="file" accept=".xlsx,.xls,.csv" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => importBuffer(file.name, buffer)); event.target.value = ""; }} />
+        <span className="mx-1 h-5 w-px bg-white/15" />
+        <button type="button" className={tbBtn} onClick={() => setData((grid) => [...grid, ...make(10, cols)])}>+ 10 rows</button>
+        <button type="button" className={tbBtn} onClick={() => setData((grid) => grid.map((row) => [...row, ""]))}>+ Column</button>
+        <button type="button" className={tbBtn} onClick={() => setData(make(30, 10))}>Clear</button>
+        <input aria-label="File name" value={name} onChange={(event) => setName(event.target.value)} className="ml-auto w-36 rounded-lg bg-white/10 px-2 py-1 text-xs outline-none" />
+      </div>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-1 text-xs">
+        <span className="w-12 rounded bg-white/10 px-2 py-1 text-center font-semibold">{colName(sel.c)}{sel.r + 1}</span>
+        <span className="text-muted-foreground">fx</span>
+        <input aria-label="Formula bar" value={raw} onChange={(event) => setCell(sel.r, sel.c, event.target.value)} placeholder="Type a value or =SUM(A1:A5)" className="min-w-0 flex-1 rounded bg-white/10 px-2 py-1 outline-none" />
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <table className="border-separate border-spacing-0 text-xs">
+          <thead className="sticky top-0 z-10"><tr><th className="sticky left-0 z-20 w-10 bg-zinc-800" />{Array.from({ length: cols }, (_, c) => <th key={c} className="min-w-24 border-b border-r border-white/10 bg-zinc-800 py-1 font-semibold text-muted-foreground">{colName(c)}</th>)}</tr></thead>
+          <tbody>
+            {data.map((row, r) => (
+              <tr key={r}>
+                <th className="sticky left-0 z-10 border-b border-r border-white/10 bg-zinc-800 px-2 text-muted-foreground">{r + 1}</th>
+                {row.map((cell, c) => {
+                  const key = `${r}-${c}`;
+                  return (
+                    <td key={c} className={`border-b border-r border-white/10 p-0 ${sel.r === r && sel.c === c ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}>
+                      <input
+                        id={`cell-${r}-${c}`}
+                        aria-label={`${colName(c)}${r + 1}`}
+                        value={editing === key ? cell : cellValue(data, r, c)}
+                        onFocus={() => { setSel({ r, c }); setEditing(key); }}
+                        onBlur={() => setEditing(null)}
+                        onChange={(event) => setCell(r, c, event.target.value)}
+                        onKeyDown={(event) => { if (event.key === "Enter") document.getElementById(`cell-${Math.min(r + 1, data.length - 1)}-${c}`)?.focus(); }}
+                        className="h-7 w-24 bg-transparent px-1.5 outline-none"
+                      />
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="h-6 shrink-0 px-3 text-[11px] leading-6 text-muted-foreground">{msg || "Formulas: =A1+B1, =SUM(A1:A5), AVERAGE, MIN, MAX, COUNT"}</p>
+    </WindowFrame>
+  );
+}
+
+function PdfApp({ close }: { close: () => void }) {
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const bytes = useRef<ArrayBuffer | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [doc, setDoc] = useState<any>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [scale, setScale] = useState(1.2);
+  const [name, setName] = useState("No file");
+  const [msg, setMsg] = useState("Open a PDF to read it.");
+  const load = async (fileName: string, buffer: ArrayBuffer) => {
+    try {
+      setMsg("Opening…");
+      await loadScript(LIBS.pdf);
+      const pdfjs = lib("pdfjsLib");
+      pdfjs.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
+      const pdf = await pdfjs.getDocument({ data: buffer.slice(0) }).promise;
+      bytes.current = buffer;
+      setDoc(pdf);
+      setTotal(pdf.numPages);
+      setPage(1);
+      setName(fileName);
+      setMsg("");
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "Couldn't open that PDF.");
+    }
+  };
+  useOpenFromFiles("pdfreader", load);
+  useEffect(() => {
+    if (!doc) return;
+    let cancelled = false;
+    void (async () => {
+      const p = await doc.getPage(page);
+      const viewport = p.getViewport({ scale });
+      const el = canvas.current;
+      if (!el || cancelled) return;
+      el.width = viewport.width;
+      el.height = viewport.height;
+      await p.render({ canvasContext: el.getContext("2d"), viewport }).promise;
+    })();
+    return () => { cancelled = true; };
+  }, [doc, page, scale]);
+  const pdfBlob = () => new Blob([bytes.current ?? new ArrayBuffer(0)], { type: "application/pdf" });
+  return (
+    <WindowFrame title={`PDF Reader – ${name}`} icon={PdfIcon} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
+        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
+        <input ref={input} type="file" accept="application/pdf,.pdf" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => load(file.name, buffer)); event.target.value = ""; }} />
+        <button type="button" className={tbBtn} disabled={!doc} onClick={() => void saveToFiles(name, pdfBlob()).then((ok) => ok && setMsg(`Saved ${name} to Documents`))}>Save</button>
+        <button type="button" className={tbBtn} disabled={!doc} onClick={() => downloadBlob(name, pdfBlob())}>Download</button>
+        <span className="mx-1 h-5 w-px bg-white/15" />
+        <button type="button" className={tbBtn} disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>‹</button>
+        <span className="text-xs tabular-nums">{doc ? `${page} / ${total}` : "–"}</span>
+        <button type="button" className={tbBtn} disabled={page >= total} onClick={() => setPage((value) => value + 1)}>›</button>
+        <button type="button" className={tbBtn} onClick={() => setScale((value) => Math.max(0.5, +(value - 0.2).toFixed(1)))}>−</button>
+        <span className="text-xs tabular-nums">{Math.round(scale * 100)}%</span>
+        <button type="button" className={tbBtn} onClick={() => setScale((value) => Math.min(3, +(value + 0.2).toFixed(1)))}>+</button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto bg-black/30 p-4">
+        {!doc && <p className="p-10 text-center text-sm text-muted-foreground">{msg}</p>}
+        <canvas ref={canvas} className={`mx-auto max-w-none rounded-sm bg-white shadow-2xl ${doc ? "" : "hidden"}`} />
+      </div>
+    </WindowFrame>
+  );
+}
+
+const ZONES: string[] = (() => {
+  try {
+    const supported = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.("timeZone");
+    if (supported?.length) return supported;
+  } catch {
+    // fall through
+  }
+  return ["UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Africa/Casablanca", "Africa/Cairo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland"];
+})();
+
+function LiveTime({ zone, hour12 }: { zone?: string; hour12: boolean }) {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    setNow(new Date());
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  if (!now) return <span className="font-mono text-sm tabular-nums">--:--:--</span>;
+  let text: string;
+  try {
+    text = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12, timeZone: zone });
+  } catch {
+    text = now.toLocaleTimeString();
+  }
+  return <span className="font-mono text-sm tabular-nums">{text}</span>;
 }

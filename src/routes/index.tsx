@@ -55,6 +55,10 @@ import {
   PanelsTopLeft,
   ChevronLeft,
   ChevronRight,
+  Timer,
+  Ruler,
+  KeyRound,
+  Mic,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -190,6 +194,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
   { v: "1.6", date: "10 Oct 2026", items: ["Slim window title bar: app icon, back and forward arrows, title, and tiny minimize, expand and close buttons"] },
   { v: "1.5", date: "10 Oct 2026", items: ["Drag a window to the top edge to expand it, with a preview and a smooth glide", "Pull a maximized window down by its title bar to restore it", "Easier snap zones on the screen edges"] },
   { v: "1.4", date: "10 Oct 2026", items: ["New dock: one floating glass bar with menu, apps, pinned apps and Task view", "Right-click a dock app to open, close or pin it", "Dock page in Settings: pin, reorder, auto-hide and resize", "Ctrl+K search for apps, files and commands"] },
@@ -224,6 +229,12 @@ const AboutIcon: IconComponent = ({ className }) => <Tile tone="from-cyan-400 to
 
 const GamesIcon: IconComponent = ({ className }) => <Tile tone="from-violet-500 to-fuchsia-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Gamepad2 /></Tile>;
 
+const StickyIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-200 to-yellow-500" glyph="[&>svg]:size-[56%] [&>svg]:text-yellow-900" className={className}><StickyNote /></Tile>;
+const FocusIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Timer /></Tile>;
+const ConvertIcon: IconComponent = ({ className }) => <Tile tone="from-teal-400 to-cyan-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Ruler /></Tile>;
+const PasswordIcon: IconComponent = ({ className }) => <Tile tone="from-slate-500 to-slate-800" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><KeyRound /></Tile>;
+const RecorderIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-pink-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Mic /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
@@ -253,7 +264,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
+launcherApps.push(...linkLauncher, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -456,6 +467,26 @@ function PrivateOS() {
   const allWalls: WallpaperOption[] = [...wallpaperOptions, ...customWalls.map((wall) => ({ label: wall.label, thumb: wall.url, src: wall.url }))];
 
   useEffect(() => {
+    if (!settings.autoLock) return;
+    const limit = settings.autoLock * 60000;
+    let timer = window.setTimeout(() => setLocked(true), limit);
+    const reset = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setLocked(true), limit);
+    };
+    const events = ["pointerdown", "keydown", "pointermove"];
+    events.forEach((name) => window.addEventListener(name, reset, { passive: true }));
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((name) => window.removeEventListener(name, reset));
+    };
+  }, [settings.autoLock]);
+
+  useEffect(() => {
+    if (settings.skipStart) setPhase((value) => (value === "start" ? "boot" : value));
+  }, [settings.skipStart]);
+
+  useEffect(() => {
     if (!settings.slideshow || allWalls.length < 2) return;
     const timer = window.setInterval(() => setWallpaper((index) => (index + 1) % allWalls.length), settings.slideshow * 60000);
     return () => window.clearInterval(timer);
@@ -605,6 +636,11 @@ function PrivateOS() {
       case "weather": return <WeatherApp close={close} />;
       case "paint": return <PaintApp close={close} />;
       case "todo": return <TodoApp close={close} />;
+      case "sticky": return <StickyApp close={close} />;
+      case "focus": return <FocusApp close={close} />;
+      case "convert": return <ConvertApp close={close} />;
+      case "passwords": return <PasswordApp close={close} />;
+      case "recorder": return <RecorderApp close={close} />;
       case "games": return <GamesApp close={close} launch={(url) => { setBrowserStart(url); openApp("browser"); }} />;
       case "camera": return <CameraApp close={close} />;
       case "media": return <MediaApp close={close} />;
@@ -618,7 +654,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
           <Wallpaper index={wallpaper} options={allWalls} />
@@ -725,7 +761,7 @@ function PrivateOS() {
               <div key={id} className="group pointer-events-auto relative w-20 text-center">
                 <OsButton label={`Open ${app.label}`} onClick={() => openApp(id)} className="flex w-full flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
                   <Icon className={settings.bigIcons ? "size-16" : "size-12"} />
-                  <span className="line-clamp-2 text-[11px] text-white drop-shadow">{app.label}</span>
+                  {settings.desktopLabels && <span className="line-clamp-2 text-[11px] text-white drop-shadow">{app.label}</span>}
                 </OsButton>
                 <button type="button" aria-label={`Remove ${app.label} from desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.filter((item) => item !== id) }))} className="absolute right-0 top-0 hidden rounded-full bg-black/60 p-0.5 text-white group-hover:block"><X className="size-3" /></button>
               </div>
@@ -783,7 +819,7 @@ function PrivateOS() {
         <div className={`pointer-events-none absolute right-3 z-[9] flex flex-col items-end gap-3 ${settings.railHidden ? "top-3" : "top-72"}`}>
           {settings.widgets.map((id) => (
             <WidgetShell key={id} title={WIDGET_LIST.find((item) => item.id === id)?.label ?? id} offset={settings.wpos[id] ?? { x: 0, y: 0 }} onMove={(pos) => patchSettings((current) => ({ wpos: { ...current.wpos, [id]: pos } }))} onRemove={() => patchSettings((current) => ({ widgets: current.widgets.filter((item) => item !== id) }))}>
-              {id === "music" ? <MusicWidget /> : id === "notes" ? <NotesWidget /> : id === "calendar" ? <CalendarWidget /> : <StopwatchWidget />}
+              {id === "music" ? <MusicWidget /> : id === "notes" ? <NotesWidget /> : id === "calendar" ? <CalendarWidget weekStart={settings.weekStart} /> : <StopwatchWidget />}
             </WidgetShell>
           ))}
         </div>
@@ -1150,7 +1186,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           </span>
           <span className="truncate text-[11px] font-medium text-white/85">{title}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1.5 pr-1">
           {actions}
           <OsButton label="Minimize" onClick={minimize} className="win-ctl"><Minus className="size-3.5" /></OsButton>
           <OsButton label={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="win-ctl">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
@@ -2196,8 +2232,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2352,16 +2388,16 @@ function NotesWidget() {
   );
 }
 
-function CalendarWidget() {
+function CalendarWidget({ weekStart = 0 }: { weekStart?: number }) {
   const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const first = (new Date(now.getFullYear(), now.getMonth(), 1).getDay() - weekStart + 7) % 7;
   const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const cells: (number | null)[] = [...Array.from({ length: first }, () => null), ...Array.from({ length: days }, (_, i) => i + 1)];
   return (
     <div>
       <p className="mb-2 text-center font-semibold">{now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
-        {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => <span key={i} className="text-muted-foreground">{day}</span>)}
+        {(weekStart ? ["M", "T", "W", "T", "F", "S", "S"] : ["S", "M", "T", "W", "T", "F", "S"]).map((day, i) => <span key={i} className="text-muted-foreground">{day}</span>)}
         {cells.map((day, i) => <span key={i} className={day === now.getDate() ? "rounded bg-primary text-primary-foreground" : ""}>{day}</span>)}
       </div>
     </div>
@@ -3078,6 +3114,14 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
                   <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
                   <CfgRow title="Desktop icons" sub="Show app shortcuts on the desktop"><Switch on={settings.showIcons} label="Desktop icons" onChange={(value) => patch({ showIcons: value })} /></CfgRow>
+                  <CfgRow title="Desktop labels" sub="Show names under desktop icons"><Switch on={settings.desktopLabels} label="Desktop labels" onChange={(value) => patch({ desktopLabels: value })} /></CfgRow>
+                  <CfgRow title="Skip start screen" sub="Go straight to the lock screen when you open PRIVATE OS"><Switch on={settings.skipStart} label="Skip start screen" onChange={(value) => patch({ skipStart: value })} /></CfgRow>
+                  <CfgRow title="Auto-lock" sub="Lock after you stop using it">
+                    <select aria-label="Auto-lock" value={settings.autoLock} onChange={(event) => patch({ autoLock: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>Never</option><option value={1}>1 minute</option><option value={5}>5 minutes</option><option value={10}>10 minutes</option><option value={30}>30 minutes</option></select>
+                  </CfgRow>
+                  <CfgRow title="Week starts on" sub="Used by the calendar widget">
+                    <select aria-label="Week starts on" value={settings.weekStart} onChange={(event) => patch({ weekStart: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>Sunday</option><option value={1}>Monday</option></select>
+                  </CfgRow>
                 </CfgCard>
                 <CfgCard title="Appearance">
                   <CfgRow title="Main color" sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
@@ -3090,6 +3134,11 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <CfgSlider label="Dock size" value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
                   <CfgRow title="Dock position" sub="Or drag the handle above the dock">
                     <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
+                  </CfgRow>
+                </CfgCard>
+                <CfgCard title="Windows">
+                  <CfgRow title="Title bar buttons" sub="Bigger buttons are easier to click">
+                    <div className="flex gap-1">{(["compact", "comfortable", "large"] as const).map((size) => <button key={size} type="button" onClick={() => patch({ titleButtons: size })} className={`${btn} capitalize ${settings.titleButtons === size ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{size}</button>)}</div>
                   </CfgRow>
                 </CfgCard>
                 <CfgCard title="Accessibility">
@@ -3176,6 +3225,227 @@ function GamesApp({ close, launch }: { close: () => void; launch: (url: string) 
           <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Web address" aria-label="Game web address" className="utility-input min-w-0 flex-[2]" />
           <button type="submit" className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground">Add game</button>
         </form>
+      </div>
+    </WindowFrame>
+  );
+}
+
+function StickyApp({ close }: { close: () => void }) {
+  const COLORS = ["#fde68a", "#bbf7d0", "#bfdbfe", "#fecaca", "#e9d5ff"];
+  const [notes, setNotes] = useState<{ id: number; text: string; color: string }[]>([]);
+  useEffect(() => {
+    try {
+      setNotes(JSON.parse(localStorage.getItem("pos-sticky") ?? "[]") as { id: number; text: string; color: string }[]);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const save = (next: { id: number; text: string; color: string }[]) => {
+    setNotes(next);
+    try {
+      localStorage.setItem("pos-sticky", JSON.stringify(next));
+    } catch {
+      // storage unavailable
+    }
+  };
+  return (
+    <WindowFrame title="Sticky Notes" icon={StickyIcon} close={close}>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
+        {COLORS.map((color) => <button key={color} type="button" aria-label="Add a note" onClick={() => save([...notes, { id: Date.now(), text: "", color }])} className="size-6 rounded-md" style={{ background: color }} />)}
+        <span className="text-xs text-muted-foreground">Tap a colour to add a note</span>
+      </div>
+      <div className="grid flex-1 grid-cols-2 content-start gap-3 overflow-auto p-3 md:grid-cols-3">
+        {notes.length === 0 && <p className="col-span-full p-6 text-center text-sm text-muted-foreground">No notes yet.</p>}
+        {notes.map((note) => (
+          <div key={note.id} className="relative rounded-xl p-2 text-zinc-900 shadow-lg" style={{ background: note.color }}>
+            <textarea value={note.text} placeholder="Write something…" aria-label="Note text" onChange={(event) => save(notes.map((item) => (item.id === note.id ? { ...item, text: event.target.value } : item)))} className="h-28 w-full resize-none bg-transparent text-sm outline-none placeholder:text-zinc-600" />
+            <button type="button" aria-label="Delete note" onClick={() => save(notes.filter((item) => item.id !== note.id))} className="absolute right-1 top-1 rounded p-1 hover:bg-black/10"><X className="size-3.5" /></button>
+          </div>
+        ))}
+      </div>
+    </WindowFrame>
+  );
+}
+
+function FocusApp({ close }: { close: () => void }) {
+  const MODES = { focus: { label: "Focus", seconds: 1500 }, short: { label: "Short break", seconds: 300 }, long: { label: "Long break", seconds: 900 } } as const;
+  const [mode, setMode] = useState<keyof typeof MODES>("focus");
+  const [left, setLeft] = useState<number>(MODES.focus.seconds);
+  const [running, setRunning] = useState(false);
+  const [sessions, setSessions] = useState(0);
+  const beep = () => {
+    try {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      osc.frequency.value = 880;
+      osc.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
+    } catch {
+      // audio unavailable
+    }
+  };
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => setLeft((value) => value - 1), 1000);
+    return () => window.clearInterval(timer);
+  }, [running]);
+  useEffect(() => {
+    if (left > 0) return;
+    beep();
+    setRunning(false);
+    if (mode === "focus") setSessions((value) => value + 1);
+    setLeft(MODES[mode].seconds);
+  }, [left]); // eslint-disable-line react-hooks/exhaustive-deps
+  const choose = (next: keyof typeof MODES) => {
+    setMode(next);
+    setRunning(false);
+    setLeft(MODES[next].seconds);
+  };
+  const total = MODES[mode].seconds;
+  return (
+    <WindowFrame title="Focus Timer" icon={FocusIcon} close={close}>
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 p-6">
+        <div className="flex gap-1.5">{(Object.keys(MODES) as (keyof typeof MODES)[]).map((key) => <button key={key} type="button" onClick={() => choose(key)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${mode === key ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{MODES[key].label}</button>)}</div>
+        <p className="font-['Orbitron',sans-serif] text-6xl font-bold tabular-nums">{String(Math.floor(left / 60)).padStart(2, "0")}:{String(left % 60).padStart(2, "0")}</p>
+        <div className="h-1.5 w-64 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-primary transition-[width] duration-1000 ease-linear" style={{ width: `${((total - left) / total) * 100}%` }} /></div>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => setRunning((value) => !value)} className="rounded-lg bg-primary px-6 py-2 text-xs font-bold text-primary-foreground">{running ? "Pause" : "Start"}</button>
+          <button type="button" onClick={() => { setRunning(false); setLeft(total); }} className="rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold">Reset</button>
+        </div>
+        <p className="text-xs text-muted-foreground">Focus sessions finished: {sessions}</p>
+      </div>
+    </WindowFrame>
+  );
+}
+
+const UNIT_GROUPS: Record<string, Record<string, number>> = {
+  Length: { Meters: 1, Kilometers: 1000, Centimeters: 0.01, Millimeters: 0.001, Miles: 1609.344, Yards: 0.9144, Feet: 0.3048, Inches: 0.0254 },
+  Weight: { Kilograms: 1, Grams: 0.001, Pounds: 0.45359237, Ounces: 0.0283495231, Tonnes: 1000 },
+  Data: { Bytes: 1, Kilobytes: 1024, Megabytes: 1048576, Gigabytes: 1073741824, Terabytes: 1099511627776 },
+  Time: { Seconds: 1, Minutes: 60, Hours: 3600, Days: 86400, Weeks: 604800 },
+  Speed: { "Meters/second": 1, "Kilometers/hour": 0.277778, "Miles/hour": 0.44704, Knots: 0.514444 },
+  Temperature: { Celsius: 1, Fahrenheit: 1, Kelvin: 1 },
+};
+
+function ConvertApp({ close }: { close: () => void }) {
+  const [group, setGroup] = useState("Length");
+  const units = Object.keys(UNIT_GROUPS[group]!);
+  const [from, setFrom] = useState("Meters");
+  const [to, setTo] = useState("Feet");
+  const [value, setValue] = useState("1");
+  const pick = (next: string) => {
+    const list = Object.keys(UNIT_GROUPS[next]!);
+    setGroup(next);
+    setFrom(list[0]!);
+    setTo(list[1] ?? list[0]!);
+  };
+  const convert = () => {
+    const n = parseFloat(value);
+    if (Number.isNaN(n)) return "";
+    if (group === "Temperature") {
+      const celsius = from === "Fahrenheit" ? (n - 32) * 5 / 9 : from === "Kelvin" ? n - 273.15 : n;
+      return String(+(to === "Fahrenheit" ? celsius * 9 / 5 + 32 : to === "Kelvin" ? celsius + 273.15 : celsius).toFixed(4));
+    }
+    const table = UNIT_GROUPS[group]!;
+    return String(+((n * (table[from] ?? 1)) / (table[to] ?? 1)).toPrecision(8));
+  };
+  const field = "w-full rounded-lg bg-white/10 px-3 py-2 text-sm outline-none";
+  return (
+    <WindowFrame title="Converter" icon={ConvertIcon} close={close}>
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-3 p-5">
+        <select aria-label="Category" value={group} onChange={(event) => pick(event.target.value)} className={field}>{Object.keys(UNIT_GROUPS).map((name) => <option key={name}>{name}</option>)}</select>
+        <input aria-label="Value" inputMode="decimal" value={value} onChange={(event) => setValue(event.target.value)} className={field} />
+        <div className="grid grid-cols-2 gap-2">
+          <select aria-label="From" value={from} onChange={(event) => setFrom(event.target.value)} className={field}>{units.map((name) => <option key={name}>{name}</option>)}</select>
+          <select aria-label="To" value={to} onChange={(event) => setTo(event.target.value)} className={field}>{units.map((name) => <option key={name}>{name}</option>)}</select>
+        </div>
+        <p className="rounded-xl bg-primary/15 p-4 text-center text-2xl font-semibold tabular-nums">{convert() || "—"} <span className="text-sm font-normal text-muted-foreground">{to}</span></p>
+      </div>
+    </WindowFrame>
+  );
+}
+
+function PasswordApp({ close }: { close: () => void }) {
+  const [length, setLength] = useState(20);
+  const [sets, setSets] = useState({ lower: true, upper: true, digits: true, symbols: true });
+  const [password, setPassword] = useState("");
+  const [copied, setCopied] = useState(false);
+  const make = () => {
+    const pool = `${sets.lower ? "abcdefghijkmnopqrstuvwxyz" : ""}${sets.upper ? "ABCDEFGHJKLMNPQRSTUVWXYZ" : ""}${sets.digits ? "23456789" : ""}${sets.symbols ? "!@#$%^&*()-_=+[]{}" : ""}`;
+    if (!pool) return setPassword("");
+    const bytes = new Uint32Array(length);
+    crypto.getRandomValues(bytes);
+    setPassword(Array.from(bytes, (n) => pool[n % pool.length]).join(""));
+    setCopied(false);
+  };
+  useEffect(make, [length, sets]); // eslint-disable-line react-hooks/exhaustive-deps
+  const strength = password.length >= 20 && Object.values(sets).filter(Boolean).length >= 3 ? "Strong" : password.length >= 12 ? "Good" : "Weak";
+  return (
+    <WindowFrame title="Passwords" icon={PasswordIcon} close={close}>
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-4 p-5">
+        <p className="break-all rounded-xl bg-white/10 p-4 text-center font-mono text-sm">{password || "Pick at least one option"}</p>
+        <p className="text-center text-xs text-muted-foreground">Strength: {strength} · made on this device, never sent anywhere</p>
+        <CfgSlider label="Length" value={length} min={8} max={64} unit="" onChange={setLength} />
+        <div className="grid grid-cols-2 gap-2">
+          {(["lower", "upper", "digits", "symbols"] as const).map((key) => (
+            <label key={key} className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2 text-xs capitalize">{key}<Switch on={sets[key]} label={key} onChange={(value) => setSets({ ...sets, [key]: value })} /></label>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={make} className="flex-1 rounded-lg bg-white/10 py-2 text-xs font-semibold">Generate again</button>
+          <button type="button" onClick={() => { void navigator.clipboard?.writeText(password).then(() => setCopied(true)); }} className="flex-1 rounded-lg bg-primary py-2 text-xs font-bold text-primary-foreground">{copied ? "Copied" : "Copy"}</button>
+        </div>
+      </div>
+    </WindowFrame>
+  );
+}
+
+function RecorderApp({ close }: { close: () => void }) {
+  const [mode, setMode] = useState<"audio" | "screen">("audio");
+  const [recording, setRecording] = useState(false);
+  const [clips, setClips] = useState<{ url: string; kind: "audio" | "screen"; name: string }[]>([]);
+  const [error, setError] = useState("");
+  const recorder = useRef<MediaRecorder | null>(null);
+  const stream = useRef<MediaStream | null>(null);
+  useEffect(() => () => { stream.current?.getTracks().forEach((track) => track.stop()); }, []);
+  const start = async () => {
+    setError("");
+    try {
+      const media = mode === "audio" ? await navigator.mediaDevices.getUserMedia({ audio: true }) : await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      stream.current = media;
+      const chunks: Blob[] = [];
+      const rec = new MediaRecorder(media);
+      rec.ondataavailable = (event) => chunks.push(event.data);
+      rec.onstop = () => {
+        media.getTracks().forEach((track) => track.stop());
+        const blob = new Blob(chunks, { type: rec.mimeType || (mode === "audio" ? "audio/webm" : "video/webm") });
+        setClips((list) => [{ url: URL.createObjectURL(blob), kind: mode, name: `${mode}-${list.length + 1}.webm` }, ...list]);
+        setRecording(false);
+      };
+      media.getTracks()[0]?.addEventListener("ended", () => rec.state !== "inactive" && rec.stop());
+      rec.start();
+      recorder.current = rec;
+      setRecording(true);
+    } catch {
+      setError(mode === "audio" ? "Microphone access was blocked or no microphone was found." : "Screen recording was cancelled or isn't supported here.");
+    }
+  };
+  return (
+    <WindowFrame title="Recorder" icon={RecorderIcon} close={close}>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border p-2">
+        {(["audio", "screen"] as const).map((key) => <button key={key} type="button" disabled={recording} onClick={() => setMode(key)} className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize ${mode === key ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{key === "audio" ? "Voice" : "Screen"}</button>)}
+        <button type="button" onClick={() => (recording ? recorder.current?.stop() : void start())} className={`ml-auto rounded-lg px-4 py-1.5 text-xs font-bold ${recording ? "bg-red-600 text-white" : "bg-white/10"}`}>{recording ? "● Stop" : "● Record"}</button>
+      </div>
+      <div className="flex-1 space-y-3 overflow-auto p-3">
+        {error && <p className="text-xs text-red-300">{error}</p>}
+        {clips.length === 0 && !error && <p className="p-6 text-center text-sm text-muted-foreground">Recordings stay on this device until you download them.</p>}
+        {clips.map((clip) => (
+          <div key={clip.url} className="rounded-2xl border border-white/10 bg-black/20 p-3">
+            {clip.kind === "audio" ? <audio src={clip.url} controls className="w-full" /> : <video src={clip.url} controls className="max-h-56 w-full rounded-lg" />}
+            <a href={clip.url} download={clip.name} className="mt-2 inline-block text-xs font-semibold text-primary">Download {clip.name}</a>
+          </div>
+        ))}
       </div>
     </WindowFrame>
   );

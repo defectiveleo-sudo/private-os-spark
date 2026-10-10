@@ -284,3 +284,10 @@ main[data-native-cursor], main[data-native-cursor] * { cursor: revert !important
 .win-ctl:hover { background: rgb(255 255 255 / .14); color: #fff; }
 .win-ctl.win-close:hover { background: var(--destructive); color: #fff; }
 .os-window:not(:has(iframe)) .nav-chev { display: none; }
+
+/* easier-to-click title bar buttons */
+.win-ctl { width: 36px; height: 28px; border-radius: 8px; }
+main[data-ctl="compact"] .win-ctl { width: 26px; height: 22px; border-radius: 6px; }
+main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px; }
+.window-titlebar { min-height: 38px; }
+.win-ctl.win-close { margin-left: 4px; }

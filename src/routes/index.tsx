@@ -1641,7 +1641,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
   const [frameTarget, setFrameTarget] = useState<string | null>(startUrl);
   const [frameKey, setFrameKey] = useState(0);
   const [loading, setLoading] = useState(Boolean(startUrl));
-  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean; note?: string } | null>(null);
+  const [results, setResults] = useState<{ query: string; hits: SearchHit[] | null; error: boolean; note?: string | undefined } | null>(null);
   const [engine, setEngine] = useState<"idle" | "loading" | "ready" | "failed">("idle");
   const frameRef = useRef<HTMLIFrameElement>(null);
   const controllerRef = useRef<EngineController | null>(null);
@@ -3600,10 +3600,10 @@ function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffe
   }, [appId]);
 }
 
-const WriterIcon: IconComponent = ({ className }) => <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>;
-const SlidesIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>;
-const SheetsIcon: IconComponent = ({ className }) => <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>;
-const PdfIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>;
+function WriterIcon({ className }: { className?: string }) { return <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>; }
+function SlidesIcon({ className }: { className?: string }) { return <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>; }
+function SheetsIcon({ className }: { className?: string }) { return <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>; }
+function PdfIcon({ className }: { className?: string }) { return <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
 const tbPrimary = "rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground";
@@ -4037,7 +4037,7 @@ const ZONES: string[] = (() => {
   return ["UTC", "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles", "America/Sao_Paulo", "Europe/London", "Europe/Paris", "Europe/Berlin", "Africa/Casablanca", "Africa/Cairo", "Asia/Dubai", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland"];
 })();
 
-function LiveTime({ zone, hour12 }: { zone?: string; hour12: boolean }) {
+function LiveTime({ zone, hour12 }: { zone?: string | undefined; hour12: boolean }) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
     setNow(new Date());

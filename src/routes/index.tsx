@@ -188,6 +188,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "1.0";
 const CHANGELOG = [
+  { v: "1.5", date: "10 Oct 2026", items: ["Drag a window to the top edge to expand it, with a preview and a smooth glide", "Pull a maximized window down by its title bar to restore it", "Easier snap zones on the screen edges"] },
   { v: "1.4", date: "10 Oct 2026", items: ["New dock: one floating glass bar with menu, apps, pinned apps and Task view", "Right-click a dock app to open, close or pin it", "Dock page in Settings: pin, reorder, auto-hide and resize", "Ctrl+K search for apps, files and commands"] },
   { v: "1.3", date: "9 Oct 2026", items: ["Settings animations now run in every app", "New settings: glass blur and opacity, wallpaper slideshow, dock size, reduce motion, system or Mint cursors", "Backup page to export and import your setup", "About page with shortcuts and changelog"] },
   { v: "1.2", date: "9 Oct 2026", items: ["Settings center with Themes, Configs and Settings pages", "New cursor set", "Games app with your own game list", "Ambient glow, page transitions, staggered entrances and hover glow"] },
@@ -991,10 +992,11 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   const [snap, setSnap] = useState<string | null>(null);
   const prevRect = useRef<WinRect | null>(null);
   const live = useRef<WinRect | null>(null);
-  const gesture = useRef<{ kind: "move" | "resize"; mode: string; sx: number; sy: number; start: WinRect; ratio: number } | null>(null);
+  const gesture = useRef<{ kind: "move" | "resize" | "pending"; mode: string; sx: number; sy: number; start: WinRect; ratio: number } | null>(null);
   const [maximized, setMaximized] = useState(startMaximized);
   const toggleMaximize = () => {
     setSnap(null);
+    if (!maximized && el.current) prevRect.current = rect ?? measure();
     setMaximized((value) => !value);
   };
   const measure = (): WinRect => {
@@ -1014,12 +1016,32 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     node.style.right = "auto";
     node.style.bottom = "auto";
   };
+  // Dragging to the top edge: glide the window out to full size, then switch to the maximized layout.
+  const expand = () => {
+    const node = el.current;
+    if (!node) return setMaximized(true);
+    const reserve = window.innerWidth >= 768 ? 72 : 56;
+    const ease = "cubic-bezier(.22,1,.36,1)";
+    node.style.transition = `left .26s ${ease}, top .26s ${ease}, width .26s ${ease}, height .26s ${ease}, border-radius .26s ease`;
+    place({ x: 0, y: 0, w: window.innerWidth, h: window.innerHeight - reserve });
+    node.style.borderRadius = "0px";
+    window.setTimeout(() => {
+      node.style.transition = "";
+      node.style.borderRadius = "";
+      ["left", "top", "width", "height", "right", "bottom"].forEach((property) => node.style.removeProperty(property));
+      setSnap(null);
+      setMaximized(true);
+    }, 270);
+  };
   const restore = () => {
     setSnap(null);
     setRect(prevRect.current);
   };
   const snapTo = (zone: string) => {
-    if (zone === "up") return setMaximized(true);
+    if (zone === "up") {
+      if (!maximized && el.current) prevRect.current = rect ?? measure();
+      return setMaximized(true);
+    }
     if (zone === "down") {
       if (maximized) return setMaximized(false);
       if (snap) return restore();
@@ -1051,7 +1073,13 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       onPointerDown={(event) => {
         focus();
         const target = event.target as HTMLElement;
-        if (maximized || event.button !== 0 || !target.closest("header") || target.closest("button")) return;
+        if (event.button !== 0 || !target.closest("header") || target.closest("button")) return;
+        if (maximized) {
+          // Hold the title bar of a maximized window and pull down to restore it.
+          gesture.current = { kind: "pending", mode: "", sx: event.clientX, sy: event.clientY, start: { x: 0, y: 0, w: 0, h: 0 }, ratio: 0 };
+          event.currentTarget.setPointerCapture(event.pointerId);
+          return;
+        }
         const start = rect ?? measure();
         const ratio = (event.clientX - start.x) / Math.max(1, start.w);
         let base = start;
@@ -1069,9 +1097,20 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         if (!g) return;
         const dx = event.clientX - g.sx;
         const dy = event.clientY - g.sy;
+        if (g.kind === "pending") {
+          if (Math.hypot(dx, dy) < 6) return;
+          const base = prevRect.current ?? { x: 80, y: 40, w: Math.min(900, window.innerWidth - 160), h: Math.min(600, window.innerHeight - 160) };
+          const next = { ...base, x: event.clientX - base.w * (event.clientX / window.innerWidth), y: Math.max(0, event.clientY - 18) };
+          setMaximized(false);
+          setSnap(null);
+          setRect(next);
+          live.current = next;
+          gesture.current = { kind: "move", mode: "", sx: event.clientX, sy: event.clientY, start: next, ratio: 0 };
+          return;
+        }
         if (g.kind === "move") {
           place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(0, g.start.y + dy)) });
-          showSnap(event.clientX <= 6 ? "left" : event.clientX >= window.innerWidth - 6 ? "right" : event.clientY <= 4 ? "max" : null);
+          showSnap(edgeZone(event.clientX, event.clientY) === "up" ? "max" : edgeZone(event.clientX, event.clientY) as "left" | "right" | null);
         } else {
           place({ ...g.start, w: g.mode.includes("e") ? Math.max(320, g.start.w + dx) : g.start.w, h: g.mode.includes("s") ? Math.max(220, g.start.h + dy) : g.start.h });
         }
@@ -1081,9 +1120,10 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         gesture.current = null;
         if (!g) return;
         showSnap(null);
+        if (g.kind === "pending") return;
+        const zone = g.kind === "move" && live.current ? edgeZone(event.clientX, event.clientY) : null;
+        if (zone === "up") return expand();
         if (live.current) setRect(live.current);
-        if (g.kind !== "move" || !live.current) return;
-        const zone = event.clientX <= 6 ? "left" : event.clientX >= window.innerWidth - 6 ? "right" : event.clientY <= 4 ? "up" : null;
         if (zone) snapTo(zone);
       }}
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "pointer-events-none translate-y-8 scale-90 opacity-0" : ""} ${position}`}
@@ -2326,6 +2366,11 @@ function StopwatchWidget() {
 type WinRect = { x: number; y: number; w: number; h: number };
 type SearchHit = { title: string; url: string; snippet: string };
 
+// Where a dragged window would snap: left/right edge, or the top edge to expand it.
+function edgeZone(x: number, y: number): "left" | "right" | "up" | null {
+  return x <= 16 ? "left" : x >= window.innerWidth - 16 ? "right" : y <= 24 ? "up" : null;
+}
+
 // Windows 11 style snap preview shown while dragging a window to a screen edge.
 function showSnap(zone: "left" | "right" | "max" | null) {
   let node = document.getElementById("snap-preview");
@@ -2341,11 +2386,13 @@ function showSnap(zone: "left" | "right" | "max" | null) {
   }
   const width = window.innerWidth;
   const half = Math.round(width / 2) - 12;
+  const reserve = width >= 768 ? 72 : 56;
   Object.assign(node.style, {
-    left: `${zone === "right" ? Math.round(width / 2) + 4 : 8}px`,
-    top: "8px",
-    width: `${zone === "max" ? width - 16 : half}px`,
-    height: `${window.innerHeight - 88}px`,
+    left: `${zone === "max" ? 0 : zone === "right" ? Math.round(width / 2) + 4 : 8}px`,
+    top: zone === "max" ? "0px" : "8px",
+    width: `${zone === "max" ? width : half}px`,
+    height: `${zone === "max" ? window.innerHeight - reserve : window.innerHeight - 88}px`,
+    borderRadius: zone === "max" ? "0px" : "12px",
   });
 }
 

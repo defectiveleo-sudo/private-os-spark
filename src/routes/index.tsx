@@ -3506,7 +3506,7 @@ const LIBS = {
   pdfWorker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js",
 };
 const scriptCache = new Map<string, Promise<void>>();
-function loadScript(src: string) {
+function loadLibScript(src: string) {
   let task = scriptCache.get(src);
   if (!task) {
     task = new Promise<void>((resolve, reject) => {
@@ -3624,7 +3624,7 @@ function WriterApp({ close }: { close: () => void }) {
     try {
       let html: string;
       if (/\.docx$/i.test(fileName)) {
-        await loadScript(LIBS.mammoth);
+        await loadLibScript(LIBS.mammoth);
         html = (await lib("mammoth").convertToHtml({ arrayBuffer: buffer })).value as string;
       } else {
         const text = new TextDecoder().decode(buffer);
@@ -3716,7 +3716,7 @@ function SlidesApp({ close }: { close: () => void }) {
   };
   const importPptx = async (fileName: string, buffer: ArrayBuffer) => {
     try {
-      await loadScript(LIBS.jszip);
+      await loadLibScript(LIBS.jszip);
       const zip = await lib("JSZip").loadAsync(buffer);
       const files = Object.keys(zip.files).filter((file) => /^ppt\/slides\/slide\d+\.xml$/.test(file)).sort((a, b) => parseInt(a.replace(/\D/g, ""), 10) - parseInt(b.replace(/\D/g, ""), 10));
       const decode = (text: string) => text.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
@@ -3737,7 +3737,7 @@ function SlidesApp({ close }: { close: () => void }) {
   };
   useOpenFromFiles("slides", importPptx);
   const build = async () => {
-    await loadScript(LIBS.pptx);
+    await loadLibScript(LIBS.pptx);
     const pptx = new (lib("PptxGenJS"))();
     slides.forEach((item) => {
       const s = pptx.addSlide();
@@ -3868,7 +3868,7 @@ function SheetsApp({ close }: { close: () => void }) {
   const setCell = (r: number, c: number, value: string) => setData((grid) => grid.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)));
   const importBuffer = async (fileName: string, buffer: ArrayBuffer) => {
     try {
-      await loadScript(LIBS.xlsx);
+      await loadLibScript(LIBS.xlsx);
       const XLSX = lib("XLSX");
       const wb = XLSX.read(buffer, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
@@ -3889,7 +3889,7 @@ function SheetsApp({ close }: { close: () => void }) {
   };
   useOpenFromFiles("sheets", importBuffer);
   const workbook = async () => {
-    await loadScript(LIBS.xlsx);
+    await loadLibScript(LIBS.xlsx);
     const XLSX = lib("XLSX");
     const values = data.map((row, r) => row.map((_cell, c) => (data[r]![c]!.startsWith("=") ? "" : data[r]![c]!)));
     const ws = XLSX.utils.aoa_to_sheet(values);
@@ -3974,7 +3974,7 @@ function PdfApp({ close }: { close: () => void }) {
   const load = async (fileName: string, buffer: ArrayBuffer) => {
     try {
       setMsg("Opening…");
-      await loadScript(LIBS.pdf);
+      await loadLibScript(LIBS.pdf);
       const pdfjs = lib("pdfjsLib");
       pdfjs.GlobalWorkerOptions.workerSrc = LIBS.pdfWorker;
       const pdf = await pdfjs.getDocument({ data: buffer.slice(0) }).promise;

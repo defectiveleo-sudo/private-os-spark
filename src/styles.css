@@ -302,10 +302,18 @@ main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px;
 .doc-page table { border-collapse: collapse; }
 .doc-page td, .doc-page th { border: 1px solid #bbb; padding: 4px 8px; }
 
-/* Modern settings style (dark panels, compact type, like the reference screenshots) */
-.modern-settings { background: #0b0c12; font-family: "Manrope", system-ui, sans-serif; }
-.modern-settings section.fx-card { background: #11121a; border: 1px solid rgb(255 255 255 / .06); border-radius: 14px; }
-.modern-settings section.fx-card:hover { box-shadow: 0 10px 30px color-mix(in oklab, var(--primary) 12%, transparent); }
-.modern-settings section.fx-card > h4 { font-size: 11px; letter-spacing: .02em; margin-bottom: .75rem; }
-.modern-settings section.fx-card > div > div { border-bottom: 1px solid rgb(255 255 255 / .05); padding-bottom: .7rem; }
-.modern-settings section.fx-card > div > div:last-child { border-bottom: 0; padding-bottom: 0; }
+/* Modern settings style: dark frosted panels, purple toggles, compact type (matches the reference screenshots).
+   Uses the same page-in / stagger / fx-card animations as Classic. */
+.modern-settings { background: radial-gradient(120% 80% at 70% 0%, color-mix(in oklab, var(--primary) 9%, #0b0c12) 0%, #0b0c12 60%); font-family: "Poppins", "Manrope", system-ui, sans-serif; }
+.modern-settings h2 { font-size: 1.35rem; letter-spacing: -.01em; }
+.modern-card { background: rgb(18 19 27 / .72); border: 1px solid rgb(255 255 255 / .06); border-radius: 14px; backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+.modern-card:hover { border-color: color-mix(in oklab, var(--primary) 30%, rgb(255 255 255 / .06)); box-shadow: 0 12px 32px color-mix(in oklab, var(--primary) 14%, transparent); }
+.modern-rows > * { padding: .7rem 0; }
+.modern-rows > * + * { border-top: 1px solid rgb(255 255 255 / .05); }
+.modern-rows > p, .modern-rows > button { margin: .5rem 0; padding: .45rem .75rem; }
+.modern-settings [role="switch"] { height: 18px; width: 32px; transition: background-color .2s ease, box-shadow .25s ease; }
+.modern-settings [role="switch"] > span { top: 2px; width: 14px; height: 14px; }
+.modern-settings [role="switch"][aria-checked="true"] { background: var(--primary); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 60%, white 10%), 0 0 12px color-mix(in oklab, var(--primary) 45%, transparent); }
+.modern-settings [role="switch"][aria-checked="true"] > span { left: 16px; }
+.modern-settings [role="switch"][aria-checked="false"] { background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
+.modern-settings input[type="range"] { accent-color: var(--primary); }

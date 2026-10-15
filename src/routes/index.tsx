@@ -22,6 +22,9 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Crown,
+  RotateCcw,
+  Check as CheckMark,
   Settings,
   ShieldCheck,
   Signal,
@@ -2808,7 +2811,24 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (value: boolea
   );
 }
 
+// True inside the Modern settings style, so cards draw the Modern header.
+const ModernUi = createContext(false);
+
 function CfgCard({ title, children }: { title: string; children: ReactNode }) {
+  const modern = useContext(ModernUi);
+  if (modern) {
+    const count = Array.isArray(children) ? children.filter(Boolean).length : 1;
+    return (
+      <section className="fx-card modern-card overflow-hidden">
+        <header className="flex items-center gap-3 border-b border-white/[.06] px-4 py-3">
+          <span className="grid size-7 place-items-center rounded-lg border border-primary/40 bg-primary/10 text-primary"><CheckMark className="size-3.5" aria-hidden /></span>
+          <h4 className="flex-1 text-[12px] font-semibold">{title}</h4>
+          <span className="text-[10px] tabular-nums text-muted-foreground">{count}</span>
+        </header>
+        <div className="modern-rows px-4 py-1">{children}</div>
+      </section>
+    );
+  }
   return (
     <section className="fx-card rounded-2xl border border-white/10 bg-black/20 p-4">
       <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />{title}</h4>
@@ -2945,18 +2965,19 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
   const btn = "rounded-lg px-3 py-1.5 text-[11px] font-semibold";
   const modern = settings.uiStyle === "modern";
   const curTheme = THEMES.find((item) => item.id === settings.theme) ?? THEMES[0]!;
-  const curColor = curTheme.accent || "#f2c783";
+  const baseColor = modern ? "#8b7cff" : "#f2c783";
+  const curColor = curTheme.accent || baseColor;
   const shownThemes = THEMES.filter((item) => (themeTab === "all" || item.glass) && `${item.name} ${item.sub}`.toLowerCase().includes(themeQuery.toLowerCase()));
   const primaryIds = ["themes", "configs", "appearance", "settings", "backup", "about"];
   const categoryCounts: Record<string, number> = { widgets: settings.widgets.length, dock: settings.dockPins.length, time: settings.worldClocks.length, network: 0 };
   const quickList = [...configs, ...PUBLIC_CONFIGS].filter((item) => item.name.toLowerCase().includes(qcQuery.toLowerCase()));
-  const particlesEl = (
-        {settings.particles && (
+  const particlesEl = settings.particles ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             {Array.from({ length: 16 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%`, animationDelay: `${-(i * 1.7) % 9}s`, animationDuration: `${8 + (i % 5) * 2}s` }} />)}
           </div>
-        )}
-  );
+  ) : null;
+  const customized = (Object.keys(DEFAULT_SETTINGS) as (keyof OsSettings)[]).filter((key) => key !== "uiStyle" && JSON.stringify(settings[key]) !== JSON.stringify(DEFAULT_SETTINGS[key])).length;
+  const resetDefaults = () => { patch({ ...DEFAULT_SETTINGS, uiStyle: settings.uiStyle }); log("Settings reset to defaults"); };
   const classicAside = (
         <aside className="relative z-10 flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 p-2 md:w-60 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:p-3">
           <div className="hidden items-center gap-3 px-2 pb-3 md:flex">
@@ -3009,7 +3030,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {shownThemes.map((theme) => {
                   const on = settings.theme === theme.id;
-                  const color = theme.accent || "#f2c783";
+                  const color = theme.accent || baseColor;
                   return (
                     <button key={theme.id} type="button" onClick={() => chooseTheme(theme)} aria-pressed={on} className="fx-card rounded-2xl border bg-[#12131b] p-2 text-left" style={{ borderColor: on ? color : "rgb(255 255 255 / .07)", boxShadow: on ? `0 0 0 1px ${color}` : undefined }}>
                       <ThemePreview accent={color} badge={theme.glass ? "GLASS" : undefined} />
@@ -3248,13 +3269,20 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             </div>
           )}
 
+          {page === "settings" && modern && (
+            <div className="-mx-4 -mt-1 mb-4 flex items-center justify-end gap-3 border-y border-white/[.06] bg-[#0d0e14]/70 px-4 py-2 md:-mx-6 md:px-6">
+              <span className="text-[10px] text-muted-foreground">{customized} customized</span>
+              <button type="button" onClick={resetDefaults} disabled={customized === 0} className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-[11px] font-semibold disabled:opacity-40"><RotateCcw className="size-3" aria-hidden />Reset defaults</button>
+            </div>
+          )}
+
           {page === "settings" && (
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
                 <CfgCard title="Interface style">
-                  <p className="text-[10px] text-muted-foreground">Pick how Settings looks. Both keep the same animations.</p>
+                  <p className="text-[10px] text-muted-foreground">Pick how Settings looks. Both keep the same animations and sounds.</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark panels with a top bar, quick configs, theme previews and a status bar."]] as const).map(([id, label, sub]) => (
+                    {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark frosted panels, purple toggles, a search bar, quick configs and a themes grid."]] as const).map(([id, label, sub]) => (
                       <button key={id} type="button" aria-pressed={settings.uiStyle === id} onClick={() => patch({ uiStyle: id })} className={`fx-card rounded-2xl border p-2.5 text-left ${settings.uiStyle === id ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
                         <StylePreview kind={id} />
                         <p className="mt-2 text-xs font-bold">{label}{settings.uiStyle === id ? " ✓" : ""}</p>
@@ -3308,7 +3336,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <CfgRow title="Mint cursors" sub="Off uses your system cursor"><Switch on={!settings.nativeCursor} label="Mint cursors" onChange={(value) => patch({ nativeCursor: !value })} /></CfgRow>
                 </CfgCard>
                 <CfgCard title="Reset">
-                  <button type="button" onClick={() => { patch({ ...DEFAULT_SETTINGS }); log("Appearance reset to defaults"); }} className={`${btn} w-full bg-white/10 py-2`}>Reset look and widgets</button>
+                  <button type="button" onClick={resetDefaults} className={`${btn} w-full bg-white/10 py-2`}>Reset look and widgets</button>
                   <button type="button" onClick={() => { if (!window.confirm("Erase all PRIVATE OS data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ } window.setTimeout(() => window.location.reload(), 200); }} className="w-full rounded-lg bg-red-600 py-2.5 text-xs font-bold text-white">Clear all data</button>
                   <p className="text-[10px] text-muted-foreground">Wipes wallpapers, files, notes and settings stored in this browser.</p>
                 </CfgCard>
@@ -3324,8 +3352,8 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
   const modernAside = (
     <aside className="relative z-10 flex shrink-0 gap-1 overflow-x-auto border-b border-white/[.06] bg-[#0d0e14] p-2 md:w-52 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:p-3">
       <div className="hidden items-center gap-2.5 px-1 pb-3 md:flex">
-        <span className="grid size-9 place-items-center rounded-xl bg-primary/20 text-primary"><ShieldCheck className="size-4" /></span>
-        <div><p className="font-['Playfair_Display',serif] text-sm font-bold leading-tight">PRIVATE</p><p className="text-[8px] tracking-[.16em] text-muted-foreground">OS EDITION</p></div>
+        <span className="grid size-9 place-items-center rounded-xl bg-primary/20 text-primary shadow-[0_0_18px_color-mix(in_oklab,var(--primary)_35%,transparent)]"><Crown className="size-4" /></span>
+        <div><p className="font-['Playfair_Display',serif] text-sm font-bold leading-tight">Private</p><p className="text-[8px] tracking-[.16em] text-muted-foreground">OS EDITION</p></div>
       </div>
       <p className="hidden px-2 pb-1 text-[8px] font-semibold tracking-[.2em] text-muted-foreground md:block">SYSTEM</p>
       {NAV.filter((item) => primaryIds.includes(item.id)).map((item) => {
@@ -3375,9 +3403,11 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     <WindowFrame title="Settings" icon={SettingsIcon} close={close}>
       {modern ? (
         <div style={settings.accent ? undefined : ({ "--primary": "#8b7cff", "--primary-foreground": "#ffffff" } as React.CSSProperties)} className="modern-settings relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
-          {particlesEl}
-          {modernAside}
-          <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">{modernTop}{contentEl}{modernStatus}</div>
+          <ModernUi.Provider value={true}>
+            {particlesEl}
+            {modernAside}
+            <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">{modernTop}{contentEl}{modernStatus}</div>
+          </ModernUi.Provider>
         </div>
       ) : (
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
@@ -4237,7 +4267,7 @@ function LiveTime({ zone, hour12 }: { zone?: string | undefined; hour12: boolean
 }
 
 // Mini picture of an interface, used for theme cards and the interface style picker.
-function ThemePreview({ accent, badge }: { accent: string; badge?: string }) {
+function ThemePreview({ accent, badge }: { accent: string; badge?: string | undefined }) {
   return (
     <div aria-hidden className="relative flex h-[5.2rem] gap-1.5 overflow-hidden rounded-xl border border-white/[.07] bg-[#0b0c11] p-1.5">
       <div className="flex w-5 shrink-0 flex-col gap-1">{[0, 1, 2, 3].map((i) => <span key={i} className="h-1.5 rounded-sm" style={{ background: i === 1 ? accent : "rgb(255 255 255 / .12)" }} />)}</div>

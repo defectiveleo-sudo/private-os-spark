@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { installUiSounds, playClick, playHover } from "@/lib/ui-sound";
 import { Component } from "react";
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
@@ -494,6 +495,12 @@ function PrivateOS() {
   useEffect(() => {
     if (settings.skipStart) setPhase((value) => (value === "start" ? "boot" : value));
   }, [settings.skipStart]);
+
+  const soundPrefs = useRef({ enabled: true, hover: true, click: true, volume: 40 });
+  useEffect(() => {
+    soundPrefs.current = { enabled: settings.uiSounds, hover: settings.soundHover, click: settings.soundClick, volume: settings.soundVolume };
+  });
+  useEffect(() => installUiSounds(() => soundPrefs.current), []);
 
   useEffect(() => {
     if (!settings.slideshow || allWalls.length < 2) return;
@@ -2256,8 +2263,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40 };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2759,7 +2766,7 @@ function AboutApp({ close }: { close: () => void }) {
   );
 }
 
-type ThemeDef = { id: string; name: string; sub: string; accent: string };
+type ThemeDef = { id: string; name: string; sub: string; accent: string; glass?: boolean };
 const THEMES: ThemeDef[] = [
   { id: "private", name: "Private", sub: "Original gold", accent: "" },
   { id: "signature", name: "Signature", sub: "Brand purple", accent: "#7c6cff" },
@@ -2773,6 +2780,9 @@ const THEMES: ThemeDef[] = [
   { id: "ember", name: "Ember", sub: "Warm orange ember", accent: "#fb923c" },
   { id: "coral", name: "Coral", sub: "Soft coral pink", accent: "#fb7185" },
   { id: "plasma", name: "Plasma", sub: "Hot pink plasma", accent: "#f43f9d" },
+  { id: "vault-glass", name: "Vault Glass", sub: "Smoked graphite with a quiet violet glow", accent: "#8b7cff", glass: true },
+  { id: "arctic-glass", name: "Arctic Glass", sub: "Cool graphite with a soft blue glow", accent: "#5aa9ff", glass: true },
+  { id: "rose-glass", name: "Rose Glass", sub: "Soft rose reflections on slate glass", accent: "#f59fb8", glass: true },
 ];
 
 function readableOn(hex: string) {
@@ -2839,6 +2849,10 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     { id: "about", label: "About", sub: "Version and changelog", icon: Info, title: "About", heading: "What this OS is and what's new" },
   ];
   const [page, setPage] = useState("themes");
+  const [qcOpen, setQcOpen] = useState(false);
+  const [qcQuery, setQcQuery] = useState("");
+  const [themeTab, setThemeTab] = useState<"all" | "glass">("all");
+  const [themeQuery, setThemeQuery] = useState("");
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"all" | "mine" | "public">("all");
   const [cfgQuery, setCfgQuery] = useState("");
@@ -2929,14 +2943,21 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
   const current = NAV.find((item) => item.id === page) ?? NAV[0]!;
   const navShown = NAV.filter((item) => `${item.label} ${item.sub}`.toLowerCase().includes(query.toLowerCase()));
   const btn = "rounded-lg px-3 py-1.5 text-[11px] font-semibold";
-  return (
-    <WindowFrame title="Settings" icon={SettingsIcon} close={close}>
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+  const modern = settings.uiStyle === "modern";
+  const curTheme = THEMES.find((item) => item.id === settings.theme) ?? THEMES[0]!;
+  const curColor = curTheme.accent || "#f2c783";
+  const shownThemes = THEMES.filter((item) => (themeTab === "all" || item.glass) && `${item.name} ${item.sub}`.toLowerCase().includes(themeQuery.toLowerCase()));
+  const primaryIds = ["themes", "configs", "appearance", "settings", "backup", "about"];
+  const categoryCounts: Record<string, number> = { widgets: settings.widgets.length, dock: settings.dockPins.length, time: settings.worldClocks.length, network: 0 };
+  const quickList = [...configs, ...PUBLIC_CONFIGS].filter((item) => item.name.toLowerCase().includes(qcQuery.toLowerCase()));
+  const particlesEl = (
         {settings.particles && (
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             {Array.from({ length: 16 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%`, animationDelay: `${-(i * 1.7) % 9}s`, animationDuration: `${8 + (i % 5) * 2}s` }} />)}
           </div>
         )}
+  );
+  const classicAside = (
         <aside className="relative z-10 flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 p-2 md:w-60 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:p-3">
           <div className="hidden items-center gap-3 px-2 pb-3 md:flex">
             <span className="grid size-10 place-items-center rounded-xl bg-primary/20 text-primary"><ShieldCheck className="size-5" /></span>
@@ -2958,12 +2979,82 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <p className="mt-0.5 text-[10px] text-muted-foreground">Data stored: <span className="text-primary">Locally</span></p>
           </div>
         </aside>
-
+  );
+  const contentEl = (
         <div key={page} className="page-in relative z-10 min-h-0 flex-1 overflow-auto p-4 md:p-6">
-          <h2 className="font-['Playfair_Display',serif] text-2xl font-bold">{current.title}</h2>
+          <h2 className={`text-2xl font-bold ${modern ? "tracking-tight" : "font-['Playfair_Display',serif]"}`}>{current.title}</h2>
           <p className="mb-4 text-xs text-muted-foreground">{current.heading}</p>
 
-          {page === "themes" && (
+          {page === "themes" && modern && (
+            <div className="stagger space-y-5">
+              <div className="grid gap-4 rounded-2xl border border-white/[.06] bg-[#12131b] p-4 lg:grid-cols-[1fr_17rem]">
+                <div>
+                  <p className="text-[9px] font-semibold tracking-[.18em] text-muted-foreground">CURRENT THEME</p>
+                  <p className="mt-1 text-lg font-bold">{curTheme.name}</p>
+                  <p className="mt-0.5 text-[11px] text-primary">✓ Frosted cards + ambient glow</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{curTheme.sub}</p>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[10px]">
+                    {([["Accent", curColor], ["Background", "#0d0e14"], ["Surface", "#161822"], ["Scrollbar", settings.scrollAccent || curColor]] as const).map(([label, value]) => (
+                      <div key={label} className="flex items-center gap-2"><span className="size-4 rounded-[5px] ring-1 ring-white/15" style={{ background: value }} /><div><dt className="text-muted-foreground">{label}</dt><dd className="font-mono">{value}</dd></div></div>
+                    ))}
+                  </dl>
+                </div>
+                <ThemePreview accent={curColor} />
+              </div>
+              <div className="flex items-end justify-between"><p className="text-sm font-bold">Choose a theme</p><span className="text-[10px] text-muted-foreground">{shownThemes.length} themes</span></div>
+              <div className="flex flex-wrap items-center gap-2">
+                {([["all", "All themes"], ["glass", "Glass"]] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={themeTab === id} onClick={() => setThemeTab(id)} className={`rounded-lg px-3 py-1.5 text-[11px] font-semibold ${themeTab === id ? "bg-primary text-primary-foreground" : "border border-white/10 bg-black/30"}`}>{label}</button>)}
+                <label className="flex min-w-[10rem] flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5"><Search className="size-3.5 text-muted-foreground" aria-hidden /><input aria-label="Search themes" value={themeQuery} onChange={(event) => setThemeQuery(event.target.value)} placeholder="Search themes…" className="h-8 w-full bg-transparent text-[11px] outline-none" /></label>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {shownThemes.map((theme) => {
+                  const on = settings.theme === theme.id;
+                  const color = theme.accent || "#f2c783";
+                  return (
+                    <button key={theme.id} type="button" onClick={() => chooseTheme(theme)} aria-pressed={on} className="fx-card rounded-2xl border bg-[#12131b] p-2 text-left" style={{ borderColor: on ? color : "rgb(255 255 255 / .07)", boxShadow: on ? `0 0 0 1px ${color}` : undefined }}>
+                      <ThemePreview accent={color} badge={theme.glass ? "GLASS" : undefined} />
+                      <div className="flex items-start justify-between gap-2 px-1.5 pb-1 pt-2"><div className="min-w-0"><p className="text-[11px] font-bold">{theme.name}</p><p className="truncate text-[9px] text-muted-foreground">{theme.sub}</p></div>{on && <span className="shrink-0 text-[9px] font-semibold" style={{ color }}>✓ Active</span>}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {page === "configs" && modern && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex min-w-[10rem] flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5"><Search className="size-3.5 text-muted-foreground" aria-hidden /><input aria-label="Search configs" value={cfgQuery} onChange={(event) => setCfgQuery(event.target.value)} placeholder="Search configs, creators or tags…" className="h-8 w-full bg-transparent text-[11px] outline-none" /></label>
+                <button type="button" onClick={importConfig} className={`${btn} border border-white/10 bg-black/30`}>Import</button>
+                <button type="button" onClick={newConfig} className={`${btn} bg-primary text-primary-foreground`}>+ New config</button>
+              </div>
+              <div className="flex gap-1.5 text-[11px]">
+                {([["all", `All ${configs.length + PUBLIC_CONFIGS.length}`], ["mine", `Mine ${configs.length}`], ["public", `Public ${PUBLIC_CONFIGS.length}`]] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={tab === id} onClick={() => setTab(id)} className={`rounded-lg px-3 py-1 font-semibold ${tab === id ? "bg-primary text-primary-foreground" : "bg-black/30 text-muted-foreground"}`}>{label}</button>)}
+              </div>
+              {shown.length === 0 && <p className="p-8 text-center text-xs text-muted-foreground">No configs here yet. Use + New config to save your current setup.</p>}
+              <div className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {shown.map((config) => (
+                  <div key={config.id} className="fx-card overflow-hidden rounded-2xl border border-white/[.07] bg-[#12131b]">
+                    <div className="flex items-center gap-2 bg-primary/10 px-3 py-2 text-[9px] font-semibold tracking-widest text-primary"><Save className="size-3.5" aria-hidden />{config.mine ? "PRIVATE" : "BUILT-IN"}</div>
+                    <div className="space-y-1.5 p-3">
+                      <p className="text-xs font-bold">{config.name}</p>
+                      <p className="line-clamp-2 min-h-[2rem] text-[10px] text-muted-foreground">{config.desc}</p>
+                      <div className="flex flex-wrap gap-1">{config.tags.map((tag) => <span key={tag} className="rounded bg-primary/15 px-1.5 py-0.5 text-[9px] text-primary">{tag}</span>)}</div>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <span className="mr-auto text-[9px] text-muted-foreground">{config.mine ? "By you" : "Public"}</span>
+                        {config.mine && <button type="button" onClick={() => editConfig(config)} className={`${btn} bg-black/30`}>Edit</button>}
+                        <button type="button" onClick={() => shareConfig(config)} className={`${btn} bg-black/30`}>Share</button>
+                        {config.mine && <button type="button" onClick={() => saveConfigs(configs.filter((item) => item.id !== config.id))} className={`${btn} bg-red-500/70 text-white`}>Delete</button>}
+                        <button type="button" onClick={() => applyConfig(config)} className={`${btn} bg-primary text-primary-foreground`}>Load</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {page === "themes" && !modern && (
             <div className="stagger grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {THEMES.map((theme) => {
                 const active = settings.theme === theme.id;
@@ -2983,7 +3074,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             </div>
           )}
 
-          {page === "configs" && (
+          {page === "configs" && !modern && (
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3"><Search className="size-3.5 text-muted-foreground" /><input aria-label="Search configs" value={cfgQuery} onChange={(event) => setCfgQuery(event.target.value)} placeholder="Search configs by name or tag..." className="h-9 w-full bg-transparent text-xs outline-none" /></label>
@@ -3160,6 +3251,26 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           {page === "settings" && (
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
+                <CfgCard title="Interface style">
+                  <p className="text-[10px] text-muted-foreground">Pick how Settings looks. Both keep the same animations.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark panels with a top bar, quick configs, theme previews and a status bar."]] as const).map(([id, label, sub]) => (
+                      <button key={id} type="button" aria-pressed={settings.uiStyle === id} onClick={() => patch({ uiStyle: id })} className={`fx-card rounded-2xl border p-2.5 text-left ${settings.uiStyle === id ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
+                        <StylePreview kind={id} />
+                        <p className="mt-2 text-xs font-bold">{label}{settings.uiStyle === id ? " ✓" : ""}</p>
+                        <p className="text-[10px] leading-snug text-muted-foreground">{sub}</p>
+                      </button>
+                    ))}
+                  </div>
+                </CfgCard>
+                <CfgCard title="Sounds">
+                  <CfgRow title="Interface sounds" sub="A soft tick when you hover a button and a pop when you click"><Switch on={settings.uiSounds} label="Interface sounds" onChange={(value) => patch({ uiSounds: value })} /></CfgRow>
+                  <CfgRow title="Hover sound" sub="Plays when the pointer moves onto a button"><Switch on={settings.soundHover} label="Hover sound" onChange={(value) => patch({ soundHover: value })} /></CfgRow>
+                  <CfgRow title="Click sound" sub="Plays when you press a button or switch"><Switch on={settings.soundClick} label="Click sound" onChange={(value) => patch({ soundClick: value })} /></CfgRow>
+                  <CfgSlider label="Volume" value={settings.soundVolume} max={100} unit="%" onChange={(value) => patch({ soundVolume: value })} />
+                  <button type="button" onClick={() => { playHover(settings.soundVolume / 100); window.setTimeout(() => playClick(settings.soundVolume / 100), 260); }} className={`${btn} bg-white/10`}>Play a test sound</button>
+                  <p className="text-[10px] text-muted-foreground">Sounds are made on your device. Hover sounds only play with a mouse. Your browser may stay silent until you click once.</p>
+                </CfgCard>
                 <CfgCard title="General">
                   <CfgRow title="Search key" sub="Search apps, files and commands"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Ctrl + K</kbd></CfgRow>
                   <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
@@ -3209,7 +3320,72 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             </div>
           )}
         </div>
+  );
+  const modernAside = (
+    <aside className="relative z-10 flex shrink-0 gap-1 overflow-x-auto border-b border-white/[.06] bg-[#0d0e14] p-2 md:w-52 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:p-3">
+      <div className="hidden items-center gap-2.5 px-1 pb-3 md:flex">
+        <span className="grid size-9 place-items-center rounded-xl bg-primary/20 text-primary"><ShieldCheck className="size-4" /></span>
+        <div><p className="font-['Playfair_Display',serif] text-sm font-bold leading-tight">PRIVATE</p><p className="text-[8px] tracking-[.16em] text-muted-foreground">OS EDITION</p></div>
       </div>
+      <p className="hidden px-2 pb-1 text-[8px] font-semibold tracking-[.2em] text-muted-foreground md:block">SYSTEM</p>
+      {NAV.filter((item) => primaryIds.includes(item.id)).map((item) => {
+        const Icon = item.icon;
+        const on = item.id === page;
+        return <button key={item.id} type="button" onClick={() => setPage(item.id)} aria-current={on ? "page" : undefined} className={`flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold ${on ? "bg-primary/15 shadow-[inset_2px_0_0_var(--primary)]" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`}><Icon className="size-3.5" />{item.label}</button>;
+      })}
+      <p className="hidden px-2 pb-1 pt-3 text-[8px] font-semibold tracking-[.2em] text-muted-foreground md:block">CATEGORIES</p>
+      {NAV.filter((item) => !primaryIds.includes(item.id)).map((item) => {
+        const Icon = item.icon;
+        const on = item.id === page;
+        return <button key={item.id} type="button" onClick={() => setPage(item.id)} aria-current={on ? "page" : undefined} className={`flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold ${on ? "bg-primary/15 shadow-[inset_2px_0_0_var(--primary)]" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`}><Icon className="size-3.5" /><span className="flex-1">{item.label}</span>{(categoryCounts[item.id] ?? 0) > 0 && <span className="text-[9px] tabular-nums text-muted-foreground">{categoryCounts[item.id]}</span>}</button>;
+      })}
+      <div className="mt-auto hidden space-y-2 md:block">
+        <button type="button" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true }))} className="flex w-full items-center gap-2 rounded-lg border border-white/[.07] px-2.5 py-2 text-[10px] text-muted-foreground hover:bg-white/5"><Search className="size-3" aria-hidden />Quick switch<span className="ml-auto rounded bg-white/10 px-1 text-[9px]">Ctrl K</span></button>
+        <div className="flex items-center gap-2 rounded-lg border border-white/[.07] p-2"><span className="grid size-7 place-items-center rounded-lg bg-primary/25 text-[11px] font-bold text-primary">P</span><div><p className="text-[10px] font-semibold">private</p><p className="text-[9px] text-muted-foreground">Local profile</p></div></div>
+      </div>
+    </aside>
+  );
+  const modernTop = (
+    <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-white/[.06] bg-[#0d0e14] px-4 py-2">
+      <span className="flex items-center gap-2 text-[11px] text-muted-foreground"><current.icon className="size-3.5" />{current.title}</span>
+      <div className="ml-auto flex items-center gap-2">
+        <label className="flex w-40 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5 sm:w-60"><Search className="size-3.5 text-muted-foreground" aria-hidden /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && navShown[0]) { setPage(navShown[0].id); setQuery(""); } }} placeholder="Search modules or settings…" className="h-8 w-full bg-transparent text-[11px] outline-none" /></label>
+        <div className="relative">
+          <button type="button" aria-haspopup="true" aria-expanded={qcOpen} onClick={() => setQcOpen((value) => !value)} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-[11px] font-semibold"><Save className="size-3.5" aria-hidden />Quick configs<ChevronDown className="size-3" aria-hidden /></button>
+          {qcOpen && (
+            <div role="dialog" aria-label="Quick configs" className="absolute right-0 top-full z-30 mt-2 w-72 rounded-xl border border-white/10 bg-[#14151d] p-3 shadow-2xl [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
+              <div className="flex items-start gap-2"><Save className="mt-0.5 size-4 text-primary" aria-hidden /><div className="flex-1"><p className="text-xs font-bold">Quick configs</p><p className="text-[9px] text-muted-foreground">Your personal library</p></div><button type="button" aria-label="Close quick configs" onClick={() => setQcOpen(false)} className="rounded p-1 hover:bg-white/10"><X className="size-3.5" /></button></div>
+              <label className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5"><Search className="size-3 text-muted-foreground" aria-hidden /><input aria-label="Search your configs" value={qcQuery} onChange={(event) => setQcQuery(event.target.value)} placeholder="Search your configs…" className="h-7 w-full bg-transparent text-[10px] outline-none" /></label>
+              <ul className="mt-2 max-h-48 overflow-auto">
+                {quickList.map((config) => <li key={config.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/5"><span className="min-w-0 flex-1"><span className="block truncate text-[11px] font-semibold">{config.name}</span><span className="text-[9px] text-muted-foreground">{config.mine ? "Private" : "Public"}</span></span><button type="button" onClick={() => { applyConfig(config); setQcOpen(false); }} className="rounded px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/15">Apply</button></li>)}
+                {quickList.length === 0 && <li className="p-3 text-center text-[10px] text-muted-foreground">No configs match.</li>}
+              </ul>
+              <button type="button" onClick={() => { setPage("configs"); setQcOpen(false); }} className="mt-2 flex w-full items-center gap-2 border-t border-white/10 px-1 pt-2 text-[10px] text-muted-foreground hover:text-foreground"><Save className="size-3" aria-hidden />Config library</button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+  const modernStatus = (
+    <div className="flex shrink-0 items-center justify-between border-t border-white/[.06] bg-[#0d0e14] px-4 py-1.5 text-[9px] text-muted-foreground"><span className="flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-green-400" />OS active</span><span>{settings.widgets.length} widgets on</span><span>{OS_VERSION}</span></div>
+  );
+
+  return (
+    <WindowFrame title="Settings" icon={SettingsIcon} close={close}>
+      {modern ? (
+        <div style={settings.accent ? undefined : ({ "--primary": "#8b7cff", "--primary-foreground": "#ffffff" } as React.CSSProperties)} className="modern-settings relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+          {particlesEl}
+          {modernAside}
+          <div className="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col">{modernTop}{contentEl}{modernStatus}</div>
+        </div>
+      ) : (
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+          {particlesEl}
+          {classicAside}
+          {contentEl}
+        </div>
+      )}
     </WindowFrame>
   );
 }
@@ -4058,4 +4234,34 @@ function LiveTime({ zone, hour12 }: { zone?: string | undefined; hour12: boolean
     text = now.toLocaleTimeString();
   }
   return <span className="font-mono text-sm tabular-nums">{text}</span>;
+}
+
+// Mini picture of an interface, used for theme cards and the interface style picker.
+function ThemePreview({ accent, badge }: { accent: string; badge?: string }) {
+  return (
+    <div aria-hidden className="relative flex h-[5.2rem] gap-1.5 overflow-hidden rounded-xl border border-white/[.07] bg-[#0b0c11] p-1.5">
+      <div className="flex w-5 shrink-0 flex-col gap-1">{[0, 1, 2, 3].map((i) => <span key={i} className="h-1.5 rounded-sm" style={{ background: i === 1 ? accent : "rgb(255 255 255 / .12)" }} />)}</div>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="h-1.5 w-1/2 rounded-sm bg-white/25" />
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="flex items-center gap-1 rounded-[4px] bg-white/[.05] px-1 py-[3px]"><span className="h-1 flex-1 rounded-sm bg-white/15" /><span className="h-1.5 w-3 rounded-full" style={{ background: i === 1 ? accent : "rgb(255 255 255 / .18)" }} /></div>
+        ))}
+      </div>
+      {badge && <span className="absolute right-1.5 top-1.5 rounded bg-black/50 px-1 text-[7px] font-semibold tracking-wider text-white/70">{badge}</span>}
+    </div>
+  );
+}
+
+function StylePreview({ kind }: { kind: "classic" | "modern" }) {
+  return kind === "classic" ? (
+    <div aria-hidden className="flex h-16 gap-1.5 overflow-hidden rounded-xl border border-white/10 bg-white/[.06] p-1.5">
+      <div className="flex w-1/4 flex-col gap-1 rounded-lg bg-black/20 p-1">{[0, 1, 2].map((i) => <span key={i} className="h-1.5 rounded bg-white/20" />)}</div>
+      <div className="flex-1 space-y-1"><span className="block h-2 w-1/3 rounded bg-white/30" /><span className="block h-4 rounded-lg bg-white/10" /><span className="block h-4 rounded-lg bg-white/10" /></div>
+    </div>
+  ) : (
+    <div aria-hidden className="flex h-16 overflow-hidden rounded-xl border border-white/10 bg-[#0b0c12]">
+      <div className="flex w-1/4 flex-col gap-1 border-r border-white/[.06] bg-[#0d0e14] p-1.5">{[0, 1, 2].map((i) => <span key={i} className="h-1.5 rounded bg-white/15" />)}</div>
+      <div className="flex flex-1 flex-col"><span className="h-3 border-b border-white/[.06] bg-[#0d0e14]" /><div className="flex-1 space-y-1 p-1.5"><span className="block h-1.5 w-1/3 rounded bg-white/30" /><span className="block h-3 rounded bg-white/[.07]" /><span className="block h-3 rounded bg-white/[.07]" /></div><span className="h-2 border-t border-white/[.06] bg-[#0d0e14]" /></div>
+    </div>
+  );
 }

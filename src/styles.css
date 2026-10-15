@@ -301,3 +301,11 @@ main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px;
 .doc-page a { color: #2563eb; text-decoration: underline; }
 .doc-page table { border-collapse: collapse; }
 .doc-page td, .doc-page th { border: 1px solid #bbb; padding: 4px 8px; }
+
+/* Modern settings style (dark panels, compact type, like the reference screenshots) */
+.modern-settings { background: #0b0c12; font-family: "Manrope", system-ui, sans-serif; }
+.modern-settings section.fx-card { background: #11121a; border: 1px solid rgb(255 255 255 / .06); border-radius: 14px; }
+.modern-settings section.fx-card:hover { box-shadow: 0 10px 30px color-mix(in oklab, var(--primary) 12%, transparent); }
+.modern-settings section.fx-card > h4 { font-size: 11px; letter-spacing: .02em; margin-bottom: .75rem; }
+.modern-settings section.fx-card > div > div { border-bottom: 1px solid rgb(255 255 255 / .05); padding-bottom: .7rem; }
+.modern-settings section.fx-card > div > div:last-child { border-bottom: 0; padding-bottom: 0; }

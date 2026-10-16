@@ -212,8 +212,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "1.8";
+const OS_VERSION = "1.9";
 const CHANGELOG = [
+  { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
   { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
   { v: "1.6", date: "10 Oct 2026", items: ["Slim window title bar: app icon, back and forward arrows, title, and tiny minimize, expand and close buttons"] },
@@ -570,9 +571,14 @@ function PrivateOS() {
     ...(settings.glassBlur !== 42 ? { "--glass-blur": `${settings.glassBlur}px` } : {}),
     ...(settings.glassOpacity > 0 ? { "--glass-tint": `color-mix(in oklab, var(--card) ${settings.glassOpacity}%, transparent)` } : {}),
   };
+  // The theme accent and the Modern interface style apply to every app, not only Settings.
+  const modernUi = settings.uiStyle === "modern";
+  const glassTheme = Boolean(THEMES.find((theme) => theme.id === settings.theme)?.glass) && settings.theme !== "liquid";
   const themeStyle = ({ ...extraStyle, ...(settings.accent
     ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
-    : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
+    : modernUi
+      ? { "--primary": "#8b7cff", "--ring": "#8b7cff", "--primary-foreground": "#ffffff", "--scroll": settings.scrollAccent || "#8b7cff" }
+      : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
 
   const lookupApp = (id: string) => launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
   const dockList = [...settings.dockPins, ...openWins.filter((id) => !settings.dockPins.includes(id))].flatMap((id) => {
@@ -731,7 +737,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
@@ -3372,7 +3378,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
                 <CfgCard title="Interface style">
-                  <p className="text-[10px] text-muted-foreground">Pick how Settings looks. Both keep the same animations and sounds.</p>
+                  <p className="text-[10px] text-muted-foreground">Pick how every app looks. Both keep the same animations and sounds.</p>
                   <div className="grid grid-cols-2 gap-3">
                     {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark frosted panels, purple toggles, a search bar, quick configs and a themes grid."]] as const).map(([id, label, sub]) => (
                       <button key={id} type="button" aria-pressed={settings.uiStyle === id} onClick={() => patch({ uiStyle: id })} className={`fx-card rounded-2xl border p-2.5 text-left ${settings.uiStyle === id ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>

@@ -1060,6 +1060,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         <span className="absolute -right-3 -top-2 rounded-[3px] bg-[#f2c783] px-1 py-px font-['Orbitron',sans-serif] text-[8px] font-bold leading-none text-black md:-right-5">OS</span>
       </div>
       <div className="mt-4 h-px w-[62%] max-w-sm bg-gradient-to-r from-white/10 via-white/80 to-white/20" />
+      <p className="beta-tag mt-4 rounded-full border border-[#f2c783]/60 bg-[#f2c783]/10 px-3 py-1 font-['Orbitron',sans-serif] text-[11px] font-bold tracking-[.32em] text-[#f2c783]">IN BETA</p>
       <button type="button" onClick={onStart} className="mt-6 border border-white/15 px-5 py-1.5 font-['Rajdhani',sans-serif] text-[11px] font-bold tracking-[.2em] text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60">
         START
       </button>
@@ -1083,7 +1084,8 @@ function BootScreen() {
         <div className="mx-auto flex size-16 items-center justify-center rounded-lg border border-border bg-card shadow-2xl"><ShieldCheck className="size-8 text-primary" /></div>
         <h1 className="mt-5 text-xl font-semibold tracking-[.28em]">PRIVATE OS</h1>
         <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-muted-foreground">Private by design</p>
-        <div className="mx-auto mt-8 h-px w-40 overflow-hidden bg-muted"><div className="h-full origin-left bg-primary [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+        <p className="mx-auto mt-3 w-fit rounded-full border border-primary/50 px-2.5 py-0.5 text-[9px] font-bold tracking-[.3em] text-primary">IN BETA</p>
+        <div className="mx-auto mt-6 h-px w-40 overflow-hidden bg-muted"><div className="h-full origin-left bg-primary [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
       </div>
     </main>
   );

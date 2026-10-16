@@ -394,3 +394,8 @@ main[data-lite] section.os-window { box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
 @keyframes optimize-spin { to { transform: rotate(360deg); } }
 @keyframes optimize-pulse { from { opacity: .3; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .optimize-spin, .optimize-dot { animation: none; } }
+
+/* "IN BETA" tag on the start screen: a soft glow pulse. */
+.beta-tag { animation: beta-glow 2.4s ease-in-out infinite; }
+@keyframes beta-glow { 0%, 100% { box-shadow: 0 0 0 rgb(242 199 131 / 0); } 50% { box-shadow: 0 0 18px rgb(242 199 131 / .35); } }
+@media (prefers-reduced-motion: reduce) { .beta-tag { animation: none; } }

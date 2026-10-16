@@ -146,14 +146,19 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
   );
 }
 
-const CloudIcon: IconComponent = ({ className }) => <Tile tone="from-sky-300 to-blue-600" className={className}><Cloud className="fill-white" /></Tile>;
+// App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
+function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
+  return <Tile tone={tone} glyph="[&>img]:relative [&>img]:size-[68%] [&>img]:drop-shadow-[0_2px_2px_rgb(0_0_0/.35)]" className={className}><img src={`/icons/apps/${src}.svg`} alt="" draggable={false} decoding="async" /></Tile>;
+}
+
+const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="cloud" className={className} />;
 const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
-const FolderIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-600" className={className}><Folder className="fill-white/90" /></Tile>;
-const SettingsIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-400 to-zinc-700" glyph="[&>svg]:size-[60%] [&>svg]:text-zinc-100" className={className}><Settings /></Tile>;
+const FolderIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="files" className={className} />;
+const SettingsIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-400 to-zinc-700" src="settings" className={className} />;
 const BeeZIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-yellow-600" glyph="[&>svg]:size-[62%] [&>svg]:text-zinc-900" className={className}><Hexagon className="fill-zinc-900/25" /></Tile>;
-const NotesIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-300 to-orange-500" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><StickyNote /></Tile>;
-const CalcIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-500 to-zinc-800" className={className}><Calculator /></Tile>;
-const TerminalIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-700 to-black" glyph="[&>svg]:size-[56%] [&>svg]:text-green-400" className={className}><Terminal /></Tile>;
+const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="notes" className={className} />;
+const CalcIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-500 to-zinc-800" src="calc" className={className} />;
+const TerminalIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-black" src="terminal" className={className} />;
 
 function GrassBlock() {
   return (
@@ -185,17 +190,17 @@ function MinecraftIcon({ className }: { className?: string }) {
   return <Tile tone="from-zinc-600 to-zinc-900" glyph="[&>svg]:size-[76%]" className={className}><GrassBlock /></Tile>;
 }
 
-const TaskIcon: IconComponent = ({ className }) => <Tile tone="from-emerald-400 to-teal-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Activity /></Tile>;
+const TaskIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-400 to-teal-700" src="taskmgr" className={className} />;
 
-const WeatherIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-700" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><CloudSun /></Tile>;
-const PaintIcon: IconComponent = ({ className }) => <Tile tone="from-pink-400 to-purple-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Paintbrush /></Tile>;
-const TodoIcon: IconComponent = ({ className }) => <Tile tone="from-lime-400 to-green-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><ListChecks /></Tile>;
+const WeatherIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-700" src="weather" className={className} />;
+const PaintIcon: IconComponent = ({ className }) => <AppImage tone="from-pink-400 to-purple-700" src="paint" className={className} />;
+const TodoIcon: IconComponent = ({ className }) => <AppImage tone="from-lime-400 to-green-700" src="todo" className={className} />;
 
 const YouTubeIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" glyph="[&>svg]:size-[52%] [&>svg]:text-white" className={className}><Play className="fill-white" /></Tile>;
 
-const CalendarIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-calendar ${className ?? ""}`}><CalendarDays /></span>;
-const ClockIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-clock ${className ?? ""}`}><Clock3 /></span>;
-const PhotosIcon: IconComponent = ({ className }) => <span className={`app-icon app-icon-photos ${className ?? ""}`}><ImageIcon /></span>;
+const CalendarIcon: IconComponent = ({ className }) => <AppImage tone="from-white to-zinc-200" src="calendar" className={className} />;
+const ClockIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-zinc-900" src="clock" className={className} />;
+const PhotosIcon: IconComponent = ({ className }) => <AppImage tone="from-white to-zinc-200" src="photos" className={className} />;
 
 
 const LINK_APPS = [
@@ -207,8 +212,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "1.8";
+const OS_VERSION = "1.9";
 const CHANGELOG = [
+  { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
   { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
   { v: "1.6", date: "10 Oct 2026", items: ["Slim window title bar: app icon, back and forward arrows, title, and tiny minimize, expand and close buttons"] },
@@ -239,22 +245,22 @@ function ChangelogList({ limit }: { limit?: number }) {
   );
 }
 
-const CameraIcon: IconComponent = ({ className }) => <Tile tone="from-slate-400 to-slate-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Camera /></Tile>;
-const MediaIcon: IconComponent = ({ className }) => <Tile tone="from-orange-400 to-rose-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Film /></Tile>;
-const AboutIcon: IconComponent = ({ className }) => <Tile tone="from-cyan-400 to-blue-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Info /></Tile>;
+const CameraIcon: IconComponent = ({ className }) => <AppImage tone="from-slate-400 to-slate-700" src="camera" className={className} />;
+const MediaIcon: IconComponent = ({ className }) => <AppImage tone="from-orange-400 to-rose-600" src="media" className={className} />;
+const AboutIcon: IconComponent = ({ className }) => <AppImage tone="from-cyan-400 to-blue-700" src="about" className={className} />;
 
-const GamesIcon: IconComponent = ({ className }) => <Tile tone="from-violet-500 to-fuchsia-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Gamepad2 /></Tile>;
+const GamesIcon: IconComponent = ({ className }) => <AppImage tone="from-violet-500 to-fuchsia-700" src="games" className={className} />;
 
-const StickyIcon: IconComponent = ({ className }) => <Tile tone="from-yellow-200 to-yellow-500" glyph="[&>svg]:size-[56%] [&>svg]:text-yellow-900" className={className}><StickyNote /></Tile>;
-const FocusIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Timer /></Tile>;
-const ConvertIcon: IconComponent = ({ className }) => <Tile tone="from-teal-400 to-cyan-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Ruler /></Tile>;
-const PasswordIcon: IconComponent = ({ className }) => <Tile tone="from-slate-500 to-slate-800" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><KeyRound /></Tile>;
-const RecorderIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-pink-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Mic /></Tile>;
+const StickyIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-200 to-yellow-500" src="sticky" className={className} />;
+const FocusIcon: IconComponent = ({ className }) => <AppImage tone="from-rose-400 to-red-700" src="focus" className={className} />;
+const ConvertIcon: IconComponent = ({ className }) => <AppImage tone="from-teal-400 to-cyan-700" src="convert" className={className} />;
+const PasswordIcon: IconComponent = ({ className }) => <AppImage tone="from-slate-500 to-slate-800" src="passwords" className={className} />;
+const RecorderIcon: IconComponent = ({ className }) => <AppImage tone="from-red-500 to-pink-700" src="recorder" className={className} />;
 
-const MessagesIcon: IconComponent = ({ className }) => <Tile tone="from-green-400 to-green-600" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><MessageCircle className="fill-white" /></Tile>;
-const MailIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-600" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><Mail /></Tile>;
-const ContactsIcon: IconComponent = ({ className }) => <Tile tone="from-stone-300 to-stone-500" glyph="[&>svg]:size-[56%] [&>svg]:text-stone-800" className={className}><BookUser /></Tile>;
-const MapsIcon: IconComponent = ({ className }) => <Tile tone="from-emerald-300 to-teal-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><MapIcon /></Tile>;
+const MessagesIcon: IconComponent = ({ className }) => <AppImage tone="from-green-400 to-green-600" src="messages" className={className} />;
+const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="mail" className={className} />;
+const ContactsIcon: IconComponent = ({ className }) => <AppImage tone="from-stone-300 to-stone-500" src="contacts" className={className} />;
+const MapsIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-300 to-teal-600" src="maps" className={className} />;
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
@@ -565,9 +571,14 @@ function PrivateOS() {
     ...(settings.glassBlur !== 42 ? { "--glass-blur": `${settings.glassBlur}px` } : {}),
     ...(settings.glassOpacity > 0 ? { "--glass-tint": `color-mix(in oklab, var(--card) ${settings.glassOpacity}%, transparent)` } : {}),
   };
+  // The theme accent and the Modern interface style apply to every app, not only Settings.
+  const modernUi = settings.uiStyle === "modern";
+  const glassTheme = Boolean(THEMES.find((theme) => theme.id === settings.theme)?.glass) && settings.theme !== "liquid";
   const themeStyle = ({ ...extraStyle, ...(settings.accent
     ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
-    : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
+    : modernUi
+      ? { "--primary": "#8b7cff", "--ring": "#8b7cff", "--primary-foreground": "#ffffff", "--scroll": settings.scrollAccent || "#8b7cff" }
+      : { "--scroll": settings.scrollAccent || "rgba(255,255,255,.28)" }) }) as React.CSSProperties;
 
   const lookupApp = (id: string) => launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
   const dockList = [...settings.dockPins, ...openWins.filter((id) => !settings.dockPins.includes(id))].flatMap((id) => {
@@ -726,7 +737,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
@@ -3367,7 +3378,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
                 <CfgCard title="Interface style">
-                  <p className="text-[10px] text-muted-foreground">Pick how Settings looks. Both keep the same animations and sounds.</p>
+                  <p className="text-[10px] text-muted-foreground">Pick how every app looks. Both keep the same animations and sounds.</p>
                   <div className="grid grid-cols-2 gap-3">
                     {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark frosted panels, purple toggles, a search bar, quick configs and a themes grid."]] as const).map(([id, label, sub]) => (
                       <button key={id} type="button" aria-pressed={settings.uiStyle === id} onClick={() => patch({ uiStyle: id })} className={`fx-card rounded-2xl border p-2.5 text-left ${settings.uiStyle === id ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
@@ -3926,7 +3937,7 @@ function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffe
 function WriterIcon({ className }: { className?: string }) { return <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>; }
 function SlidesIcon({ className }: { className?: string }) { return <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>; }
 function SheetsIcon({ className }: { className?: string }) { return <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>; }
-function PdfIcon({ className }: { className?: string }) { return <Tile tone="from-red-500 to-red-800" className={className}><span className="text-[11px] font-black text-white">PDF</span></Tile>; }
+function PdfIcon({ className }: { className?: string }) { return <AppImage tone="from-red-500 to-red-800" src="pdf" className={className} />; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
 const tbPrimary = "rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground";

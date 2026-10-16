@@ -64,9 +64,15 @@ import {
   KeyRound,
   Mic,
   Globe,
+  MessageCircle,
+  Mail,
+  BookUser,
+  Map as MapIcon,
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
+import { LIQUID_DOCK, LiquidContext, LiquidDock, LiquidMenuBar, LiquidSpotlight, LiquidWallpaper, LiquidWidgets } from "@/components/liquid-desktop";
+import { ContactsContent, MailContent, MapsContent, MessagesContent } from "@/components/liquid-apps";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
 import cherryAsset from "@/assets/private-os-cherry.jpg.asset.json";
 import inkEyeAsset from "@/assets/ink-eye.jpg.asset.json";
@@ -244,6 +250,11 @@ const ConvertIcon: IconComponent = ({ className }) => <Tile tone="from-teal-400 
 const PasswordIcon: IconComponent = ({ className }) => <Tile tone="from-slate-500 to-slate-800" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><KeyRound /></Tile>;
 const RecorderIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-pink-700" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><Mic /></Tile>;
 
+const MessagesIcon: IconComponent = ({ className }) => <Tile tone="from-green-400 to-green-600" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><MessageCircle className="fill-white" /></Tile>;
+const MailIcon: IconComponent = ({ className }) => <Tile tone="from-sky-400 to-blue-600" glyph="[&>svg]:size-[58%] [&>svg]:text-white" className={className}><Mail /></Tile>;
+const ContactsIcon: IconComponent = ({ className }) => <Tile tone="from-stone-300 to-stone-500" glyph="[&>svg]:size-[56%] [&>svg]:text-stone-800" className={className}><BookUser /></Tile>;
+const MapsIcon: IconComponent = ({ className }) => <Tile tone="from-emerald-300 to-teal-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><MapIcon /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
@@ -273,7 +284,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "writer", label: "Writer", icon: WriterIcon }, { id: "sheets", label: "Sheets", icon: SheetsIcon }, { id: "slides", label: "Slides", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon });
+launcherApps.push(...linkLauncher, { id: "writer", label: "Writer", icon: WriterIcon }, { id: "sheets", label: "Sheets", icon: SheetsIcon }, { id: "slides", label: "Slides", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Mail", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -556,6 +567,31 @@ function PrivateOS() {
     const app = lookupApp(id);
     return app ? [{ id, app }] : [];
   });
+  const liquid = settings.theme === "liquid";
+  const visibleWins = openWins.filter((id) => !minWins.includes(id));
+  const topId = [...zOrder].reverse().find((id) => visibleWins.includes(id)) ?? null;
+  const liquidDock = [...LIQUID_DOCK, ...openWins.filter((id) => !LIQUID_DOCK.includes(id) && id !== "files")].flatMap((id) => {
+    const app = lookupApp(id);
+    return app ? [{ ...app, id }] : [];
+  });
+  const edit = (command: string) => () => { document.execCommand(command); };
+  const liquidMenus = [
+    { title: "File", items: [{ label: "New Note", run: () => openApp("notes") }, { label: "New Browser Window", run: () => openApp("browser") }, { label: "", divider: true }, { label: "Close Window", run: topId ? () => closeWindow(topId) : undefined }] },
+    { title: "Edit", items: [{ label: "Undo", run: edit("undo") }, { label: "Redo", run: edit("redo") }, { label: "", divider: true }, { label: "Cut", run: edit("cut") }, { label: "Copy", run: edit("copy") }, { label: "Select All", run: edit("selectAll") }] },
+    { title: "View", items: [{ label: fullscreen ? "Exit Full Screen" : "Enter Full Screen", run: canFullscreen ? toggleFullscreen : undefined }, { label: settings.bigIcons ? "Standard Icons" : "Bigger Icons", run: () => patchSettings((current) => ({ bigIcons: !current.bigIcons })) }, { label: settings.reduceMotion ? "Turn Motion On" : "Reduce Motion", run: () => patchSettings((current) => ({ reduceMotion: !current.reduceMotion })) }] },
+    { title: "Go", items: [{ label: "Files", run: () => openApp("files") }, { label: "Applications", run: () => setLauncher(true) }, { label: "Utilities: Terminal", run: () => openApp("terminal") }, { label: "Task Manager", run: () => openApp("taskmgr") }] },
+    { title: "Window", items: [{ label: "Minimize", run: topId ? () => setMinWins((list) => [...list, topId]) : undefined }, { label: "Show All Windows", run: () => setTaskView(true) }, ...(openWins.length ? [{ label: "", divider: true }] : []), ...openWins.map((id) => ({ label: lookupApp(id)?.label ?? id, run: () => openApp(id) }))] },
+    { title: "Help", items: [{ label: "Search", run: () => setRunOpen(true) }, { label: "System Info", run: () => openApp("about") }] },
+  ];
+  const liquidAppleMenu = [
+    { label: "About PRIVATE OS", run: () => openApp("about") },
+    { label: "System Settings…", run: () => openApp("settings") },
+    { label: "", divider: true },
+    { label: "Lock Screen", run: () => setLocked(true) },
+    { label: "Sleep", run: () => setPower("sleep") },
+    { label: "Restart…", run: () => window.location.reload() },
+    { label: "Shut Down…", run: () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); } },
+  ];
   const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !launcher && !taskView && !quickMenu;
   const hideShift = settings.dockPos === "right" ? "translateX(160%)" : settings.dockPos === "top" ? "translateY(-160%)" : "translateY(160%)";
 
@@ -668,6 +704,10 @@ function PrivateOS() {
       case "camera": return <CameraApp close={close} />;
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
+      case "messages": return <WindowFrame title="Messages" icon={MessagesIcon} close={close}><MessagesContent /></WindowFrame>;
+      case "mail": return <WindowFrame title="Mail" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
+      case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
+      case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       default: return null;
     }
@@ -677,21 +717,22 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
-          <Wallpaper index={wallpaper} options={allWalls} />
+          {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
-      {settings.ambient && (
+      {settings.ambient && !liquid && (
         <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           <div className="aurora" />
           {Array.from({ length: 14 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 41 + 7) % 100}%`, top: `${(i * 59 + 20) % 100}%`, animationDelay: `${-(i * 2.3) % 12}s`, animationDuration: `${12 + (i % 5) * 3}s` }} />)}
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />
+      {!liquid && <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />}
 
+      {!liquid && (<>
       {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed z-30 ${settings.dockPos === "right" ? "inset-y-0 right-0 w-3" : settings.dockPos === "top" ? "inset-x-0 top-0 h-3" : "inset-x-0 bottom-0 h-3"}`} />}
       <div onMouseEnter={() => setDockShown(true)} onMouseLeave={() => setDockShown(false)} style={{ zoom: settings.dockScale / 100, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? hideShift : undefined }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
@@ -762,10 +803,12 @@ function PrivateOS() {
         </div>
       </div>
 
-      <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>
+      </>)}
+
+      {!liquid && <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>}
 
       {quickMenu && (
-        <aside className="glass-panel quick-settings absolute bottom-20 right-3 z-50 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5">
+        <aside className={`glass-panel quick-settings absolute right-3 z-50 ${liquid ? "top-9" : "bottom-20"} w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5`}>
           <div className="mb-5 flex items-center justify-between"><p className="text-sm font-semibold">Quick settings</p><OsButton label="Open settings" onClick={() => { setQuickMenu(false); openApp("settings"); }} className="utility-icon"><Settings className="size-4" /></OsButton></div>
           <div className="grid grid-cols-3 gap-2"><div className="quick-tile"><Wifi className="size-5" /><span>Online</span></div><OsButton onClick={() => setSound(v => v === 0 ? 70 : 0)} className="quick-tile"><Volume2 className="size-5" /><span>{sound ? "Sound" : "Muted"}</span></OsButton><OsButton onClick={() => { setQuickMenu(false); setLocked(true); }} className="quick-tile"><LockKeyhole className="size-5" /><span>Lock</span></OsButton></div>
           <label className="mt-5 flex items-center gap-3 text-xs"><Volume2 className="size-4" /><input aria-label="OS sound level" type="range" min="0" max="100" value={sound} onChange={e => setSound(Number(e.target.value))} className="min-w-0 flex-1 accent-primary" /><span className="w-8 text-right">{sound}%</span></label>
@@ -775,7 +818,7 @@ function PrivateOS() {
       )}
 
       {settings.showIcons && settings.desktop.length > 0 && (
-        <div className="pointer-events-none absolute left-3 top-3 z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap content-start gap-2">
+        <div className={`pointer-events-none absolute z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap gap-2 ${liquid ? "right-3 top-10 content-end" : "left-3 top-3 content-start"}`}>
           {settings.desktop.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
             if (!app) return null;
@@ -838,7 +881,16 @@ function PrivateOS() {
         </aside>
       )}
 
-      {settings.widgets.length > 0 && (
+      {liquid && (
+        <>
+          <LiquidMenuBar appName={topId ? lookupApp(topId)?.label ?? "Desktop" : "Desktop"} menus={liquidMenus} onAppleMenu={liquidAppleMenu} battery={battery} time={time} clock24={settings.clock24} onSearch={() => setRunOpen(true)} onControl={() => setQuickMenu((value) => !value)} />
+          <LiquidWidgets now={time} weekStart={settings.weekStart} zones={settings.worldClocks} localZone={zone} openApp={openApp} />
+          {visibleWins.length === 0 && !launcher && <LiquidSpotlight onSearch={() => setRunOpen(true)} onApps={() => setLauncher(true)} onFiles={() => openApp("files")} onTaskView={() => setTaskView(true)} onNotes={() => openApp("notes")} />}
+          <LiquidDock apps={liquidDock} openWins={openWins} focusedId={topId} onApp={(id) => (topId === id ? setMinWins((list) => [...list, id]) : openApp(id))} onLauncher={() => setLauncher((value) => !value)} onFiles={() => openApp("files")} onContext={(id, x, y) => { setMenu(null); setDockMenu({ id, x, y }); }} />
+        </>
+      )}
+
+      {settings.widgets.length > 0 && !liquid && (
         <div className={`pointer-events-none absolute right-3 z-[9] flex flex-col items-end gap-3 ${settings.railHidden ? "top-3" : "top-72"}`}>
           {settings.widgets.map((id) => (
             <WidgetShell key={id} title={WIDGET_LIST.find((item) => item.id === id)?.label ?? id} offset={settings.wpos[id] ?? { x: 0, y: 0 }} onMove={(pos) => patchSettings((current) => ({ wpos: { ...current.wpos, [id]: pos } }))} onRemove={() => patchSettings((current) => ({ widgets: current.widgets.filter((item) => item !== id) }))}>
@@ -939,11 +991,13 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
+      <LiquidContext.Provider value={liquid}>
       {openWins.map((id) => (
         <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id && !minWins.includes(id) }}>
           <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
         </WindowContext.Provider>
       ))}
+      </LiquidContext.Provider>
 
 
       <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} />
@@ -1049,6 +1103,8 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
 
 function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
   const { minimized, minimize, focus, z, top } = useContext(WindowContext);
+  const liquid = useContext(LiquidContext);
+  const topGap = liquid ? 36 : 8;
   const el = useRef<HTMLElement>(null);
   const [rect, setRect] = useState<WinRect | null>(null);
   const [snap, setSnap] = useState<string | null>(null);
@@ -1092,10 +1148,10 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   const expand = () => {
     const node = el.current;
     if (!node) return setMaximized(true);
-    const reserve = window.innerWidth >= 768 ? 72 : 56;
+    const reserve = liquid ? 88 : window.innerWidth >= 768 ? 72 : 56;
     const ease = "cubic-bezier(.22,1,.36,1)";
     node.style.transition = `left .26s ${ease}, top .26s ${ease}, width .26s ${ease}, height .26s ${ease}, border-radius .26s ease`;
-    place({ x: 0, y: 0, w: window.innerWidth, h: window.innerHeight - reserve });
+    place({ x: 0, y: liquid ? 28 : 0, w: window.innerWidth, h: window.innerHeight - reserve - (liquid ? 28 : 0) });
     node.style.borderRadius = "0px";
     window.setTimeout(() => {
       node.style.transition = "";
@@ -1124,7 +1180,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     const half = Math.round(window.innerWidth / 2) - 12;
     setMaximized(false);
     setSnap(zone);
-    setRect({ x: zone === "left" ? 8 : Math.round(window.innerWidth / 2) + 4, y: 8, w: half, h: window.innerHeight - 88 });
+    setRect({ x: zone === "left" ? 8 : Math.round(window.innerWidth / 2) + 4, y: topGap, w: half, h: window.innerHeight - 80 - topGap - (liquid ? 16 : 0) });
   };
   useEffect(() => {
     if (!top) return;
@@ -1133,7 +1189,9 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     return () => window.removeEventListener("pos-snap", handler);
   });
   const surface = "glass-panel os-window";
-  const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-2xl md:inset-x-[8%] md:top-6 md:bottom-20";
+  const position = liquid
+    ? maximized ? "inset-x-0 top-7 bottom-[5.25rem] rounded-none" : "inset-x-2 top-10 bottom-24 md:inset-x-[12%] md:top-12 md:bottom-28"
+    : maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-2xl md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
     <section
       ref={el}
@@ -1157,7 +1215,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         let base = start;
         live.current = null;
         if (snap && prevRect.current) {
-          base = { ...prevRect.current, x: event.clientX - prevRect.current.w * ratio, y: 8 };
+          base = { ...prevRect.current, x: event.clientX - prevRect.current.w * ratio, y: topGap };
           setSnap(null);
           place(base);
         } else prevRect.current = start;
@@ -1181,7 +1239,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           return;
         }
         if (g.kind === "move") {
-          place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(0, g.start.y + dy)) });
+          place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(liquid ? 28 : 0, g.start.y + dy)) });
           showSnap(edgeZone(event.clientX, event.clientY) === "up" ? "max" : edgeZone(event.clientX, event.clientY) as "left" | "right" | null);
         } else {
           place({ ...g.start, w: g.mode.includes("e") ? Math.max(320, g.start.w + dx) : g.start.w, h: g.mode.includes("s") ? Math.max(220, g.start.h + dy) : g.start.h });
@@ -1200,6 +1258,21 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       }}
       className={`absolute flex flex-col overflow-hidden [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "pointer-events-none translate-y-8 scale-90 opacity-0" : ""} ${position}`}
     >
+      {liquid ? (
+      <header className="window-titlebar liquid-titlebar relative flex h-10 shrink-0 items-center gap-2 px-4">
+        <div className="traffic flex shrink-0 items-center gap-2">
+          <button type="button" aria-label="Close" title="Close" onClick={close} className="traffic-btn bg-[#ff5f57]"><X /></button>
+          <button type="button" aria-label="Minimize" title="Minimize" onClick={minimize} className="traffic-btn bg-[#febc2e]"><Minus /></button>
+          <button type="button" aria-label={maximized ? "Restore" : "Zoom"} title={maximized ? "Restore" : "Zoom"} onClick={toggleMaximize} className="traffic-btn bg-[#28c840]">{maximized ? <Minimize2 /> : <Maximize2 />}</button>
+        </div>
+        <span className="nav-chev flex items-center">
+          <OsButton label="Back" onClick={() => frameNav("back")} className="win-ctl"><ChevronLeft className="size-3.5" /></OsButton>
+          <OsButton label="Forward" onClick={() => frameNav("forward")} className="win-ctl"><ChevronRight className="size-3.5" /></OsButton>
+        </span>
+        <span className="pointer-events-none absolute inset-x-0 mx-auto flex w-max max-w-[50%] items-center gap-1.5 truncate text-[13px] font-semibold text-white/90"><Icon className="size-4 shrink-0" />{title}</span>
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>
+      </header>
+      ) : (
       <header className="window-titlebar flex h-8 shrink-0 items-center justify-between gap-2 px-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className="size-5 shrink-0" />
@@ -1216,6 +1289,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
         </div>
       </header>
+      )}
       {children}
       {!maximized && (["e", "s", "se"] as const).map((mode) => (
         <div
@@ -2772,6 +2846,7 @@ function AboutApp({ close }: { close: () => void }) {
 type ThemeDef = { id: string; name: string; sub: string; accent: string; glass?: boolean };
 const THEMES: ThemeDef[] = [
   { id: "private", name: "Private", sub: "Original gold", accent: "" },
+  { id: "liquid", name: "Liquid Glass", sub: "macOS-style desktop: menu bar, widgets, Spotlight and dock", accent: "#0a84ff", glass: true },
   { id: "signature", name: "Signature", sub: "Brand purple", accent: "#7c6cff" },
   { id: "iris", name: "Iris", sub: "Deep violet-blue", accent: "#6d5efc" },
   { id: "midnight", name: "Midnight", sub: "Deep space indigo", accent: "#4f6bff" },

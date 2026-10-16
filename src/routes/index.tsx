@@ -3366,6 +3366,21 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                     ))}
                   </div>
                 </CfgCard>
+                <CfgCard title="Desktop style">
+                  <p className="text-[10px] text-muted-foreground">Switch the whole desktop. Liquid Glass adds a macOS-style menu bar, widgets, Spotlight and a magnifying dock.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([["private", "Standard", "The PRIVATE OS desktop with its dock and widget rail."], ["liquid", "Liquid Glass", "macOS-style glass desktop with Messages, Mail, Contacts and Maps in the dock."]] as const).map(([id, label, sub]) => {
+                      const on = id === "liquid" ? settings.theme === "liquid" : settings.theme !== "liquid";
+                      return (
+                        <button key={id} type="button" aria-pressed={on} onClick={() => { if (!on) chooseTheme(THEMES.find((theme) => theme.id === id)!); }} className={`fx-card rounded-2xl border p-2.5 text-left ${on ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
+                          <DesktopPreview kind={id} />
+                          <p className="mt-2 text-xs font-bold">{label}{on ? " ✓" : ""}</p>
+                          <p className="text-[10px] leading-snug text-muted-foreground">{sub}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </CfgCard>
                 <CfgCard title="Sounds">
                   <CfgRow title="Interface sounds" sub="A soft tick when you hover a button and a pop when you click"><Switch on={settings.uiSounds} label="Interface sounds" onChange={(value) => patch({ uiSounds: value })} /></CfgRow>
                   <CfgRow title="Hover sound" sub="Plays when the pointer moves onto a button"><Switch on={settings.soundHover} label="Hover sound" onChange={(value) => patch({ soundHover: value })} /></CfgRow>
@@ -4353,6 +4368,22 @@ function ThemePreview({ accent, badge }: { accent: string; badge?: string | unde
         ))}
       </div>
       {badge && <span className="absolute right-1.5 top-1.5 rounded bg-black/50 px-1 text-[7px] font-semibold tracking-wider text-white/70">{badge}</span>}
+    </div>
+  );
+}
+
+function DesktopPreview({ kind }: { kind: "private" | "liquid" }) {
+  return kind === "liquid" ? (
+    <div aria-hidden className="relative h-16 overflow-hidden rounded-xl border border-white/10" style={{ background: "linear-gradient(135deg, #3b4fd8, #7a3fd0 55%, #1b1f5e)" }}>
+      <span className="absolute inset-x-0 top-0 h-1.5 bg-white/25" />
+      <div className="absolute left-1.5 top-3 flex flex-col gap-1">{[0, 1, 2].map((i) => <span key={i} className="h-2.5 w-5 rounded bg-white/25" />)}</div>
+      <span className="absolute left-1/2 top-6 h-2 w-12 -translate-x-1/2 rounded-full bg-white/30" />
+      <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5 rounded-md bg-white/25 p-0.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="size-1.5 rounded-sm bg-white/70" />)}</div>
+    </div>
+  ) : (
+    <div aria-hidden className="relative h-16 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[#2a2416] to-[#0b0c12]">
+      <div className="absolute right-1.5 top-1.5 flex flex-col gap-1">{[0, 1].map((i) => <span key={i} className="h-3 w-6 rounded bg-white/15" />)}</div>
+      <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5 rounded-md bg-black/40 p-0.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="size-1.5 rounded-sm bg-white/40" />)}</div>
     </div>
   );
 }

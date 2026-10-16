@@ -73,6 +73,7 @@ import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/deskt
 import { OsButton } from "@/components/os-button";
 import { LIQUID_DOCK, LiquidContext, LiquidDock, LiquidMenuBar, LiquidSpotlight, LiquidWallpaper, LiquidWidgets } from "@/components/liquid-desktop";
 import { ContactsContent, MailContent, MapsContent, MessagesContent } from "@/components/liquid-apps";
+import { OPTIMIZE_EVENT, OptimizeOverlay, isLowPowerDevice, requestOptimize } from "@/components/optimize-overlay";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
 import cherryAsset from "@/assets/private-os-cherry.jpg.asset.json";
 import inkEyeAsset from "@/assets/ink-eye.jpg.asset.json";
@@ -334,6 +335,12 @@ function PrivateOS() {
   const wallInput = useRef<HTMLInputElement>(null);
   const [taskView, setTaskView] = useState(false);
   const [runOpen, setRunOpen] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  useEffect(() => {
+    const start = () => setOptimizing(true);
+    window.addEventListener(OPTIMIZE_EVENT, start);
+    return () => window.removeEventListener(OPTIMIZE_EVENT, start);
+  }, []);
   const [runText, setRunText] = useState("");
   const [runIndex, setRunIndex] = useState(0);
   const [dockShown, setDockShown] = useState(false);
@@ -586,6 +593,7 @@ function PrivateOS() {
   const liquidAppleMenu = [
     { label: "About PRIVATE OS", run: () => openApp("about") },
     { label: "System Settings…", run: () => openApp("settings") },
+    { label: settings.lite ? "Optimized ✓" : "Optimize…", run: settings.lite ? undefined : requestOptimize },
     { label: "", divider: true },
     { label: "Lock Screen", run: () => setLocked(true) },
     { label: "Sleep", run: () => setPower("sleep") },
@@ -605,6 +613,7 @@ function PrivateOS() {
     { label: "Sleep", run: () => setPower("sleep") },
     { label: "Toggle ambient glow", run: () => patchSettings((current) => ({ ambient: !current.ambient })) },
     { label: "Toggle reduce motion", run: () => patchSettings((current) => ({ reduceMotion: !current.reduceMotion })) },
+    { label: "Optimize for speed", run: requestOptimize },
     { label: "Toggle dock auto-hide", run: () => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide })) },
     { label: "Reload PRIVATE OS", run: () => window.location.reload() },
   ];
@@ -717,14 +726,14 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0" style={{ filter: `blur(${settings.blur}px)`, transform: settings.blur ? "scale(1.08)" : undefined }}>
+        <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
-      {settings.ambient && !liquid && (
+      {settings.ambient && !settings.lite && !liquid && (
         <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           <div className="aurora" />
           {Array.from({ length: 14 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 41 + 7) % 100}%`, top: `${(i * 59 + 20) % 100}%`, animationDelay: `${-(i * 2.3) % 12}s`, animationDuration: `${12 + (i % 5) * 3}s` }} />)}
@@ -920,6 +929,7 @@ function PrivateOS() {
         </div>
       )}
 
+      {optimizing && <OptimizeOverlay onApply={() => patchSettings(() => ({ lite: true }))} onDone={() => setOptimizing(false)} />}
       {runOpen && (
         <div onClick={() => setRunOpen(false)} className="absolute inset-0 z-[46] flex items-start justify-center bg-black/30 px-3 pt-[14dvh] backdrop-blur-sm">
           <div onClick={(event) => event.stopPropagation()} className="glass-panel w-[min(34rem,100%)] overflow-hidden rounded-3xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
@@ -2340,8 +2350,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40 };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -3046,7 +3056,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
   const primaryIds = ["themes", "configs", "appearance", "settings", "backup", "about"];
   const categoryCounts: Record<string, number> = { widgets: settings.widgets.length, dock: settings.dockPins.length, time: settings.worldClocks.length, network: 0 };
   const quickList = [...configs, ...PUBLIC_CONFIGS].filter((item) => item.name.toLowerCase().includes(qcQuery.toLowerCase()));
-  const particlesEl = settings.particles ? (
+  const particlesEl = settings.particles && !settings.lite ? (
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             {Array.from({ length: 16 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 37) % 100}%`, top: `${(i * 53) % 100}%`, animationDelay: `${-(i * 1.7) % 9}s`, animationDuration: `${8 + (i % 5) * 2}s` }} />)}
           </div>
@@ -3365,6 +3375,15 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                       </button>
                     ))}
                   </div>
+                </CfgCard>
+                <CfgCard title="Performance">
+                  <CfgRow title={settings.lite ? "Optimized ✓" : "Full effects"} sub={settings.lite ? "Blur, glow, particles and looping animations are off so every theme runs smoothly." : isLowPowerDevice() ? "This device looks low-power. Optimize to make every theme faster." : "Glass blur, glow and particles are on. Optimize if things feel slow."}>
+                    {settings.lite ? (
+                      <button type="button" onClick={() => { patch({ lite: false }); log("Full effects restored"); }} className={`${btn} bg-white/10`}>Restore full effects</button>
+                    ) : (
+                      <button type="button" onClick={() => { log("Optimizing for speed"); requestOptimize(); }} className={`${btn} bg-primary text-primary-foreground`}>Optimize</button>
+                    )}
+                  </CfgRow>
                 </CfgCard>
                 <CfgCard title="Desktop style">
                   <p className="text-[10px] text-muted-foreground">Switch the whole desktop. Liquid Glass adds a macOS-style menu bar, widgets, Spotlight and a magnifying dock.</p>

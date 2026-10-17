@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 // Server-side web search so results show up even when a search site refuses to run inside a proxy.
-type Hit = { title: string; url: string; snippet: string };
+type Hit = { title: string; url: string; snippet: string; image?: string };
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
@@ -116,6 +116,39 @@ async function wikipedia(q: string): Promise<Hit[]> {
   return (data.query?.search ?? []).map((item) => ({ title: item.title, url: `https://en.wikipedia.org/?curid=${item.pageid}`, snippet: clean(item.snippet) }));
 }
 
+// Reads the start of a result page and returns the picture the site shares for it (og:image or twitter:image).
+async function previewImage(pageUrl: string): Promise<string | undefined> {
+  try {
+    const host = new URL(pageUrl).hostname;
+    if (!host.includes(".") || /^[\d.]+$/.test(host) || host.includes(":") || /(^|\.)(localhost|local|internal)$/i.test(host)) return undefined;
+    const res = await fetch(pageUrl, { headers: { "user-agent": UA, accept: "text/html", "accept-language": "en-US,en;q=0.9" }, redirect: "follow", signal: AbortSignal.timeout(3500) });
+    if (!res.ok || !/text\/html/i.test(res.headers.get("content-type") ?? "") || !res.body) {
+      res.body?.cancel().catch(() => {});
+      return undefined;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let head = "";
+    while (head.length < 200_000 && !/<\/head>/i.test(head)) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      head += decoder.decode(value, { stream: true });
+    }
+    reader.cancel().catch(() => {});
+    for (const tag of head.match(/<meta\b[^>]*>/gi) ?? []) {
+      if (!/(?:property|name)\s*=\s*["'](?:og:image(?::secure_url)?|og:image:url|twitter:image(?::src)?)["']/i.test(tag)) continue;
+      const content = /content\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
+      const value = clean(content?.[1] ?? content?.[2] ?? "");
+      if (!value) continue;
+      const image = new URL(value, res.url || pageUrl);
+      if (/^https?:$/.test(image.protocol)) return image.href;
+    }
+  } catch {
+    // no picture for this result
+  }
+  return undefined;
+}
+
 export const Route = createFileRoute("/api/search")({
   server: {
     handlers: {
@@ -127,7 +160,13 @@ export const Route = createFileRoute("/api/search")({
         for (const [engine, run] of [["duckduckgo", ddgHtml], ["duckduckgo-lite", ddgLite], ["bing", bing], ["mojeek", mojeek], ["wikipedia", wikipedia]] as const) {
           try {
             const hits = (await run(q)).slice(0, 12);
-            if (hits.length > 0) return new Response(JSON.stringify({ engine, hits }), { headers });
+            if (hits.length > 0) {
+              const images = await Promise.all(hits.map((hit) => previewImage(hit.url)));
+              hits.forEach((hit, index) => {
+                if (images[index]) hit.image = images[index];
+              });
+              return new Response(JSON.stringify({ engine, hits }), { headers });
+            }
             errors.push(`${engine}: no results`);
           } catch (error) {
             errors.push(`${engine}: ${error instanceof Error ? error.message : "failed"}`);

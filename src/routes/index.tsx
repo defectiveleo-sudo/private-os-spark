@@ -1439,17 +1439,58 @@ async function resetProxyWorker() {
   }
 }
 
+// Waits for a newly installed proxy worker to take over, so the previous one is shut down first.
+function workerActivated(worker: ServiceWorker | null) {
+  return new Promise<void>((resolve) => {
+    if (!worker || worker.state === "activated" || worker.state === "redundant") return resolve();
+    const timer = window.setTimeout(resolve, 8000);
+    worker.addEventListener("statechange", () => {
+      if (worker.state !== "activated" && worker.state !== "redundant") return;
+      window.clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
+// Scramjet keeps its settings in an IndexedDB database. The previous proxy worker opened that database
+// before the page had set it up, which left it empty and stopped every page from loading.
+// An empty database is deleted here so the engine can rebuild it.
+function repairEngineStore() {
+  return new Promise<void>((resolve) => {
+    let request: IDBOpenDBRequest;
+    try {
+      request = indexedDB.open("$scramjet");
+    } catch {
+      return resolve();
+    }
+    request.onerror = () => resolve();
+    request.onsuccess = () => {
+      const database = request.result;
+      const ready = database.objectStoreNames.contains("config");
+      database.close();
+      if (ready) return resolve();
+      const removal = indexedDB.deleteDatabase("$scramjet");
+      const timer = window.setTimeout(resolve, 8000);
+      removal.onsuccess = removal.onerror = () => {
+        window.clearTimeout(timer);
+        resolve();
+      };
+    };
+  });
+}
+
 function startProxyEngine() {
   if (!engineStart) {
     engineStart = withTimeout((async () => {
-      if (!("serviceWorker" in navigator) || typeof SharedWorker === "undefined" || typeof WebAssembly === "undefined") {
+      if (!("serviceWorker" in navigator) || typeof SharedWorker === "undefined" || typeof WebAssembly === "undefined" || typeof indexedDB === "undefined") {
         throw new Error("This browser can't run the proxy engine");
       }
       const scope = window as unknown as EngineWindow;
       await loadScript("/baremux.js");
       await loadScript("/scramjet.all.js");
       if (!scope.BareMux || !scope.$scramjetLoadController) throw new Error("Proxy engine files are missing");
-      await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      await workerActivated(registration.installing ?? registration.waiting);
       await withTimeout(navigator.serviceWorker.ready, 8000, "The proxy worker did not start");
       if (!navigator.serviceWorker.controller) {
         await new Promise<void>((resolve) => {
@@ -1457,11 +1498,12 @@ function startProxyEngine() {
           window.setTimeout(resolve, 4000);
         });
       }
-      const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
-      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: await pickWisp() }]), 12000, "Could not reach a proxy server");
+      await repairEngineStore();
       const { ScramjetController } = scope.$scramjetLoadController();
       const controller = new ScramjetController({ prefix: "/scramjet/" });
       await withTimeout(controller.init(), 10000, "The proxy engine did not initialise");
+      const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
+      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: await pickWisp() }]), 12000, "Could not reach a proxy server");
       return controller;
     })(), 30000, "The proxy engine took too long to start").catch((error) => {
       engineStart = null;
@@ -1900,13 +1942,7 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
                   No results came back. <button type="button" className="underline" onClick={() => window.open(`https://duckduckgo.com/?q=${encodeURIComponent(results.query)}`, "_blank", "noopener,noreferrer")}>Open DuckDuckGo in a new tab</button>
                 </p>
               )}
-              {results.hits?.map((hit) => (
-                <button key={hit.url} type="button" onClick={() => navigateTo(hit.url)} className="mt-4 block w-full text-left">
-                  <span className="block truncate text-[11px] text-muted-foreground">{hit.url}</span>
-                  <span className="block text-sm font-semibold text-primary">{hit.title}</span>
-                  <span className="block text-xs text-muted-foreground">{hit.snippet}</span>
-                </button>
-              ))}
+              {results.hits?.map((hit) => <SearchResult key={hit.url} hit={hit} open={() => navigateTo(hit.url)} />)}
             </div>
           </div>
         )}
@@ -2562,7 +2598,34 @@ function StopwatchWidget() {
 }
 
 type WinRect = { x: number; y: number; w: number; h: number };
-type SearchHit = { title: string; url: string; snippet: string };
+type SearchHit = { title: string; url: string; snippet: string; image?: string | undefined };
+
+// Site pictures load through the page loader, so the result sites never see who is searching.
+const viaLoader = (url: string) => `/api/proxy?url=${encodeURIComponent(url)}`;
+
+function SearchResult({ hit, open }: { hit: SearchHit; open: () => void }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const [iconFailed, setIconFailed] = useState(false);
+  let host = "";
+  try {
+    host = new URL(hit.url).hostname.replace(/^www\./, "");
+  } catch {
+    // keep the plain address
+  }
+  return (
+    <button type="button" onClick={open} className="mt-3 flex w-full items-start gap-3 rounded-lg p-2 text-left transition-colors hover:bg-secondary/60">
+      <span className="min-w-0 flex-1">
+        <span className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+          {host && !iconFailed ? <img src={viaLoader(`https://icons.duckduckgo.com/ip3/${host}.ico`)} alt="" loading="lazy" onError={() => setIconFailed(true)} className="size-4 shrink-0 rounded-sm bg-white/90 object-contain" /> : <Globe className="size-4 shrink-0" />}
+          <span className="truncate">{host || hit.url}</span>
+        </span>
+        <span className="mt-0.5 block text-sm font-semibold text-primary">{hit.title}</span>
+        <span className="mt-0.5 line-clamp-3 block text-xs text-muted-foreground">{hit.snippet}</span>
+      </span>
+      {hit.image && !imageFailed && <img src={viaLoader(hit.image)} alt="" loading="lazy" onError={() => setImageFailed(true)} className="h-[4.5rem] w-28 shrink-0 rounded-md border border-border bg-secondary object-cover" />}
+    </button>
+  );
+}
 
 // Where a dragged window would snap: left/right edge, or the top edge to expand it.
 function edgeZone(x: number, y: number): "left" | "right" | "up" | null {

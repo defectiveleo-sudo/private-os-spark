@@ -146,8 +146,14 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
   );
 }
 
+// Icons cut from the Windows 11 icon sheet (public/icons/apps/win); they bring their own shape, so no tile.
+const WIN_ICONS = new Set(["calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
+
 // App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
 function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
+  if (WIN_ICONS.has(src)) {
+    return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/apps/win/${src}.webp`} alt="" draggable={false} decoding="async" className="size-[94%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
+  }
   return <Tile tone={tone} glyph="[&>img]:relative [&>img]:size-[68%] [&>img]:drop-shadow-[0_2px_2px_rgb(0_0_0/.35)]" className={className}><img src={`/icons/apps/${src}.svg`} alt="" draggable={false} decoding="async" /></Tile>;
 }
 

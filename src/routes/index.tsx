@@ -24,6 +24,8 @@ import {
   Plus,
   RefreshCw,
   Search,
+  ChevronUp,
+  Check,
   Crown,
   RotateCcw,
   Check as CheckMark,
@@ -152,7 +154,7 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
 }
 
 // Icons cut from the Windows 11 icon sheet (public/icons/apps/win); they bring their own shape, so no tile.
-const WIN_ICONS = new Set(["calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
+const WIN_ICONS = new Set(["word", "powerpoint", "excel", "outlook", "onenote", "onedrive", "calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
 
 // App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
 function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
@@ -162,12 +164,12 @@ function AppImage({ className, tone, src }: { className?: string | undefined; to
   return <Tile tone={tone} glyph="[&>img]:relative [&>img]:size-[68%] [&>img]:drop-shadow-[0_2px_2px_rgb(0_0_0/.35)]" className={className}><img src={`/icons/apps/${src}.svg`} alt="" draggable={false} decoding="async" /></Tile>;
 }
 
-const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="cloud" className={className} />;
+const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="onedrive" className={className} />;
 const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
 const FolderIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="files" className={className} />;
 const SettingsIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-400 to-zinc-700" src="settings" className={className} />;
 const BeeZIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-yellow-600" glyph="[&>svg]:size-[62%] [&>svg]:text-zinc-900" className={className}><Hexagon className="fill-zinc-900/25" /></Tile>;
-const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="notes" className={className} />;
+const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="onenote" className={className} />;
 const CalcIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-500 to-zinc-800" src="calc" className={className} />;
 const TerminalIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-black" src="terminal" className={className} />;
 
@@ -225,7 +227,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "2.0";
 const CHANGELOG = [
-  { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner"] },
+  { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner", "Windows 11 style taskbar: apps in the middle, tray and clock on the right, all in one bar", "Right-click the taskbar to change its transparency, turn on liquid glass, switch to the floating dock or add apps", "Private Word, Private Excel, Private PowerPoint, Private Outlook and Private OneNote with new icons", "Cleaner app icons with no white edges"] },
   { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
   { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
@@ -270,14 +272,14 @@ const PasswordIcon: IconComponent = ({ className }) => <AppImage tone="from-slat
 const RecorderIcon: IconComponent = ({ className }) => <AppImage tone="from-red-500 to-pink-700" src="recorder" className={className} />;
 
 const MessagesIcon: IconComponent = ({ className }) => <AppImage tone="from-green-400 to-green-600" src="messages" className={className} />;
-const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="mail" className={className} />;
+const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="outlook" className={className} />;
 const ContactsIcon: IconComponent = ({ className }) => <AppImage tone="from-stone-300 to-stone-500" src="contacts" className={className} />;
 const MapsIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-300 to-teal-600" src="maps" className={className} />;
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
-  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "notes", label: "Private OneNote", icon: NotesIcon },
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
@@ -291,7 +293,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
-  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "notes", label: "Private OneNote", icon: NotesIcon },
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "terminal", label: "Terminal", icon: TerminalIcon },
   { id: "taskmgr", label: "Task Manager", icon: TaskIcon },
@@ -303,7 +305,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "writer", label: "Writer", icon: WriterIcon }, { id: "sheets", label: "Sheets", icon: SheetsIcon }, { id: "slides", label: "Slides", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Mail", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -362,6 +364,7 @@ function PrivateOS() {
   const [runText, setRunText] = useState("");
   const [runIndex, setRunIndex] = useState(0);
   const [dockShown, setDockShown] = useState(false);
+  const [barMenu, setBarMenu] = useState<{ x: number; y: number } | null>(null);
   const [dockMenu, setDockMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [battery, setBattery] = useState(100);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
@@ -642,7 +645,21 @@ function PrivateOS() {
     { label: "Restart…", run: () => window.location.reload() },
     { label: "Shut Down…", run: () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); } },
   ];
-  const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !launcher && !taskView && !quickMenu;
+  const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !barMenu && !launcher && !taskView && !quickMenu;
+  // Windows 11 style: one full-width bar with the apps centred and the tray on the right.
+  const taskbarMode = settings.dockStyle === "taskbar" && settings.dockPos !== "right";
+  const openStartMenu = () => {
+    const anchor = document.getElementById("start-anchor");
+    if (anchor) {
+      const box = anchor.getBoundingClientRect();
+      const width = Math.min(416, window.innerWidth - 16);
+      setStartPos({ left: Math.max(8, Math.min(box.left - 8, window.innerWidth - width - 8)), bottom: settings.dockPos === "top" ? window.innerHeight - box.bottom - 460 : window.innerHeight - box.top + 10 });
+    }
+    setStartMenu((value) => !value);
+    setLauncher(false);
+    setQuickMenu(false);
+  };
+  const dockSurface = { "--dock-alpha": `${settings.dockOpacity}%` } as React.CSSProperties;
   const hideShift = settings.dockPos === "right" ? "translateX(160%)" : settings.dockPos === "top" ? "translateY(-160%)" : "translateY(160%)";
 
   const webSearch = (text: string) => {
@@ -756,7 +773,7 @@ function PrivateOS() {
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
       case "messages": return <WindowFrame title="Messages" icon={MessagesIcon} close={close}><MessagesContent /></WindowFrame>;
-      case "mail": return <WindowFrame title="Mail" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
+      case "mail": return <WindowFrame title="Private Outlook" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
       case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
@@ -768,7 +785,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={!liquid && taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
@@ -783,7 +800,54 @@ function PrivateOS() {
       )}
       {!liquid && <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />}
 
-      {!liquid && (<>
+      {!liquid && taskbarMode && (<>
+      {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed inset-x-0 z-30 h-2 ${settings.dockPos === "top" ? "top-0" : "bottom-0"}`} />}
+      <div
+        onMouseEnter={() => setDockShown(true)}
+        onMouseLeave={() => setDockShown(false)}
+        onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }}
+        style={{ ...dockSurface, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? (settings.dockPos === "top" ? "translateY(-110%)" : "translateY(110%)") : undefined }}
+        className={`taskbar ${settings.dockLiquid ? "taskbar-liquid" : ""} absolute inset-x-0 z-40 flex h-12 items-center px-2 text-white ${settings.dockPos === "top" ? "top-0 border-b" : "bottom-0 border-t"}`}
+      >
+        <div className="hidden w-48 shrink-0 md:block" aria-hidden />
+        <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
+          <span data-start id="start-anchor" className="inline-flex">
+            <OsButton label="Start" onClick={openStartMenu} className={`taskbar-btn ${startMenu ? "is-on" : ""}`}><StartGlyph /></OsButton>
+          </span>
+          <OsButton label="Search" onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`taskbar-btn ${launcher ? "is-on" : ""}`}><Search className="size-[18px]" /></OsButton>
+          <OsButton label="Task view" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className={`taskbar-btn ${taskView ? "is-on" : ""}`}><PanelsTopLeft className="size-[18px]" /></OsButton>
+          {dockList.map(({ id, app }) => {
+            const Icon = app.icon;
+            const open = openWins.includes(id);
+            const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
+            return (
+              <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
+                <OsButton label={app.label} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className={`taskbar-btn group ${focused ? "is-on" : ""}`}>
+                  <Icon className={settings.bigIcons ? "size-7" : "size-6"} />
+                  <span className="taskbar-tip">{app.label}</span>
+                  {open && <span className={`taskbar-dot ${focused ? "is-focused" : ""}`} />}
+                </OsButton>
+              </span>
+            );
+          })}
+        </nav>
+        <div className="flex shrink-0 items-center gap-0.5 md:w-48 md:justify-end">
+          <OsButton label="Show hidden icons" onClick={() => setLauncher((value) => !value)} className="taskbar-btn hidden w-7 sm:inline-flex"><ChevronUp className="size-4" /></OsButton>
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
+            <span className="hidden text-[11px] font-medium leading-tight sm:block">ENG</span>
+            <Wifi className="size-4" />
+            <Volume2 className="size-4" />
+            <BatteryFull className="size-4" />
+          </button>
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Date and time" className="taskbar-btn w-auto px-2 text-right">
+            <span className="flex flex-col items-end text-[11px] leading-tight tabular-nums"><span>{timeLabel}</span>{settings.showDate && <span className="text-white/75">{time.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}</span>
+          </button>
+          {canFullscreen && <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="taskbar-btn hidden w-8 sm:inline-flex">{fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</OsButton>}
+        </div>
+      </div>
+      </>)}
+
+      {!liquid && !taskbarMode && (<>
       {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed z-30 ${settings.dockPos === "right" ? "inset-y-0 right-0 w-3" : settings.dockPos === "top" ? "inset-x-0 top-0 h-3" : "inset-x-0 bottom-0 h-3"}`} />}
       <div onMouseEnter={() => setDockShown(true)} onMouseLeave={() => setDockShown(false)} style={{ zoom: settings.dockScale / 100, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? hideShift : undefined }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
@@ -797,7 +861,7 @@ function PrivateOS() {
           }}
           className={`absolute cursor-grab touch-none rounded-full bg-white/50 ${settings.dockPos === "right" ? "-left-2.5 top-1/2 h-8 w-1 -translate-y-1/2" : settings.dockPos === "top" ? "-bottom-2 left-1/2 h-1 w-8 -translate-x-1/2" : "-top-2 left-1/2 h-1 w-8 -translate-x-1/2"}`}
         />
-        <nav aria-label="PRIVATE OS dock" className={`dock-bar dock-glass flex items-center gap-3.5 rounded-2xl px-4 py-2.5 ${settings.dockPos === "right" ? "flex-col" : ""}`}>
+        <nav aria-label="PRIVATE OS dock" onContextMenu={(event) => { if (event.target !== event.currentTarget) return; event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }} style={dockSurface} className={`dock-bar dock-glass ${settings.dockLiquid ? "taskbar-liquid" : ""} flex items-center gap-3.5 rounded-2xl px-4 ${settings.dockPos === "right" ? "flex-col py-3" : "h-[52px]"}`}>
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label="Menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
@@ -839,7 +903,7 @@ function PrivateOS() {
           </OsButton>
         </nav>
 
-        <div className={`dock-glass flex h-9 items-center gap-2 rounded-2xl px-2.5 text-xs font-medium tabular-nums text-white md:h-10 md:gap-3 md:px-3 ${settings.dockPos === "right" ? "hidden" : ""}`}>
+        <div onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }} style={dockSurface} className={`dock-bar dock-glass ${settings.dockLiquid ? "taskbar-liquid" : ""} flex h-[52px] items-center gap-2 rounded-2xl px-3 text-xs font-medium tabular-nums text-white md:gap-3 md:px-4 ${settings.dockPos === "right" ? "hidden" : ""}`}>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
@@ -1006,6 +1070,43 @@ function PrivateOS() {
         </div>
       )}
 
+      {barMenu && (
+        <div role="menu" aria-label="Taskbar options" onClick={(event) => event.stopPropagation()} style={{ left: Math.max(8, barMenu.x), ...(settings.dockPos === "top" ? { top: barMenu.y + 12 } : { bottom: window.innerHeight - barMenu.y + 12 }) }} className="soft-glass fixed z-50 w-64 rounded-2xl p-3 text-[11px] text-white shadow-2xl [animation:start-menu-in_.22s_cubic-bezier(.16,1.1,.3,1)]">
+          <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-white/55">Taskbar</p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {([["taskbar", "Windows bar"], ["floating", "Floating dock"]] as const).map(([value, label]) => (
+              <button key={value} type="button" aria-pressed={settings.dockStyle === value} onClick={() => patchSettings({ dockStyle: value })} className={`rounded-xl border px-2 py-2 font-semibold ${settings.dockStyle === value ? "border-primary bg-primary/20" : "border-white/10 hover:bg-white/10"}`}>{label}</button>
+            ))}
+          </div>
+          <label className="mt-3 block px-1">
+            <span className="flex justify-between"><span>Transparency</span><span className="tabular-nums text-white/60">{100 - settings.dockOpacity}%</span></span>
+            <input type="range" min={0} max={95} value={100 - settings.dockOpacity} aria-label="Taskbar transparency" onChange={(event) => patchSettings({ dockOpacity: 100 - Number(event.target.value) })} className="mt-1.5 w-full accent-primary" />
+          </label>
+          <button type="button" role="menuitemcheckbox" aria-checked={settings.dockLiquid} onClick={() => patchSettings((current) => ({ dockLiquid: !current.dockLiquid }))} className="mt-2 flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
+            <span>Liquid glass</span>
+            <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockLiquid ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockLiquid ? "left-3.5" : "left-0.5"}`} /></span>
+          </button>
+          <button type="button" role="menuitemcheckbox" aria-checked={settings.dockAutoHide} onClick={() => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide }))} className="flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
+            <span>Auto-hide</span>
+            <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockAutoHide ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockAutoHide ? "left-3.5" : "left-0.5"}`} /></span>
+          </button>
+          <p className="mt-2 border-t border-white/10 px-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">Apps on the taskbar</p>
+          <div className="mt-1 max-h-48 overflow-auto pr-1">
+            {launcherApps.map((app) => {
+              const pinned = settings.dockPins.includes(app.id);
+              const Icon = app.icon;
+              return (
+                <button key={app.id} type="button" role="menuitemcheckbox" aria-checked={pinned} onClick={() => patchSettings((current) => ({ dockPins: current.dockPins.includes(app.id) ? current.dockPins.filter((entry) => entry !== app.id) : [...current.dockPins, app.id] }))} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white/10">
+                  <Icon className="size-5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{app.label}</span>
+                  {pinned && <Check className="size-3.5 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" onClick={() => { setBarMenu(null); openApp("settings"); }} className="mt-2 w-full rounded-lg border-t border-white/10 px-2 pt-2.5 text-left text-white/80 hover:text-white">Taskbar settings…</button>
+        </div>
+      )}
       {dockMenu && (() => {
         const app = lookupApp(dockMenu.id);
         const open = openWins.includes(dockMenu.id);
@@ -1067,6 +1168,15 @@ function Wallpaper({ index, options }: { index: number; options: WallpaperOption
   }
   if (item.src) return <img src={item.src} alt={`${item.label} wallpaper`} className="absolute inset-0 size-full object-cover" />;
   return <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0d1b2a,#1b3a4b_55%,#5c7f8a)]" />;
+}
+
+// Four rounded panes in the theme colour: the Start button.
+function StartGlyph() {
+  return (
+    <span aria-hidden className="grid size-[18px] grid-cols-2 gap-[2px]">
+      {[0, 1, 2, 3].map((i) => <span key={i} className="rounded-[2px] bg-gradient-to-br from-[color-mix(in_oklab,var(--primary)_55%,#7dd3fc)] to-[color-mix(in_oklab,var(--primary)_85%,#1d4ed8)]" />)}
+    </span>
+  );
 }
 
 function LockScreen({ locked, unlock, day, date, clock, dim, blur, name }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string; dim: number; blur: number; name?: string }) {
@@ -2321,7 +2431,7 @@ function NotesApp({ close }: { close: () => void }) {
     } else setMsg("File not found");
   };
   return (
-    <WindowFrame title="Notes" icon={StickyNote} close={close}>
+    <WindowFrame title="Private OneNote" icon={NotesIcon} close={close}>
       <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
         <input value={path} onChange={(event) => setPath(event.target.value)} aria-label="File path" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
         <button type="button" onClick={load} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs">Open</button>
@@ -2567,8 +2677,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "" };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -4195,9 +4305,9 @@ function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffe
   }, [appId]);
 }
 
-function WriterIcon({ className }: { className?: string }) { return <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>; }
-function SlidesIcon({ className }: { className?: string }) { return <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>; }
-function SheetsIcon({ className }: { className?: string }) { return <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>; }
+function WriterIcon({ className }: { className?: string }) { return <AppImage tone="from-blue-500 to-blue-800" src="word" className={className} />; }
+function SlidesIcon({ className }: { className?: string }) { return <AppImage tone="from-orange-400 to-red-600" src="powerpoint" className={className} />; }
+function SheetsIcon({ className }: { className?: string }) { return <AppImage tone="from-green-500 to-emerald-800" src="excel" className={className} />; }
 function PdfIcon({ className }: { className?: string }) { return <AppImage tone="from-red-500 to-red-800" src="pdf" className={className} />; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
@@ -4246,7 +4356,7 @@ function WriterApp({ close }: { close: () => void }) {
   };
   const keep = (event: React.MouseEvent) => event.preventDefault();
   return (
-    <WindowFrame title={`Writer – ${name}`} icon={WriterIcon} close={close}>
+    <WindowFrame title={`Private Word – ${name}`} icon={WriterIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void saveToFiles(`${name}.doc`, docBlob()).then((ok) => ok && setMsg(`Saved ${name}.doc to Documents`))}>Save</button>
@@ -4357,7 +4467,7 @@ function SlidesApp({ close }: { close: () => void }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [present, slides.length]);
   return (
-    <WindowFrame title={`Slides – ${name}`} icon={SlidesIcon} close={close}>
+    <WindowFrame title={`Private PowerPoint – ${name}`} icon={SlidesIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void build().then((blob) => saveToFiles(`${name}.pptx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.pptx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
@@ -4503,7 +4613,7 @@ function SheetsApp({ close }: { close: () => void }) {
   };
   const raw = data[sel.r]?.[sel.c] ?? "";
   return (
-    <WindowFrame title={`Sheets – ${name}`} icon={SheetsIcon} close={close}>
+    <WindowFrame title={`Private Excel – ${name}`} icon={SheetsIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => saveToFiles(`${name}.xlsx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.xlsx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>

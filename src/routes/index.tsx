@@ -78,7 +78,6 @@ import {
 } from "lucide-react";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
-import { LIQUID_DOCK, LiquidContext, LiquidDock, LiquidMenuBar, LiquidSpotlight, LiquidWallpaper, LiquidWidgets } from "@/components/liquid-desktop";
 import { ContactsContent, MailContent, MapsContent, MessagesContent } from "@/components/liquid-apps";
 import { OPTIMIZE_EVENT, OptimizeOverlay, isLowPowerDevice, requestOptimize } from "@/components/optimize-overlay";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -225,8 +224,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "2.0";
+const OS_VERSION = "2.1";
 const CHANGELOG = [
+  { v: "2.1", date: "18 Oct 2026", items: ["New Clay theme: warm terracotta on soft charcoal with its own slow-moving wallpaper, softer windows and a warm glow", "Removed the macOS-style Liquid Glass desktop; if you used it you now get Clay"] },
   { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner", "Windows 11 style taskbar: apps in the middle, tray and clock on the right, all in one bar", "Right-click the taskbar to change its transparency, turn on liquid glass, switch to the floating dock or add apps", "Private Word, Private Excel, Private PowerPoint, Private Outlook and Private OneNote with new icons", "Cleaner app icons with no white edges"] },
   { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
@@ -475,7 +475,12 @@ function PrivateOS() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("pos-settings");
-      if (raw) setSettings({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<OsSettings>) });
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<OsSettings>;
+        // The macOS-style Liquid Glass desktop was removed; people who used it get Clay instead.
+        if (saved.theme === "liquid") { saved.theme = "clay"; saved.accent = "#d97757"; }
+        setSettings({ ...DEFAULT_SETTINGS, ...saved });
+      }
     } catch {
       // storage unavailable
     }
@@ -603,7 +608,8 @@ function PrivateOS() {
   // The theme accent and the Modern interface style apply to every app, not only Settings.
   const modernUi = settings.uiStyle === "modern";
   const themeDef = THEMES.find((theme) => theme.id === settings.theme);
-  const glassTheme = Boolean(themeDef?.glass) && settings.theme !== "liquid";
+  const glassTheme = Boolean(themeDef?.glass);
+  const clay = settings.theme === "clay";
   // Themes with a base colour also tint the desktop, cards, menus and windows.
   const baseStyle = themeDef?.base
     ? { "--background": themeDef.base, "--theme-base": themeDef.base, "--card": `color-mix(in oklab, ${themeDef.base} 78%, transparent)`, "--popover": `color-mix(in oklab, ${themeDef.base} 86%, transparent)`, ...(settings.glassOpacity > 0 ? {} : { "--glass-tint": `color-mix(in oklab, ${themeDef.base} ${themeDef.glass ? 42 : 62}%, transparent)` }) }
@@ -619,32 +625,8 @@ function PrivateOS() {
     const app = lookupApp(id);
     return app ? [{ id, app }] : [];
   });
-  const liquid = settings.theme === "liquid";
   const visibleWins = openWins.filter((id) => !minWins.includes(id));
   const topId = [...zOrder].reverse().find((id) => visibleWins.includes(id)) ?? null;
-  const liquidDock = [...LIQUID_DOCK, ...openWins.filter((id) => !LIQUID_DOCK.includes(id) && id !== "files")].flatMap((id) => {
-    const app = lookupApp(id);
-    return app ? [{ ...app, id }] : [];
-  });
-  const edit = (command: string) => () => { document.execCommand(command); };
-  const liquidMenus = [
-    { title: "File", items: [{ label: "New Note", run: () => openApp("notes") }, { label: "New Browser Window", run: () => openApp("browser") }, { label: "", divider: true }, { label: "Close Window", run: topId ? () => closeWindow(topId) : undefined }] },
-    { title: "Edit", items: [{ label: "Undo", run: edit("undo") }, { label: "Redo", run: edit("redo") }, { label: "", divider: true }, { label: "Cut", run: edit("cut") }, { label: "Copy", run: edit("copy") }, { label: "Select All", run: edit("selectAll") }] },
-    { title: "View", items: [{ label: fullscreen ? "Exit Full Screen" : "Enter Full Screen", run: canFullscreen ? toggleFullscreen : undefined }, { label: settings.bigIcons ? "Standard Icons" : "Bigger Icons", run: () => patchSettings((current) => ({ bigIcons: !current.bigIcons })) }, { label: settings.reduceMotion ? "Turn Motion On" : "Reduce Motion", run: () => patchSettings((current) => ({ reduceMotion: !current.reduceMotion })) }] },
-    { title: "Go", items: [{ label: "Files", run: () => openApp("files") }, { label: "Applications", run: () => setLauncher(true) }, { label: "Utilities: Terminal", run: () => openApp("terminal") }, { label: "Task Manager", run: () => openApp("taskmgr") }] },
-    { title: "Window", items: [{ label: "Minimize", run: topId ? () => setMinWins((list) => [...list, topId]) : undefined }, { label: "Show All Windows", run: () => setTaskView(true) }, ...(openWins.length ? [{ label: "", divider: true }] : []), ...openWins.map((id) => ({ label: lookupApp(id)?.label ?? id, run: () => openApp(id) }))] },
-    { title: "Help", items: [{ label: "Search", run: () => setRunOpen(true) }, { label: "System Info", run: () => openApp("about") }] },
-  ];
-  const liquidAppleMenu = [
-    { label: "About PRIVATE OS", run: () => openApp("about") },
-    { label: "System Settings…", run: () => openApp("settings") },
-    { label: settings.lite ? "Optimized ✓" : "Optimize…", run: settings.lite ? undefined : requestOptimize },
-    { label: "", divider: true },
-    { label: "Lock Screen", run: () => setLocked(true) },
-    { label: "Sleep", run: () => setPower("sleep") },
-    { label: "Restart…", run: () => window.location.reload() },
-    { label: "Shut Down…", run: () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); } },
-  ];
   const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !barMenu && !launcher && !taskView && !quickMenu;
   // Windows 11 style: one full-width bar with the apps centred and the tray on the right.
   const taskbarMode = settings.dockStyle === "taskbar" && settings.dockPos !== "right";
@@ -785,22 +767,22 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={!liquid && taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-clay={clay ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
-          {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
+          {clay ? <ClayWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: settings.dim / 100 }} />
-      {settings.ambient && !settings.lite && !liquid && (
+      {settings.ambient && !settings.lite && !clay && (
         <div aria-hidden className="pointer-events-none absolute inset-0 z-[1] overflow-hidden">
           <div className="aurora" />
           {Array.from({ length: 14 }, (_, i) => <span key={i} className="particle" style={{ left: `${(i * 41 + 7) % 100}%`, top: `${(i * 59 + 20) % 100}%`, animationDelay: `${-(i * 2.3) % 12}s`, animationDuration: `${12 + (i % 5) * 3}s` }} />)}
         </div>
       )}
-      {!liquid && <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />}
+      {<div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />}
 
-      {!liquid && taskbarMode && (<>
+      {taskbarMode && (<>
       {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed inset-x-0 z-30 h-2 ${settings.dockPos === "top" ? "top-0" : "bottom-0"}`} />}
       <div
         onMouseEnter={() => setDockShown(true)}
@@ -847,7 +829,7 @@ function PrivateOS() {
       </div>
       </>)}
 
-      {!liquid && !taskbarMode && (<>
+      {!taskbarMode && (<>
       {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed z-30 ${settings.dockPos === "right" ? "inset-y-0 right-0 w-3" : settings.dockPos === "top" ? "inset-x-0 top-0 h-3" : "inset-x-0 bottom-0 h-3"}`} />}
       <div onMouseEnter={() => setDockShown(true)} onMouseLeave={() => setDockShown(false)} style={{ zoom: settings.dockScale / 100, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? hideShift : undefined }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
@@ -920,10 +902,10 @@ function PrivateOS() {
 
       </>)}
 
-      {!liquid && <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>}
+      {<div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>}
 
       {quickMenu && (
-        <aside className={`glass-panel quick-settings absolute right-3 z-50 ${liquid ? "top-9" : "bottom-20"} w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5`}>
+        <aside className={`glass-panel quick-settings absolute right-3 z-50 bottom-20 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5`}>
           <div className="mb-5 flex items-center justify-between"><p className="text-sm font-semibold">Quick settings</p><OsButton label="Open settings" onClick={() => { setQuickMenu(false); openApp("settings"); }} className="utility-icon"><Settings className="size-4" /></OsButton></div>
           <div className="grid grid-cols-3 gap-2"><div className="quick-tile"><Wifi className="size-5" /><span>Online</span></div><OsButton onClick={() => setSound(v => v === 0 ? 70 : 0)} className="quick-tile"><Volume2 className="size-5" /><span>{sound ? "Sound" : "Muted"}</span></OsButton><OsButton onClick={() => { setQuickMenu(false); setLocked(true); }} className="quick-tile"><LockKeyhole className="size-5" /><span>Lock</span></OsButton></div>
           <label className="mt-5 flex items-center gap-3 text-xs"><Volume2 className="size-4" /><input aria-label="OS sound level" type="range" min="0" max="100" value={sound} onChange={e => setSound(Number(e.target.value))} className="min-w-0 flex-1 accent-primary" /><span className="w-8 text-right">{sound}%</span></label>
@@ -933,7 +915,7 @@ function PrivateOS() {
       )}
 
       {settings.showIcons && settings.desktop.length > 0 && (
-        <div className={`pointer-events-none absolute z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap gap-2 ${liquid ? "right-3 top-10 content-end" : "left-3 top-3 content-start"}`}>
+        <div className={`pointer-events-none absolute z-[9] flex max-h-[calc(100dvh-7rem)] flex-col flex-wrap gap-2 left-3 top-3 content-start`}>
           {settings.desktop.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
             if (!app) return null;
@@ -996,16 +978,7 @@ function PrivateOS() {
         </aside>
       )}
 
-      {liquid && (
-        <>
-          <LiquidMenuBar appName={topId ? lookupApp(topId)?.label ?? "Desktop" : "Desktop"} menus={liquidMenus} onAppleMenu={liquidAppleMenu} battery={battery} time={time} clock24={settings.clock24} onSearch={() => setRunOpen(true)} onControl={() => setQuickMenu((value) => !value)} />
-          <LiquidWidgets now={time} weekStart={settings.weekStart} zones={settings.worldClocks} localZone={zone} openApp={openApp} />
-          {visibleWins.length === 0 && !launcher && <LiquidSpotlight onSearch={() => setRunOpen(true)} onApps={() => setLauncher(true)} onFiles={() => openApp("files")} onTaskView={() => setTaskView(true)} onNotes={() => openApp("notes")} />}
-          <LiquidDock apps={liquidDock} openWins={openWins} focusedId={topId} onApp={(id) => (topId === id ? setMinWins((list) => [...list, id]) : openApp(id))} onLauncher={() => setLauncher((value) => !value)} onFiles={() => openApp("files")} onContext={(id, x, y) => { setMenu(null); setDockMenu({ id, x, y }); }} />
-        </>
-      )}
-
-      {settings.widgets.length > 0 && !liquid && (
+      {settings.widgets.length > 0 && (
         <div className={`pointer-events-none absolute right-3 z-[9] flex flex-col items-end gap-3 ${settings.railHidden ? "top-3" : "top-72"}`}>
           {settings.widgets.map((id) => (
             <WidgetShell key={id} title={WIDGET_LIST.find((item) => item.id === id)?.label ?? id} offset={settings.wpos[id] ?? { x: 0, y: 0 }} onMove={(pos) => patchSettings((current) => ({ wpos: { ...current.wpos, [id]: pos } }))} onRemove={() => patchSettings((current) => ({ widgets: current.widgets.filter((item) => item !== id) }))}>
@@ -1144,13 +1117,11 @@ function PrivateOS() {
       )}
 
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
-      <LiquidContext.Provider value={liquid}>
       {openWins.map((id) => (
         <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id && !minWins.includes(id), closing: closingWins.includes(id) }}>
           <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
         </WindowContext.Provider>
       ))}
-      </LiquidContext.Provider>
 
 
       <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} name={settings.userName} />
@@ -1270,8 +1241,7 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
 
 function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
   const { minimized, minimize, focus, z, top, closing } = useContext(WindowContext);
-  const liquid = useContext(LiquidContext);
-  const topGap = liquid ? 36 : 8;
+  const topGap = 8;
   const el = useRef<HTMLElement>(null);
   const [rect, setRect] = useState<WinRect | null>(null);
   const [snap, setSnap] = useState<string | null>(null);
@@ -1315,10 +1285,10 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   const expand = () => {
     const node = el.current;
     if (!node) return setMaximized(true);
-    const reserve = liquid ? 88 : window.innerWidth >= 768 ? 72 : 56;
+    const reserve = window.innerWidth >= 768 ? 72 : 56;
     const ease = "cubic-bezier(.22,1,.36,1)";
     node.style.transition = `left .26s ${ease}, top .26s ${ease}, width .26s ${ease}, height .26s ${ease}, border-radius .26s ease`;
-    place({ x: 0, y: liquid ? 28 : 0, w: window.innerWidth, h: window.innerHeight - reserve - (liquid ? 28 : 0) });
+    place({ x: 0, y: 0, w: window.innerWidth, h: window.innerHeight - reserve });
     node.style.borderRadius = "0px";
     window.setTimeout(() => {
       node.style.transition = "";
@@ -1347,7 +1317,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     const half = Math.round(window.innerWidth / 2) - 12;
     setMaximized(false);
     setSnap(zone);
-    setRect({ x: zone === "left" ? 8 : Math.round(window.innerWidth / 2) + 4, y: topGap, w: half, h: window.innerHeight - 80 - topGap - (liquid ? 16 : 0) });
+    setRect({ x: zone === "left" ? 8 : Math.round(window.innerWidth / 2) + 4, y: topGap, w: half, h: window.innerHeight - 80 - topGap });
   };
   useEffect(() => {
     if (!top) return;
@@ -1356,9 +1326,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     return () => window.removeEventListener("pos-snap", handler);
   });
   const surface = "glass-panel os-window";
-  const position = liquid
-    ? maximized ? "inset-x-0 top-7 bottom-[5.25rem] rounded-none" : "inset-x-2 top-10 bottom-24 md:inset-x-[12%] md:top-12 md:bottom-28"
-    : maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-2xl md:inset-x-[8%] md:top-6 md:bottom-20";
+  const position = maximized ? "inset-x-0 top-0 bottom-14 rounded-none md:bottom-[4.5rem]" : "inset-x-2 top-3 bottom-16 rounded-2xl md:inset-x-[8%] md:top-6 md:bottom-20";
   return (
     <section
       ref={el}
@@ -1406,7 +1374,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           return;
         }
         if (g.kind === "move") {
-          place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(liquid ? 28 : 0, g.start.y + dy)) });
+          place({ ...g.start, x: Math.min(window.innerWidth - 80, Math.max(80 - g.start.w, g.start.x + dx)), y: Math.min(window.innerHeight - 60, Math.max(0, g.start.y + dy)) });
           showSnap(edgeZone(event.clientX, event.clientY) === "up" ? "max" : edgeZone(event.clientX, event.clientY) as "left" | "right" | null);
         } else {
           place({ ...g.start, w: g.mode.includes("e") ? Math.max(320, g.start.w + dx) : g.start.w, h: g.mode.includes("s") ? Math.max(220, g.start.h + dy) : g.start.h });
@@ -1425,21 +1393,6 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       }}
       className={`os-window-anim absolute flex flex-col overflow-hidden ${surface} ${minimized ? "os-window-min pointer-events-none" : ""} ${closing ? "os-window-closing pointer-events-none" : ""} ${position}`}
     >
-      {liquid ? (
-      <header className="window-titlebar liquid-titlebar relative flex h-10 shrink-0 items-center gap-2 px-4">
-        <div className="traffic flex shrink-0 items-center gap-2">
-          <button type="button" aria-label="Close" title="Close" onClick={close} className="traffic-btn bg-[#ff5f57]"><X /></button>
-          <button type="button" aria-label="Minimize" title="Minimize" onClick={minimize} className="traffic-btn bg-[#febc2e]"><Minus /></button>
-          <button type="button" aria-label={maximized ? "Restore" : "Zoom"} title={maximized ? "Restore" : "Zoom"} onClick={toggleMaximize} className="traffic-btn bg-[#28c840]">{maximized ? <Minimize2 /> : <Maximize2 />}</button>
-        </div>
-        <span className="nav-chev flex items-center">
-          <OsButton label="Back" onClick={() => frameNav("back")} className="win-ctl"><ChevronLeft className="size-3.5" /></OsButton>
-          <OsButton label="Forward" onClick={() => frameNav("forward")} className="win-ctl"><ChevronRight className="size-3.5" /></OsButton>
-        </span>
-        <span className="pointer-events-none absolute inset-x-0 mx-auto flex w-max max-w-[50%] items-center gap-1.5 truncate text-[13px] font-semibold text-white/90"><Icon className="size-4 shrink-0" />{title}</span>
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">{actions}</div>
-      </header>
-      ) : (
       <header className="window-titlebar flex h-8 shrink-0 items-center justify-between gap-2 px-2.5">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className="size-5 shrink-0" />
@@ -1456,7 +1409,6 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
         </div>
       </header>
-      )}
       {children}
       {!maximized && (["e", "s", "se"] as const).map((mode) => (
         <div
@@ -3210,7 +3162,7 @@ function AboutApp({ close }: { close: () => void }) {
 type ThemeDef = { id: string; name: string; sub: string; accent: string; glass?: boolean; base?: string };
 const THEMES: ThemeDef[] = [
   { id: "private", name: "Private", sub: "Original gold", accent: "" },
-  { id: "liquid", name: "Liquid Glass", sub: "macOS-style desktop: menu bar, widgets, Spotlight and dock", accent: "#0a84ff", glass: true },
+  { id: "clay", name: "Clay", sub: "Claude's pick: warm terracotta on soft charcoal", accent: "#d97757", base: "#1d1a17" },
   { id: "signature", name: "Signature", sub: "Brand purple", accent: "#7c6cff" },
   { id: "iris", name: "Iris", sub: "Deep violet-blue", accent: "#6d5efc" },
   { id: "midnight", name: "Midnight", sub: "Deep space indigo", accent: "#4f6bff" },
@@ -3234,7 +3186,7 @@ const THEMES: ThemeDef[] = [
   { id: "forest-glass", name: "Forest Glass", sub: "Mossy green glass", accent: "#4ade80", glass: true, base: "#0e2618" },
 ];
 
-const WELCOME_THEMES = ["private", "liquid", "tokyo-night", "dracula", "nord", "sunset", "mono", "ocean-glass", "forest-glass", "aurora", "plasma", "vault-glass"];
+const WELCOME_THEMES = ["private", "clay", "tokyo-night", "dracula", "nord", "sunset", "mono", "ocean-glass", "forest-glass", "aurora", "plasma", "vault-glass"];
 
 function readableOn(hex: string) {
   const value = hex.replace("#", "");
@@ -3749,10 +3701,10 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   </CfgRow>
                 </CfgCard>
                 <CfgCard title="Desktop style">
-                  <p className="text-[10px] text-muted-foreground">Switch the whole desktop. Liquid Glass adds a macOS-style menu bar, widgets, Spotlight and a magnifying dock.</p>
+                  <p className="text-[10px] text-muted-foreground">Clay is a warm theme with its own moving wallpaper and softer windows. You can still pick any theme below.</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {([["private", "Standard", "The PRIVATE OS desktop with its dock and widget rail."], ["liquid", "Liquid Glass", "macOS-style glass desktop with Messages, Mail, Contacts and Maps in the dock."]] as const).map(([id, label, sub]) => {
-                      const on = id === "liquid" ? settings.theme === "liquid" : settings.theme !== "liquid";
+                    {([["private", "Standard", "The PRIVATE OS desktop with your own wallpaper."], ["clay", "Clay", "Warm terracotta, a slow glowing wallpaper and soft rounded windows."]] as const).map(([id, label, sub]) => {
+                      const on = id === "clay" ? settings.theme === "clay" : settings.theme !== "clay";
                       return (
                         <button key={id} type="button" aria-pressed={on} onClick={() => { if (!on) chooseTheme(THEMES.find((theme) => theme.id === id)!); }} className={`fx-card rounded-2xl border p-2.5 text-left ${on ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
                           <DesktopPreview kind={id} />
@@ -4775,13 +4727,12 @@ function ThemePreview({ accent, badge }: { accent: string; badge?: string | unde
   );
 }
 
-function DesktopPreview({ kind }: { kind: "private" | "liquid" }) {
-  return kind === "liquid" ? (
-    <div aria-hidden className="relative h-16 overflow-hidden rounded-xl border border-white/10" style={{ background: "linear-gradient(135deg, #3b4fd8, #7a3fd0 55%, #1b1f5e)" }}>
-      <span className="absolute inset-x-0 top-0 h-1.5 bg-white/25" />
-      <div className="absolute left-1.5 top-3 flex flex-col gap-1">{[0, 1, 2].map((i) => <span key={i} className="h-2.5 w-5 rounded bg-white/25" />)}</div>
-      <span className="absolute left-1/2 top-6 h-2 w-12 -translate-x-1/2 rounded-full bg-white/30" />
-      <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5 rounded-md bg-white/25 p-0.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="size-1.5 rounded-sm bg-white/70" />)}</div>
+function DesktopPreview({ kind }: { kind: "private" | "clay" }) {
+  return kind === "clay" ? (
+    <div aria-hidden className="clay-wall relative h-16 overflow-hidden rounded-xl border border-white/10">
+      <span className="clay-blob clay-blob-a" /><span className="clay-blob clay-blob-b" />
+      <span className="absolute left-2 top-2 h-7 w-12 rounded-lg border border-[#d97757]/30 bg-[#1d1a17]/80" />
+      <div className="absolute inset-x-0 bottom-0 flex h-2.5 items-center justify-center gap-0.5 bg-[#1d1a17]/85">{[0, 1, 2, 3, 4].map((i) => <span key={i} className={`size-1.5 rounded-sm ${i === 2 ? "bg-[#d97757]" : "bg-white/40"}`} />)}</div>
     </div>
   ) : (
     <div aria-hidden className="relative h-16 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[#2a2416] to-[#0b0c12]">
@@ -4801,6 +4752,18 @@ function StylePreview({ kind }: { kind: "classic" | "modern" }) {
     <div aria-hidden className="flex h-16 overflow-hidden rounded-xl border border-white/10 bg-[#0b0c12]">
       <div className="flex w-1/4 flex-col gap-1 border-r border-white/[.06] bg-[#0d0e14] p-1.5">{[0, 1, 2].map((i) => <span key={i} className="h-1.5 rounded bg-white/15" />)}</div>
       <div className="flex flex-1 flex-col"><span className="h-3 border-b border-white/[.06] bg-[#0d0e14]" /><div className="flex-1 space-y-1 p-1.5"><span className="block h-1.5 w-1/3 rounded bg-white/30" /><span className="block h-3 rounded bg-white/[.07]" /><span className="block h-3 rounded bg-white/[.07]" /></div><span className="h-2 border-t border-white/[.06] bg-[#0d0e14]" /></div>
+    </div>
+  );
+}
+
+// Clay: Claude's own theme. Warm charcoal with slow terracotta and sand light, plus a soft paper grain.
+function ClayWallpaper() {
+  return (
+    <div aria-hidden className="clay-wall absolute inset-0 overflow-hidden">
+      <span className="clay-blob clay-blob-a" />
+      <span className="clay-blob clay-blob-b" />
+      <span className="clay-blob clay-blob-c" />
+      <span className="clay-grain" />
     </div>
   );
 }

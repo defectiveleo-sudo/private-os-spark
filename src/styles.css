@@ -318,75 +318,45 @@ main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px;
 .modern-settings [role="switch"][aria-checked="false"] { background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
 .modern-settings input[type="range"] { accent-color: var(--primary); }
 
-/* Liquid Glass theme (macOS style): bright frosted glass with a light rim, specular highlight and soft depth.
-   Same motion as the rest of the OS (window-in, rise, stagger). */
-.liquid-menubar { background: linear-gradient(to bottom, rgb(255 255 255 / .16), rgb(255 255 255 / .08)); backdrop-filter: blur(24px) saturate(1.8); -webkit-backdrop-filter: blur(24px) saturate(1.8); text-shadow: 0 1px 2px rgb(0 0 0 / .25); font-family: -apple-system, "SF Pro Text", "Inter", "Manrope", system-ui, sans-serif; }
+/* Sheets, floating panels and sidebars used by Messages, Mail, Contacts and Maps. They follow the theme colour. */
 .liquid-menu, .liquid-tip, .liquid-sheet, .liquid-float {
-  background: linear-gradient(160deg, rgb(255 255 255 / .14), rgb(255 255 255 / .04)), rgb(44 48 112 / .97);
-  border: 1px solid rgb(255 255 255 / .28);
-  box-shadow: 0 18px 50px rgb(0 0 0 / .35), inset 0 1px 0 rgb(255 255 255 / .45);
-  backdrop-filter: blur(30px) saturate(1.9); -webkit-backdrop-filter: blur(30px) saturate(1.9);
+  background: linear-gradient(160deg, rgb(255 255 255 / .1), rgb(255 255 255 / .03)), color-mix(in oklab, var(--background) 94%, transparent);
+  border: 1px solid rgb(255 255 255 / .16);
+  box-shadow: 0 18px 50px rgb(0 0 0 / .35), inset 0 1px 0 rgb(255 255 255 / .18);
+  backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6);
   color: white;
 }
-.liquid-card, .liquid-pill {
-  position: relative;
-  background: linear-gradient(150deg, rgb(255 255 255 / .3), rgb(255 255 255 / .1) 45%, rgb(255 255 255 / .16));
-  border: 1px solid rgb(255 255 255 / .35);
-  box-shadow: 0 12px 34px rgb(10 10 60 / .28), inset 0 1px 1px rgb(255 255 255 / .6), inset 0 -1px 1px rgb(255 255 255 / .12);
-  backdrop-filter: blur(22px) saturate(1.8) brightness(1.06); -webkit-backdrop-filter: blur(22px) saturate(1.8) brightness(1.06);
-  text-shadow: 0 1px 2px rgb(0 0 40 / .25);
-  transition: transform .3s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease, background .3s ease;
-}
-.liquid-card:hover, .liquid-pill:hover { transform: translateY(-2px) scale(1.015); box-shadow: 0 18px 44px rgb(10 10 60 / .34), inset 0 1px 1px rgb(255 255 255 / .7), inset 0 -1px 1px rgb(255 255 255 / .16); }
-.liquid-card:active, .liquid-pill:active { transform: scale(.97); }
-.liquid-pill { background: linear-gradient(150deg, rgb(255 255 255 / .55), rgb(230 232 255 / .28)); color: #2a2a6a; text-shadow: none; }
-.liquid-pill.text-white { color: #3a3a8a; }
-.liquid-dock {
-  background: linear-gradient(160deg, rgb(255 255 255 / .28), rgb(255 255 255 / .1)), rgb(60 70 160 / .18);
-  border: 1px solid rgb(255 255 255 / .35);
-  box-shadow: 0 20px 50px rgb(0 0 40 / .35), inset 0 1px 1px rgb(255 255 255 / .55), inset 0 -1px 1px rgb(255 255 255 / .12);
-  backdrop-filter: blur(26px) saturate(1.9); -webkit-backdrop-filter: blur(26px) saturate(1.9);
-  scrollbar-width: none;
-}
-.liquid-dock-item { width: 46px; height: 46px; flex-shrink: 0; transform-origin: bottom center; transition: transform .22s cubic-bezier(.22, 1, .36, 1), margin .22s cubic-bezier(.22, 1, .36, 1); }
-.liquid-dock-item:hover { transform: translateY(-8px) scale(1.28); margin: 0 7px; }
-.liquid-dock-item:hover + .liquid-dock-item, .liquid-dock-item:has(+ .liquid-dock-item:hover) { transform: translateY(-3px) scale(1.12); margin: 0 3px; }
-.liquid-dock-item:active { transform: translateY(-4px) scale(1.15); }
-.liquid-dock-item > span:first-child, .liquid-dock-item > svg:first-child, .liquid-glyph { box-shadow: 0 4px 10px rgb(0 0 40 / .3), inset 0 1px 1px rgb(255 255 255 / .55); border-radius: 24%; }
-.liquid-glyph { position: relative; overflow: hidden; }
-.liquid-glyph::after, [data-liquid] .liquid-dock-item > span:first-child::after { content: ""; position: absolute; inset: 0 0 50% 0; background: linear-gradient(to bottom, rgb(255 255 255 / .35), transparent); pointer-events: none; border-radius: inherit; }
-
-[data-liquid] section.os-window {
-  border-radius: 22px;
-  background: linear-gradient(160deg, rgb(255 255 255 / .16), rgb(255 255 255 / .04) 40%), rgb(30 32 80 / .9);
-  border: 1px solid rgb(255 255 255 / .26);
-  box-shadow: 0 30px 80px rgb(0 0 40 / .45), inset 0 1px 1px rgb(255 255 255 / .45);
-  backdrop-filter: blur(40px) saturate(1.9); -webkit-backdrop-filter: blur(40px) saturate(1.9);
-}
-[data-liquid] section.os-window.rounded-none { border-radius: 0; }
-[data-liquid] .liquid-titlebar { background: transparent; border-bottom: 1px solid rgb(255 255 255 / .08); }
-.traffic-btn { display: grid; place-items: center; width: 13px; height: 13px; border-radius: 9999px; box-shadow: inset 0 0 0 .5px rgb(0 0 0 / .25), inset 0 1px 1px rgb(255 255 255 / .35); color: rgb(0 0 0 / .55); transition: transform .15s ease, filter .15s ease; }
-.traffic-btn > svg { width: 9px; height: 9px; stroke-width: 3; opacity: 0; transition: opacity .12s ease; }
-.traffic:hover .traffic-btn > svg { opacity: 1; }
-.traffic-btn:active { filter: brightness(.85); transform: scale(.92); }
 .liquid-sidebar { background: rgb(255 255 255 / .05); }
-.liquid-action { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; padding: 8px 10px; border-radius: 14px; background: rgb(255 255 255 / .12); color: #6cb4ff; font-size: 10px; transition: background .2s ease, transform .2s ease; }
-.liquid-action:hover { background: rgb(255 255 255 / .2); transform: translateY(-1px); }
-.liquid-wall { animation: liquid-drift 40s ease-in-out infinite alternate; transform-origin: 60% 40%; }
-@keyframes liquid-drift { from { transform: scale(1.02); } to { transform: scale(1.08) translate(-1%, 1%); } }
-[data-reduce] .liquid-wall, [data-reduce] .liquid-dock-item { animation: none; transition: none; }
-@media (prefers-reduced-motion: reduce) { .liquid-wall { animation: none; } }
+.liquid-action { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 64px; padding: 8px 10px; border-radius: 14px; background: rgb(255 255 255 / .1); color: var(--primary); font-size: 10px; transition: background .2s ease, transform .2s ease; }
+.liquid-action:hover { background: rgb(255 255 255 / .18); transform: translateY(-1px); }
+
+/* Clay: Claude's theme. Warm charcoal, slow terracotta and sand light, a paper grain, and softer warm windows. */
+.clay-wall { background: radial-gradient(120% 90% at 50% 120%, #2a211c 0%, #1d1a17 55%, #151311 100%); }
+.clay-blob { position: absolute; border-radius: 9999px; filter: blur(50px); opacity: .85; will-change: transform; }
+.clay-blob-a { width: 55vmax; height: 55vmax; left: -12vmax; top: -18vmax; background: radial-gradient(circle, #d97757 0%, rgb(217 119 87 / 0) 68%); animation: clay-drift-a 38s ease-in-out infinite alternate; }
+.clay-blob-b { width: 48vmax; height: 48vmax; right: -14vmax; bottom: -20vmax; background: radial-gradient(circle, #e8c9a0 0%, rgb(232 201 160 / 0) 66%); opacity: .5; animation: clay-drift-b 46s ease-in-out infinite alternate; }
+.clay-blob-c { width: 30vmax; height: 30vmax; left: 46%; top: 30%; background: radial-gradient(circle, #b4553a 0%, rgb(180 85 58 / 0) 70%); opacity: .6; animation: clay-drift-c 52s ease-in-out infinite alternate; }
+.clay-wall.h-16 .clay-blob { filter: blur(14px); }
+.clay-grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+@keyframes clay-drift-a { to { transform: translate(14vmax, 10vmax) scale(1.12); } }
+@keyframes clay-drift-b { to { transform: translate(-12vmax, -8vmax) scale(1.08); } }
+@keyframes clay-drift-c { to { transform: translate(-18vmax, 12vmax) scale(.85); } }
+[data-reduce] .clay-blob { animation: none; }
+@media (prefers-reduced-motion: reduce) { .clay-blob { animation: none; } }
+main[data-clay] section.os-window { border-radius: 18px; background: linear-gradient(170deg, rgb(217 119 87 / .08), transparent 40%), rgb(29 26 23 / .92); border-color: rgb(232 201 160 / .14); box-shadow: 0 28px 70px rgb(0 0 0 / .45), 0 0 0 1px rgb(0 0 0 / .2), inset 0 1px 0 rgb(255 240 220 / .07); }
+main[data-clay] section.os-window.rounded-none { border-radius: 0; }
+main[data-clay] .window-titlebar { background: rgb(255 240 220 / .03); border-bottom-color: rgb(232 201 160 / .08); }
+main[data-clay] .taskbar, main[data-clay] .dock-bar.dock-glass { border-color: rgb(232 201 160 / .14); }
+main[data-clay] ::selection { background: rgb(217 119 87 / .45); }
+main[data-lite] .clay-blob { animation: none; filter: none; opacity: .3; }
 
 /* Performance mode ("Optimize"): no backdrop blur, glow or looping animations, so every theme stays smooth on slow PCs.
    Surfaces get a more opaque fill so text stays readable without the blur behind it. */
 main[data-lite] *, main[data-lite] *::before, main[data-lite] *::after { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-main[data-lite] .aurora, main[data-lite] .particle, main[data-lite] .shine::after, main[data-lite] .liquid-wall { animation: none !important; }
+main[data-lite] .aurora, main[data-lite] .particle, main[data-lite] .shine::after { animation: none !important; }
 main[data-lite] .aurora, main[data-lite] .particle { display: none; }
 main[data-lite] .glass-panel, main[data-lite] .soft-glass, main[data-lite] .dock-glass { background: var(--glass-sheen), color-mix(in oklab, var(--background) 92%, transparent); }
 main[data-lite] .modern-card { background: rgb(18 19 27 / .96); }
-main[data-lite] .liquid-menubar { background: rgb(52 58 140 / .92); }
-main[data-lite] .liquid-card, main[data-lite] .liquid-dock { background: linear-gradient(160deg, rgb(255 255 255 / .16), rgb(255 255 255 / .04)), rgb(58 64 150 / .92); }
-main[data-lite] .liquid-pill { background: rgb(232 234 255 / .95); }
 main[data-lite] section.os-window { box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
 .optimize-overlay { animation: rise .2s cubic-bezier(.22, 1, .36, 1) both; }
 .optimize-spin { animation: optimize-spin 1s linear infinite; }
@@ -404,10 +374,10 @@ main[data-lite] section.os-window { box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
 section.os-window .window-titlebar { box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--primary) 24%, transparent); }
 section.os-window :is(input, textarea, select) { accent-color: var(--primary); caret-color: var(--primary); }
 section.os-window ::selection { background: color-mix(in oklab, var(--primary) 40%, transparent); }
-main[data-glass]:not([data-liquid]) section.os-window { background: linear-gradient(160deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent 45%), color-mix(in oklab, var(--theme-base, rgb(18 20 28)) 42%, transparent); border-color: color-mix(in oklab, var(--primary) 30%, rgb(255 255 255 / .18)); }
+main[data-glass] section.os-window { background: linear-gradient(160deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent 45%), color-mix(in oklab, var(--theme-base, rgb(18 20 28)) 42%, transparent); border-color: color-mix(in oklab, var(--primary) 30%, rgb(255 255 255 / .18)); }
 main[data-ui="modern"] { font-family: "Poppins", "Manrope", system-ui, sans-serif; }
-main[data-ui="modern"]:not([data-liquid]):not([data-glass]) section.os-window { background: radial-gradient(120% 80% at 70% 0%, color-mix(in oklab, var(--primary) 9%, #0b0c12) 0%, #0b0c12 60%); border-color: rgb(255 255 255 / .07); }
-main[data-ui="modern"]:not([data-liquid]) section.os-window { border-radius: 14px; }
+main[data-ui="modern"]:not([data-glass]) section.os-window { background: radial-gradient(120% 80% at 70% 0%, color-mix(in oklab, var(--primary) 9%, #0b0c12) 0%, #0b0c12 60%); border-color: rgb(255 255 255 / .07); }
+main[data-ui="modern"] section.os-window { border-radius: 14px; }
 main[data-ui="modern"] section.os-window .window-titlebar { background: rgb(13 14 20 / .85); }
 main[data-ui="modern"] section.os-window [role="switch"] { height: 18px; width: 32px; transition: background-color .2s ease, box-shadow .25s ease; }
 main[data-ui="modern"] section.os-window [role="switch"] > span { top: 2px; width: 14px; height: 14px; }

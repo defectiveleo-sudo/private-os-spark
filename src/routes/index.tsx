@@ -76,6 +76,8 @@ import {
   BookUser,
   Map as MapIcon,
 } from "lucide-react";
+import { Copy as LuCopy, Square as LuSquare, CirclePlus as LuCirclePlus, Scissors as LuScissors, ClipboardPaste as LuClipboardPaste, TextCursorInput as LuTextCursorInput, Trash2 as LuTrash2, ArrowUpDown as LuArrowUpDown, LayoutList as LuLayoutList, Ellipsis as LuEllipsis, PanelRight as LuPanelRight, ArrowUp as LuArrowUp, Images as LuImages, Monitor as LuMonitor, HardDrive as LuHardDrive, Pin as LuPin, FolderOpen as LuFolderOpen, CheckCheck as LuCheckCheck, FlipHorizontal as LuFlipHorizontal, Bold as LuBold, Italic as LuItalic, Underline as LuUnderline, Strikethrough as LuStrikethrough, Subscript as LuSubscript, Superscript as LuSuperscript, Highlighter as LuHighlighter, Baseline as LuBaseline, List as LuList, ListOrdered as LuListOrdered, IndentDecrease as LuIndentDecrease, IndentIncrease as LuIndentIncrease, AlignLeft as LuAlignLeft, AlignCenter as LuAlignCenter, AlignRight as LuAlignRight, AlignJustify as LuAlignJustify, Replace as LuReplace, TextSelect as LuTextSelect, RemoveFormatting as LuRemoveFormatting, AArrowUp as LuAArrowUp, AArrowDown as LuAArrowDown, Table as LuTable, ImagePlus as LuImagePlus, Link as LuLink, SeparatorHorizontal as LuSeparatorHorizontal, CalendarClock as LuCalendarClock, FileDown as LuFileDown, Printer as LuPrinter, Sigma as LuSigma, Eraser as LuEraser, ArrowDownAZ as LuArrowDownAZ, ArrowDownZA as LuArrowDownZA, PaintBucket as LuPaintBucket, DollarSign as LuDollarSign, Percent as LuPercent, Rows3 as LuRows3, Columns3 as LuColumns3, SquarePlus as LuSquarePlus, Presentation as LuPresentation, StickyNote as LuStickyNote, ZoomIn as LuZoomIn, ZoomOut as LuZoomOut, Expand as LuExpand, MoveUp as LuMoveUp, MoveDown as LuMoveDown, ImageOff as LuImageOff, BetweenHorizontalStart as LuBetweenHorizontalStart, BetweenVerticalStart as LuBetweenVerticalStart, FilePen as LuFilePen, Clock as LuClock, Calendar as LuCalendar, SquareFunction as LuSquareFunction, Search as LuSearch, FileText as LuFileText, SquareCheck as LuSquareCheck } from "lucide-react";
+import { Backstage, FileGlyph, FolderGlyph, OFFICE, OfficeStatus, OfficeTitle, RBig, RColor, RGroup, RRow, RSmall, RStack, Ribbon, rSelect } from "@/components/office-ui";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
 import { ContactsContent, MailContent, MapsContent, MessagesContent } from "@/components/liquid-apps";
@@ -226,7 +228,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "2.1";
 const CHANGELOG = [
-  { v: "2.1", date: "18 Oct 2026", items: ["New Clay theme: warm terracotta on soft charcoal with its own slow-moving wallpaper, softer windows and a warm glow", "Removed the macOS-style Liquid Glass desktop; if you used it you now get Clay"] },
+  { v: "2.1", date: "18 Oct 2026", items: ["New Clay theme: warm terracotta on soft charcoal with its own slow-moving wallpaper, softer windows and a warm glow", "Removed the macOS-style Liquid Glass desktop; if you used it you now get Clay", "Private Files rebuilt like Windows 11 File Explorer: tabs, address bar, command bar, navigation pane, Home and This PC, details and icon views, right-click menu, cut, copy, paste, rename and drag and drop", "Private Word, Excel, PowerPoint and OneNote now look like Microsoft 365: coloured title bar with AutoSave, ribbon tabs, a File page with recent files, and a status bar with zoom"] },
   { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner", "Windows 11 style taskbar: apps in the middle, tray and clock on the right, all in one bar", "Right-click the taskbar to change its transparency, turn on liquid glass, switch to the floating dock or add apps", "Private Word, Private Excel, Private PowerPoint, Private Outlook and Private OneNote with new icons", "Cleaner app icons with no white edges"] },
   { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
@@ -755,7 +757,7 @@ function PrivateOS() {
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
       case "messages": return <WindowFrame title="Messages" icon={MessagesIcon} close={close}><MessagesContent /></WindowFrame>;
-      case "mail": return <WindowFrame title="Private Outlook" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
+      case "mail": return <WindowFrame title="Mail - Private Outlook" icon={MailIcon} close={close} bar={{ className: "text-white", style: { background: OFFICE.outlook.color }, content: <OfficeTitle brand={OFFICE.outlook} icon={MailIcon} name="Mail" /> }}><MailContent /></WindowFrame>;
       case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
@@ -1239,7 +1241,11 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
   );
 }
 
-function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
+// `bar` swaps the standard title bar for an app's own (Office, File Explorer) with Windows caption buttons.
+type WindowBar = { className: string; content: ReactNode; light?: boolean; style?: React.CSSProperties };
+const NO_DRAG = "button, input, select, textarea, [data-nodrag]";
+
+function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions, bar }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode; bar?: WindowBar }) {
   const { minimized, minimize, focus, z, top, closing } = useContext(WindowContext);
   const topGap = 8;
   const el = useRef<HTMLElement>(null);
@@ -1333,12 +1339,12 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       style={{ zIndex: z, ...(rect && !maximized ? { left: rect.x, top: rect.y, width: rect.w, height: rect.h, right: "auto", bottom: "auto" } : {}) }}
       onDoubleClick={(event) => {
         const target = event.target as HTMLElement;
-        if (target.closest("header") && !target.closest("button")) toggleMaximize();
+        if (target.closest("header") && !target.closest(NO_DRAG)) toggleMaximize();
       }}
       onPointerDown={(event) => {
         focus();
         const target = event.target as HTMLElement;
-        if (event.button !== 0 || !target.closest("header") || target.closest("button")) return;
+        if (event.button !== 0 || !target.closest("header") || target.closest(NO_DRAG)) return;
         if (maximized) {
           // Hold the title bar of a maximized window and pull down to restore it.
           gesture.current = { kind: "pending", mode: "", sx: event.clientX, sy: event.clientY, start: { x: 0, y: 0, w: 0, h: 0 }, ratio: 0 };
@@ -1393,22 +1399,33 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
       }}
       className={`os-window-anim absolute flex flex-col overflow-hidden ${surface} ${minimized ? "os-window-min pointer-events-none" : ""} ${closing ? "os-window-closing pointer-events-none" : ""} ${position}`}
     >
-      <header className="window-titlebar flex h-8 shrink-0 items-center justify-between gap-2 px-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <Icon className="size-5 shrink-0" />
-          <span className="nav-chev flex items-center">
-            <OsButton label="Back" onClick={() => frameNav("back")} className="win-ctl"><ChevronLeft className="size-3.5" /></OsButton>
-            <OsButton label="Forward" onClick={() => frameNav("forward")} className="win-ctl"><ChevronRight className="size-3.5" /></OsButton>
-          </span>
-          <span className="truncate text-[11px] font-medium text-white/85">{title}</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 pr-1">
-          {actions}
-          <OsButton label="Minimize" onClick={minimize} className="win-ctl"><Minus className="size-3.5" /></OsButton>
-          <OsButton label={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="win-ctl">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
-          <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
-        </div>
-      </header>
+      {bar ? (
+        <header className={`os-bar flex h-10 shrink-0 items-stretch ${bar.className}`} style={bar.style}>
+          <div className="flex min-w-0 flex-1 items-center">{bar.content}</div>
+          <div className={`win-caption flex shrink-0 items-stretch ${bar.light ? "win-caption-light" : ""}`}>
+            <button type="button" aria-label="Minimize" title="Minimize" onClick={minimize}><Minus className="size-4" strokeWidth={1.25} /></button>
+            <button type="button" aria-label={maximized ? "Restore" : "Maximize"} title={maximized ? "Restore Down" : "Maximize"} onClick={toggleMaximize}>{maximized ? <LuCopy className="size-3.5 -scale-x-100" strokeWidth={1.25} /> : <LuSquare className="size-3.5" strokeWidth={1.25} />}</button>
+            <button type="button" aria-label="Close" title="Close" onClick={close} className="win-caption-close"><X className="size-4" strokeWidth={1.25} /></button>
+          </div>
+        </header>
+      ) : (
+        <header className="window-titlebar flex h-8 shrink-0 items-center justify-between gap-2 px-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <Icon className="size-5 shrink-0" />
+            <span className="nav-chev flex items-center">
+              <OsButton label="Back" onClick={() => frameNav("back")} className="win-ctl"><ChevronLeft className="size-3.5" /></OsButton>
+              <OsButton label="Forward" onClick={() => frameNav("forward")} className="win-ctl"><ChevronRight className="size-3.5" /></OsButton>
+            </span>
+            <span className="truncate text-[11px] font-medium text-white/85">{title}</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 pr-1">
+            {actions}
+            <OsButton label="Minimize" onClick={minimize} className="win-ctl"><Minus className="size-3.5" /></OsButton>
+            <OsButton label={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="win-ctl">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
+            <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
+          </div>
+        </header>
+      )}
       {children}
       {!maximized && (["e", "s", "se"] as const).map((mode) => (
         <div
@@ -2231,12 +2248,45 @@ function readFs(): Record<string, FsNode> {
   return { "/Documents": null, "/Documents/welcome.txt": "Welcome to PRIVATE OS. Files live only in this browser." };
 }
 
-function writeFs(fs: Record<string, FsNode>) {
+const FS_META_KEY = "pos-fs-meta";
+
+// Last-modified times, keyed by path. Kept next to the file store so every app's saves get a date.
+function readFsMeta(): Record<string, number> {
+  try {
+    const data = JSON.parse(localStorage.getItem(FS_META_KEY) ?? "{}") as Record<string, number>;
+    return data && typeof data === "object" ? data : {};
+  } catch {
+    return {};
+  }
+}
+
+// `moved` maps new paths to the old ones they came from, so moves and renames keep their dates.
+function writeFs(fs: Record<string, FsNode>, moved?: Record<string, string>) {
   let ok = true;
+  const prev = readFs();
+  const meta = readFsMeta();
+  const now = Date.now();
   try {
     localStorage.setItem(FS_KEY, JSON.stringify(fs));
   } catch {
     ok = false;
+  }
+  if (ok) {
+    const next: Record<string, number> = {};
+    for (const path of Object.keys(fs)) {
+      const from = moved?.[path];
+      if (from !== undefined) next[path] = meta[from] ?? now;
+      else if (!(path in prev) || prev[path] !== fs[path]) {
+        next[path] = now;
+        for (let parent = path.slice(0, path.lastIndexOf("/")); parent; parent = parent.slice(0, parent.lastIndexOf("/"))) next[parent] = now;
+      } else next[path] = next[path] ?? meta[path] ?? now;
+    }
+    for (const path of Object.keys(prev)) if (!(path in fs)) for (let parent = path.slice(0, path.lastIndexOf("/")); parent; parent = parent.slice(0, parent.lastIndexOf("/"))) if (parent in fs) next[parent] = now;
+    try {
+      localStorage.setItem(FS_META_KEY, JSON.stringify(next));
+    } catch {
+      // dates are a nice-to-have
+    }
   }
   window.dispatchEvent(new Event("pos-fs"));
   return ok;
@@ -2260,39 +2310,273 @@ const childrenOf = (fs: Record<string, FsNode>, dir: string) =>
 
 const baseName = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 
+const KNOWN_FOLDERS = ["Desktop", "Downloads", "Documents", "Pictures", "Music", "Videos"];
+type ExplorerView = "details" | "large" | "medium";
+type ExplorerTab = { id: number; history: string[]; pos: number };
+type ExplorerSort = { key: "name" | "date" | "type" | "size"; dir: 1 | -1 };
+
+const joinPath = (dir: string, name: string) => `${dir === "/" ? "" : dir}/${name}`;
+const parentPath = (path: string) => path.slice(0, path.lastIndexOf("/")) || "/";
+
+function fsBytes(value: FsNode | undefined) {
+  if (typeof value !== "string") return 0;
+  if (value.startsWith("data:")) return Math.floor(((value.length - value.indexOf(",") - 1) * 3) / 4);
+  return value.length;
+}
+
+const fmtBytes = (bytes: number) => `${Math.max(1, Math.ceil(bytes / 1024)).toLocaleString()} KB`;
+const fmtWhen = (ms: number | undefined) => (ms ? new Date(ms).toLocaleString([], { month: "numeric", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }).replace(",", "") : "");
+
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i;
+
+// What Windows would call this file, and how to draw it.
+function fileKind(path: string, folder: boolean): { type: string; app?: string; label?: string; color?: string } {
+  if (folder) return { type: "File folder" };
+  const ext = path.includes(".") ? path.slice(path.lastIndexOf(".") + 1).toLowerCase() : "";
+  const upper = ext.toUpperCase();
+  if (ext === "doc" || ext === "docx") return { type: "Private Word Document", app: "word" };
+  if (ext === "xls" || ext === "xlsx") return { type: "Private Excel Worksheet", app: "excel" };
+  if (ext === "csv") return { type: "CSV File", app: "excel" };
+  if (ext === "ppt" || ext === "pptx") return { type: "Private PowerPoint Presentation", app: "powerpoint" };
+  if (ext === "pdf") return { type: "PDF Document", label: "PDF", color: "#d93025" };
+  if (ext === "txt") return { type: "Text Document" };
+  if (ext === "md") return { type: "Markdown File", label: "MD", color: "#4b5563" };
+  if (ext === "html" || ext === "htm") return { type: "HTML Document", label: "HTML", color: "#e34c26" };
+  if (IMAGE_EXT.test(path)) return { type: `${upper} File`, label: upper, color: "#2f7ad1" };
+  if (/^(mp3|wav|ogg|m4a|flac)$/.test(ext)) return { type: `${upper} File`, label: upper, color: "#e0570f" };
+  if (/^(mp4|webm|mov|mkv)$/.test(ext)) return { type: `${upper} File`, label: upper, color: "#7a3fd1" };
+  if (!ext) return { type: "File" };
+  return { type: `${upper} File`, label: upper.slice(0, 4), color: "#6b7280" };
+}
+
+function ItemIcon({ path, value, className }: { path: string; value: FsNode | undefined; className: string }) {
+  if (value === null) return <FolderGlyph className={className} kind={KNOWN_FOLDERS.includes(path.slice(1)) ? path.slice(1) : undefined} />;
+  if (typeof value === "string" && value.startsWith("data:image")) return <span className={`grid place-items-center ${className}`}><img src={value} alt="" draggable={false} className="max-h-full max-w-full rounded-[3px] object-contain shadow-[0_1px_3px_rgb(0_0_0/.5)]" /></span>;
+  const kind = fileKind(path, false);
+  if (kind.app) return <AppImage tone="" src={kind.app} className={className} />;
+  return <FileGlyph className={className} label={kind.label} color={kind.color} />;
+}
+
+function locLabel(loc: string) {
+  if (loc === "home") return "Home";
+  if (loc === "gallery") return "Gallery";
+  if (loc === "pc") return "This PC";
+  if (loc === "/") return "Local Disk (C:)";
+  return baseName(loc);
+}
+
+function crumbsFor(loc: string): { label: string; loc: string }[] {
+  if (!loc.startsWith("/")) return [{ label: locLabel(loc), loc }];
+  const parts = loc.split("/").filter(Boolean);
+  const out = [{ label: "This PC", loc: "pc" }];
+  if (!parts.length || !KNOWN_FOLDERS.includes(parts[0]!)) out.push({ label: "Local Disk (C:)", loc: "/" });
+  parts.forEach((part, i) => out.push({ label: part, loc: `/${parts.slice(0, i + 1).join("/")}` }));
+  return out;
+}
+
+function TabIcon({ loc, className }: { loc: string; className: string }) {
+  if (loc === "home") return <House className={`${className} text-[#60cdff]`} />;
+  if (loc === "gallery") return <LuImages className={`${className} text-[#60cdff]`} />;
+  if (loc === "pc") return <LuMonitor className={`${className} text-[#60cdff]`} />;
+  if (loc === "/") return <LuHardDrive className={`${className} text-zinc-300`} />;
+  return <FolderGlyph className={className} kind={KNOWN_FOLDERS.includes(loc.slice(1)) ? loc.slice(1) : undefined} />;
+}
+
+// Private Files, laid out like Windows 11 File Explorer.
 function FilesWindow({ close, open }: { close: () => void; open: (id: string) => void }) {
   const fs = useFs();
-  const [dir, setDir] = useState("/");
+  const [meta, setMeta] = useState<Record<string, number>>({});
+  useEffect(() => setMeta(readFsMeta()), [fs]);
+  useEffect(() => {
+    const current = readFs();
+    const missing = KNOWN_FOLDERS.filter((name) => !(`/${name}` in current));
+    if (missing.length) writeFs({ ...current, ...Object.fromEntries(missing.map((name) => [`/${name}`, null])) });
+  }, []);
+  const [tabs, setTabs] = useState<ExplorerTab[]>([{ id: 1, history: ["home"], pos: 0 }]);
+  const [activeTab, setActiveTab] = useState(1);
+  const tab = tabs.find((item) => item.id === activeTab) ?? tabs[0]!;
+  const loc = tab.history[tab.pos]!;
+  const inDir = loc.startsWith("/");
+  const here = inDir ? loc : "/Documents";
+  const [selected, setSelected] = useState<string[]>([]);
+  const anchor = useRef<string | null>(null);
+  const [renaming, setRenaming] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [editingPath, setEditingPath] = useState<string | null>(null);
+  const [view, setViewState] = useState<ExplorerView>(() => {
+    try {
+      const saved = localStorage.getItem("pos-explorer-view");
+      return saved === "large" || saved === "medium" ? saved : "details";
+    } catch {
+      return "details";
+    }
+  });
+  const setView = (next: ExplorerView) => {
+    setViewState(next);
+    try {
+      localStorage.setItem("pos-explorer-view", next);
+    } catch {
+      // storage unavailable
+    }
+  };
+  const [sort, setSort] = useState<ExplorerSort>({ key: "name", dir: 1 });
+  const [clip, setClip] = useState<{ mode: "cut" | "copy"; paths: string[] } | null>(null);
+  const [menu, setMenu] = useState<{ x: number; y: number; target: string | null } | null>(null);
+  const [drop, setDrop] = useState<{ id: "new" | "sort" | "view" | "more"; x: number } | null>(null);
+  const [details, setDetails] = useState(false);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  const items = childrenOf(fs, dir);
-  const up = dir === "/" ? "/" : dir.slice(0, dir.lastIndexOf("/")) || "/";
-  const make = (folder: boolean) => {
-    const name = window.prompt(folder ? "Folder name" : "File name")?.trim().replace(/\//g, "");
-    if (!name) return;
-    const path = `${dir === "/" ? "" : dir}/${name}`;
-    const next = { ...readFs() };
-    if (path in next) return;
-    next[path] = folder ? null : "";
-    writeFs(next);
+  const root = useRef<HTMLDivElement>(null);
+
+  const go = (next: string) => {
+    setTabs((list) => list.map((item) => (item.id === tab.id ? { ...item, history: [...item.history.slice(0, item.pos + 1), next], pos: item.pos + 1 } : item)));
+    setSelected([]);
+    setRenaming(null);
+    setQuery("");
+    setEditingPath(null);
   };
-  const remove = (path: string) => {
-    const next = { ...readFs() };
-    for (const key of Object.keys(next)) if (key === path || key.startsWith(`${path}/`)) delete next[key];
-    writeFs(next);
+  const step = (delta: number) => {
+    setTabs((list) => list.map((item) => (item.id === tab.id ? { ...item, pos: Math.max(0, Math.min(item.history.length - 1, item.pos + delta)) } : item)));
+    setSelected([]);
+    setQuery("");
   };
-  const upload = (list: FileList | null) => {
-    if (!list) return;
+  const upLoc = loc === "home" ? null : !inDir ? "home" : loc === "/" || KNOWN_FOLDERS.includes(loc.slice(1)) ? "pc" : parentPath(loc);
+  const newTab = () => {
+    const id = Math.max(...tabs.map((item) => item.id)) + 1;
+    setTabs((list) => [...list, { id, history: ["home"], pos: 0 }]);
+    setActiveTab(id);
+    setSelected([]);
+  };
+  const closeTab = (id: number) => {
+    if (tabs.length === 1) return close();
+    const index = tabs.findIndex((item) => item.id === id);
+    const rest = tabs.filter((item) => item.id !== id);
+    setTabs(rest);
+    if (id === activeTab) setActiveTab(rest[Math.max(0, index - 1)]!.id);
+  };
+
+  const isFolder = (path: string) => fs[path] === null;
+  const sorted = (paths: string[]) =>
+    [...paths].sort((a, b) => {
+      const fa = isFolder(a);
+      const fb = isFolder(b);
+      if (fa !== fb) return fa ? -1 : 1;
+      let result = 0;
+      if (sort.key === "date") result = (meta[a] ?? 0) - (meta[b] ?? 0);
+      else if (sort.key === "type") result = fileKind(a, fa).type.localeCompare(fileKind(b, fb).type);
+      else if (sort.key === "size") result = fsBytes(fs[a]) - fsBytes(fs[b]);
+      else result = baseName(a).localeCompare(baseName(b), undefined, { numeric: true, sensitivity: "base" });
+      return result * sort.dir || baseName(a).localeCompare(baseName(b));
+    });
+  const searching = query.trim().length > 0;
+  const searchRoot = inDir ? loc : "/";
+  const items = searching
+    ? sorted(Object.keys(fs).filter((path) => path !== searchRoot && (searchRoot === "/" || path.startsWith(`${searchRoot}/`)) && baseName(path).toLowerCase().includes(query.trim().toLowerCase())))
+    : inDir
+      ? sorted(childrenOf(fs, loc))
+      : loc === "gallery"
+        ? Object.keys(fs).filter((path) => typeof fs[path] === "string" && IMAGE_EXT.test(path)).sort((a, b) => (meta[b] ?? 0) - (meta[a] ?? 0))
+        : loc === "home"
+          ? Object.keys(fs).filter((path) => typeof fs[path] === "string").sort((a, b) => (meta[b] ?? 0) - (meta[a] ?? 0)).slice(0, 20)
+          : [];
+
+  const uniqueName = (dir: string, name: string, files: Record<string, FsNode>, folder: boolean) => {
+    if (!(joinPath(dir, name) in files)) return name;
+    const dot = folder ? -1 : name.lastIndexOf(".");
+    const stem = dot > 0 ? name.slice(0, dot) : name;
+    const ext = dot > 0 ? name.slice(dot) : "";
+    for (let i = 2; ; i += 1) if (!(joinPath(dir, `${stem} (${i})${ext}`) in files)) return `${stem} (${i})${ext}`;
+  };
+  const create = (kind: "folder" | "txt" | "doc") => {
+    setDrop(null);
+    setMenu(null);
+    const current = { ...readFs() };
+    const name = uniqueName(here, kind === "folder" ? "New folder" : kind === "txt" ? "New Text Document.txt" : "New Word Document.doc", current, kind === "folder");
+    const path = joinPath(here, name);
+    current[path] = kind === "folder" ? null : "";
+    writeFs(current);
+    if (!inDir) go(here);
+    window.setTimeout(() => {
+      setSelected([path]);
+      setRenaming(path);
+    }, 0);
+  };
+  const rename = (path: string, nextName: string) => {
+    setRenaming(null);
+    const clean = nextName.trim().replace(/[\\/:*?"<>|]/g, "");
+    if (!clean || clean === baseName(path)) return;
+    const target = joinPath(parentPath(path), clean);
+    const current = readFs();
+    if (target in current) return window.alert("There is already a file with the same name in this location.");
+    const next: Record<string, FsNode> = {};
+    const moved: Record<string, string> = {};
+    for (const [key, value] of Object.entries(current)) {
+      if (key === path || key.startsWith(`${path}/`)) {
+        next[target + key.slice(path.length)] = value;
+        moved[target + key.slice(path.length)] = key;
+      } else next[key] = value;
+    }
+    writeFs(next, moved);
+    setSelected([target]);
+  };
+  const removeItems = (paths: string[]) => {
+    setMenu(null);
+    if (!paths.length) return;
+    if (!window.confirm(paths.length === 1 ? `Delete "${baseName(paths[0]!)}"? It can't be recovered.` : `Delete these ${paths.length} items? They can't be recovered.`)) return;
+    const current = { ...readFs() };
+    for (const key of Object.keys(current)) if (paths.some((path) => key === path || key.startsWith(`${path}/`))) delete current[key];
+    writeFs(current);
+    setSelected([]);
+  };
+  const paste = (into: string, source: { mode: "cut" | "copy"; paths: string[] } | null) => {
+    setMenu(null);
+    if (!source) return;
+    const current = readFs();
+    const next = { ...current };
+    const moved: Record<string, string> = {};
+    const pasted: string[] = [];
+    for (const path of source.paths) {
+      if (!(path in current) || into === path || into.startsWith(`${path}/`)) continue;
+      const fromDir = parentPath(path);
+      if (source.mode === "cut" && fromDir === into) continue;
+      const folder = current[path] === null;
+      let name = baseName(path);
+      if (joinPath(into, name) in next) {
+        if (source.mode === "copy" && fromDir === into) {
+          const dot = folder ? -1 : name.lastIndexOf(".");
+          name = dot > 0 ? `${name.slice(0, dot)} - Copy${name.slice(dot)}` : `${name} - Copy`;
+        }
+        name = uniqueName(into, name, next, folder);
+      }
+      const target = joinPath(into, name);
+      for (const [key, value] of Object.entries(current)) {
+        if (key !== path && !key.startsWith(`${path}/`)) continue;
+        next[target + key.slice(path.length)] = value;
+        if (source.mode === "cut") {
+          moved[target + key.slice(path.length)] = key;
+          delete next[key];
+        }
+      }
+      pasted.push(target);
+    }
+    writeFs(next, moved);
+    if (source.mode === "cut") setClip(null);
+    setSelected(pasted);
+  };
+  const upload = (list: FileList | null, into = here) => {
+    if (!list?.length) return;
     Array.from(list).forEach((file) => {
       const asText = file.type.startsWith("text/") || /\.(txt|md|json|csv|js|ts|tsx|html|css|xml|ya?ml|log)$/i.test(file.name);
       const reader = new FileReader();
       reader.onload = () => {
         const next = { ...readFs() };
-        next[`${dir === "/" ? "" : dir}/${file.name.replace(/\//g, "")}`] = String(reader.result ?? "");
+        next[joinPath(into, uniqueName(into, file.name.replace(/\//g, ""), next, false))] = String(reader.result ?? "");
         if (!writeFs(next)) window.alert("Browser storage is full. Try a smaller file.");
       };
       if (asText) reader.readAsText(file);
       else reader.readAsDataURL(file);
     });
+    if (!inDir) go(into);
   };
   const download = (path: string) => {
     const value = fs[path];
@@ -2305,60 +2589,499 @@ function FilesWindow({ close, open }: { close: () => void; open: (id: string) =>
     link.click();
     if (!isData) window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const btn = "rounded-md bg-secondary px-2.5 py-1 text-xs hover:bg-secondary/70 disabled:opacity-30";
-  return (
-    <WindowFrame title="Private Files" icon={Folder} close={close}>
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-3">
-        <button type="button" disabled={dir === "/"} onClick={() => setDir(up)} className={btn}>Up</button>
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{dir}</span>
-        <button type="button" onClick={() => make(true)} className={btn}>New folder</button>
-        <button type="button" onClick={() => make(false)} className={btn}>New file</button>
-        <button type="button" onClick={() => fileInput.current?.click()} className={btn}><Upload className="inline size-3" /> Upload</button>
-        <input ref={fileInput} type="file" multiple hidden onChange={(event) => { upload(event.target.files); event.target.value = ""; }} />
-      </div>
-      <div className="flex-1 overflow-auto p-3">
-        {items.length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">This folder is empty.</p>}
-        {items.map((path) => {
-          const folder = fs[path] === null;
+  const openItem = (path: string) => {
+    setMenu(null);
+    if (isFolder(path)) go(path);
+    else if (path in fs) openPathInApp(path, open);
+  };
+  const pick = (path: string, event: React.MouseEvent, list: string[]) => {
+    if (event.shiftKey && anchor.current && list.includes(anchor.current)) {
+      const a = list.indexOf(anchor.current);
+      const b = list.indexOf(path);
+      setSelected(list.slice(Math.min(a, b), Math.max(a, b) + 1));
+      return;
+    }
+    anchor.current = path;
+    if (event.ctrlKey || event.metaKey) setSelected((list2) => (list2.includes(path) ? list2.filter((item) => item !== path) : [...list2, path]));
+    else setSelected([path]);
+  };
+  const local = (event: React.MouseEvent) => {
+    const box = root.current?.getBoundingClientRect();
+    return { x: event.clientX - (box?.left ?? 0), y: event.clientY - (box?.top ?? 0) };
+  };
+  const openMenu = (event: React.MouseEvent, target: string | null) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (target && !selected.includes(target)) setSelected([target]);
+    if (!target) setSelected([]);
+    setDrop(null);
+    setMenu({ ...local(event), target });
+  };
+  const toggleDrop = (id: "new" | "sort" | "view" | "more", event: React.MouseEvent) => {
+    const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+    const outer = root.current?.getBoundingClientRect();
+    setMenu(null);
+    setDrop((value) => (value?.id === id ? null : { id, x: box.left - (outer?.left ?? 0) }));
+  };
+  const onKey = (event: React.KeyboardEvent) => {
+    if ((event.target as HTMLElement).closest("input, textarea")) return;
+    const mod = event.ctrlKey || event.metaKey;
+    if (event.key === "Delete") removeItems(selected);
+    else if (event.key === "F2" && selected.length === 1) setRenaming(selected[0]!);
+    else if (event.key === "Enter" && selected[0]) openItem(selected[0]);
+    else if (event.key === "Backspace") step(-1);
+    else if (mod && event.key.toLowerCase() === "a") setSelected(items);
+    else if (mod && event.key.toLowerCase() === "c" && selected.length) setClip({ mode: "copy", paths: selected });
+    else if (mod && event.key.toLowerCase() === "x" && selected.length) setClip({ mode: "cut", paths: selected });
+    else if (mod && event.key.toLowerCase() === "v") paste(here, clip);
+    else if (event.key === "Escape") {
+      setSelected([]);
+      setMenu(null);
+      setDrop(null);
+    } else return;
+    event.preventDefault();
+  };
+  const dragProps = (path: string) => ({
+    draggable: renaming !== path,
+    onDragStart: (event: React.DragEvent) => event.dataTransfer.setData("application/x-pos-paths", JSON.stringify(selected.includes(path) ? selected : [path])),
+    ...(isFolder(path)
+      ? {
+          onDragOver: (event: React.DragEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setDropTarget(path);
+          },
+          onDragLeave: () => setDropTarget(null),
+          onDrop: (event: React.DragEvent) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setDropTarget(null);
+            const raw = event.dataTransfer.getData("application/x-pos-paths");
+            if (raw) paste(path, { mode: "cut", paths: (JSON.parse(raw) as string[]).filter((item) => item !== path) });
+            else upload(event.dataTransfer.files, path);
+          },
+        }
+      : {}),
+  });
+
+  const selectedBytes = selected.reduce((total, path) => total + fsBytes(fs[path]), 0);
+  const one = selected.length === 1 ? selected[0]! : null;
+  const cutSet = clip?.mode === "cut" ? clip.paths : [];
+  const usedBytes = (() => {
+    try {
+      return (localStorage.getItem(FS_KEY)?.length ?? 0) * 2;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const nameCell = (path: string, big: boolean) =>
+    renaming === path ? (
+      <input
+        defaultValue={baseName(path)}
+        aria-label="New name"
+        ref={(el) => {
+          if (el && !el.dataset["ready"]) {
+            el.dataset["ready"] = "1";
+            el.focus();
+            const dot = isFolder(path) ? -1 : el.value.lastIndexOf(".");
+            el.setSelectionRange(0, dot > 0 ? dot : el.value.length);
+          }
+        }}
+        onClick={(event) => event.stopPropagation()}
+        onDoubleClick={(event) => event.stopPropagation()}
+        onBlur={(event) => rename(path, event.target.value)}
+        onKeyDown={(event) => {
+          event.stopPropagation();
+          if (event.key === "Enter") rename(path, event.currentTarget.value);
+          if (event.key === "Escape") setRenaming(null);
+        }}
+        className={`min-w-0 rounded-[3px] border border-[#60cdff] bg-[#1f1f1f] px-1 text-[12.5px] text-white outline-none ${big ? "w-full text-center" : "flex-1"}`}
+      />
+    ) : (
+      <span className={big ? "line-clamp-2 break-words text-center" : "truncate"}>{baseName(path)}</span>
+    );
+
+  const detailsTable = (list: string[], extra?: "location") => (
+    <table className="w-full table-fixed border-separate border-spacing-0 text-[12.5px]">
+      <thead className="sticky top-0 z-10 bg-[#191919]">
+        <tr className="text-left text-[12px] text-[#cfcfcf]">
+          {([["name", "Name", "w-[44%]"], ["date", "Date modified", "w-[22%]"], [extra ? "location" : "type", extra ? "File location" : "Type", "w-[20%]"], ["size", "Size", "w-[14%]"]] as const).map(([key, label, width]) => (
+            <th key={key} className={`${width} relative h-7 border-r border-white/[.06] px-2 font-normal last:border-r-0 hover:bg-white/[.04]`}>
+              <button type="button" onClick={() => key !== "location" && setSort((value) => ({ key: key as ExplorerSort["key"], dir: value.key === key ? (value.dir === 1 ? -1 : 1) : 1 }))} className="flex w-full items-center">{label}</button>
+              {sort.key === key && <ChevronUp className={`absolute left-1/2 top-0 size-3 -translate-x-1/2 text-[#9d9d9d] ${sort.dir === -1 ? "rotate-180" : ""}`} />}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {list.map((path) => {
+          const folder = isFolder(path);
+          const on = selected.includes(path);
           return (
-            <div key={path} className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-secondary">
-              <button
-                type="button"
-                className="flex min-w-0 flex-1 items-center gap-3 text-left text-sm"
-                onClick={() => {
-                  if (folder) return setDir(path);
-                  openPathInApp(path, open);
-                }}
-              >
-                {folder ? <Folder className="size-4 shrink-0 text-primary" /> : <StickyNote className="size-4 shrink-0 text-muted-foreground" />}
-                <span className="truncate">{baseName(path)}</span>
-              </button>
-              {!folder && <button type="button" aria-label={`Download ${baseName(path)}`} onClick={() => download(path)} className="rounded p-1 hover:bg-secondary"><Download className="size-4" /></button>}
-              <button type="button" aria-label={`Delete ${baseName(path)}`} onClick={() => remove(path)} className="rounded p-1 hover:bg-secondary">
-                <X className="size-4" />
-              </button>
-            </div>
+            <tr
+              key={path}
+              {...dragProps(path)}
+              onClick={(event) => { event.stopPropagation(); pick(path, event, list); }}
+              onDoubleClick={() => openItem(path)}
+              onContextMenu={(event) => openMenu(event, path)}
+              className={`group h-8 cursor-default ${on ? "bg-white/[.09]" : "hover:bg-white/[.05]"} ${dropTarget === path ? "outline outline-1 -outline-offset-1 outline-[#60cdff]" : ""} ${cutSet.includes(path) ? "opacity-50" : ""}`}
+            >
+              <td className="rounded-l-[4px] px-2"><span className="flex min-w-0 items-center gap-2"><ItemIcon path={path} value={fs[path]} className="size-[18px] shrink-0" />{nameCell(path, false)}</span></td>
+              <td className="truncate px-2 text-[#9d9d9d]">{fmtWhen(meta[path])}</td>
+              <td className="truncate px-2 text-[#9d9d9d]">{extra ? crumbsFor(parentPath(path)).map((crumb) => crumb.label).join(" › ") : fileKind(path, folder).type}</td>
+              <td className="truncate rounded-r-[4px] px-2 text-right text-[#9d9d9d]">{folder ? "" : fmtBytes(fsBytes(fs[path]))}</td>
+            </tr>
           );
         })}
+      </tbody>
+    </table>
+  );
+
+  const iconGrid = (list: string[], size: "large" | "medium") => (
+    <div className={`grid gap-1 ${size === "large" ? "grid-cols-[repeat(auto-fill,minmax(112px,1fr))]" : "grid-cols-[repeat(auto-fill,minmax(88px,1fr))]"}`}>
+      {list.map((path) => {
+        const on = selected.includes(path);
+        return (
+          <div
+            key={path}
+            {...dragProps(path)}
+            onClick={(event) => { event.stopPropagation(); pick(path, event, list); }}
+            onDoubleClick={() => openItem(path)}
+            onContextMenu={(event) => openMenu(event, path)}
+            className={`flex cursor-default flex-col items-center gap-1 rounded-[4px] border px-1.5 py-2 text-[12px] ${on ? "border-white/[.12] bg-white/[.09]" : "border-transparent hover:bg-white/[.05]"} ${dropTarget === path ? "border-[#60cdff]" : ""} ${cutSet.includes(path) ? "opacity-50" : ""}`}
+          >
+            <ItemIcon path={path} value={fs[path]} className={size === "large" ? "size-[72px]" : "size-12"} />
+            {nameCell(path, true)}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const folderTiles = (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-1">
+      {KNOWN_FOLDERS.map((name) => {
+        const path = `/${name}`;
+        const on = selected.includes(path);
+        return (
+          <div key={name} {...dragProps(path)} onClick={(event) => { event.stopPropagation(); setSelected([path]); }} onDoubleClick={() => go(path)} onContextMenu={(event) => openMenu(event, path)} className={`flex cursor-default items-center gap-3 rounded-[4px] px-2 py-1.5 ${on ? "bg-white/[.09]" : "hover:bg-white/[.05]"} ${dropTarget === path ? "outline outline-1 outline-[#60cdff]" : ""}`}>
+            <FolderGlyph kind={name} className="size-12 shrink-0" />
+            <span className="min-w-0 text-[12.5px]"><span className="block">{name}</span><span className="flex items-center gap-1 text-[11.5px] text-[#9d9d9d]">Stored locally<LuPin className="size-3" /></span></span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const section = (title: string, body: ReactNode) => (
+    <section className="mb-4">
+      <h3 className="mb-1.5 flex items-center gap-1 px-1 text-[13px] font-semibold text-white"><ChevronDown className="size-3.5 text-[#9d9d9d]" />{title}</h3>
+      {body}
+    </section>
+  );
+
+  const navItem = (target: string, label: string, icon: ReactNode, indent = false, pinned = false) => {
+    const on = loc === target && !searching;
+    return (
+      <button
+        key={target}
+        type="button"
+        onClick={() => go(target)}
+        onDragOver={(event) => { if (target.startsWith("/")) { event.preventDefault(); setDropTarget(target); } }}
+        onDragLeave={() => setDropTarget(null)}
+        onDrop={(event) => {
+          if (!target.startsWith("/")) return;
+          event.preventDefault();
+          setDropTarget(null);
+          const raw = event.dataTransfer.getData("application/x-pos-paths");
+          if (raw) paste(target, { mode: "cut", paths: JSON.parse(raw) as string[] });
+          else upload(event.dataTransfer.files, target);
+        }}
+        className={`group relative flex h-8 w-full items-center gap-2.5 rounded-[4px] pr-2 text-left text-[12.5px] ${indent ? "pl-7" : "pl-3"} ${on ? "bg-white/[.09]" : "hover:bg-white/[.05]"} ${dropTarget === target ? "outline outline-1 -outline-offset-1 outline-[#60cdff]" : ""}`}
+      >
+        {on && <span className="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-[#60cdff]" />}
+        {icon}
+        <span className="min-w-0 flex-1 truncate">{label}</span>
+        {pinned && <LuPin className="size-3 text-[#9d9d9d] opacity-0 group-hover:opacity-100" />}
+      </button>
+    );
+  };
+
+  const cmd = "flex h-8 shrink-0 items-center gap-1.5 rounded-[4px] px-2 text-[12.5px] hover:bg-white/[.06] disabled:opacity-35 disabled:hover:bg-transparent";
+  const icoBtn = "grid size-8 shrink-0 place-items-center rounded-[4px] hover:bg-white/[.06] disabled:opacity-35 disabled:hover:bg-transparent";
+  const menuItem = (icon: ReactNode, label: string, onClick: () => void, opts: { disabled?: boolean; checked?: boolean; hint?: string } = {}) => (
+    <button key={label} type="button" disabled={opts.disabled} onClick={() => { onClick(); setMenu(null); setDrop(null); }} className="flex h-8 w-full items-center gap-3 rounded-[4px] px-2.5 text-left text-[12.5px] hover:bg-white/[.07] disabled:opacity-40 disabled:hover:bg-transparent">
+      <span className="grid w-4 place-items-center">{opts.checked ? <span className="size-1.5 rounded-full bg-white" /> : icon}</span>
+      <span className="flex-1">{label}</span>
+      {opts.hint && <span className="text-[11px] text-[#9d9d9d]">{opts.hint}</span>}
+    </button>
+  );
+  const sep = (key: string) => <span key={key} className="my-1 block h-px bg-white/[.08]" />;
+  const panel = "explorer-menu absolute z-40 rounded-lg border border-white/[.08] bg-[#2c2c2c] p-1 shadow-[0_8px_32px_rgb(0_0_0/.5)] [animation:rise_.14s_ease-out_both]";
+  const viewItems = () => [
+    menuItem(<LayoutGrid className="size-4" />, "Large icons", () => setView("large"), { checked: view === "large" }),
+    menuItem(<LayoutGrid className="size-3.5" />, "Medium icons", () => setView("medium"), { checked: view === "medium" }),
+    menuItem(<LuLayoutList className="size-4" />, "Details", () => setView("details"), { checked: view === "details" }),
+  ];
+  const sortItems = () =>
+    ([["name", "Name"], ["date", "Date modified"], ["type", "Type"], ["size", "Size"]] as const).map(([key, label]) => menuItem(null, label, () => setSort((value) => ({ ...value, key })), { checked: sort.key === key }));
+  const newItems = () => [
+    menuItem(<FolderGlyph className="size-4" />, "Folder", () => create("folder")),
+    sep("n1"),
+    menuItem(<AppImage tone="" src="word" className="size-4" />, "Private Word Document", () => create("doc")),
+    menuItem(<FileGlyph className="size-4" />, "Text Document", () => create("txt")),
+  ];
+
+  const body = (() => {
+    if (searching) return items.length ? detailsTable(items, "location") : <p className="pt-16 text-center text-[12.5px] text-[#9d9d9d]">No items match your search.</p>;
+    if (loc === "home") return <>{section("Quick access", folderTiles)}{section("Recent", items.length ? detailsTable(items, "location") : <p className="px-2 py-4 text-[12.5px] text-[#9d9d9d]">After you've opened some files, we'll show the most recent ones here.</p>)}</>;
+    if (loc === "gallery") return items.length ? iconGrid(items, "large") : <p className="pt-16 text-center text-[12.5px] text-[#9d9d9d]">Pictures you add to Private Files show up here.</p>;
+    if (loc === "pc")
+      return (
+        <>
+          {section("Folders", folderTiles)}
+          {section(
+            "Devices and drives",
+            <div onDoubleClick={() => go("/")} onClick={(event) => { event.stopPropagation(); setSelected(["/"]); }} className={`flex w-72 cursor-default items-center gap-3 rounded-[4px] px-2 py-2 ${selected.includes("/") ? "bg-white/[.09]" : "hover:bg-white/[.05]"}`}>
+              <LuHardDrive className="size-11 shrink-0 text-zinc-300" strokeWidth={1.2} />
+              <div className="min-w-0 flex-1 text-[12.5px]">
+                <p>Local Disk (C:)</p>
+                <span className="mt-1 block h-3.5 overflow-hidden border border-white/20 bg-[#3a3a3a]"><span className="block h-full bg-[#60cdff]" style={{ width: `${Math.min(100, Math.max(2, (usedBytes / (10 * 1024 * 1024)) * 100))}%` }} /></span>
+                <p className="mt-0.5 text-[11.5px] text-[#9d9d9d]">{(Math.max(0, 10 * 1024 * 1024 - usedBytes) / 1048576).toFixed(1)} MB free of 10.0 MB</p>
+              </div>
+            </div>,
+          )}
+        </>
+      );
+    if (!items.length) return <p className="pt-16 text-center text-[12.5px] text-[#9d9d9d]">This folder is empty.</p>;
+    return view === "details" ? detailsTable(items) : iconGrid(items, view);
+  })();
+
+  const crumbs = crumbsFor(loc);
+  const bar = (
+    <div className="flex h-full min-w-0 flex-1 items-end gap-0.5 pl-2 pt-1.5">
+      {tabs.map((item) => {
+        const tabLoc = item.history[item.pos]!;
+        const on = item.id === tab.id;
+        return (
+          <div key={item.id} data-nodrag onClick={() => { setActiveTab(item.id); setSelected([]); }} className={`group relative flex h-full w-[min(240px,30vw)] min-w-[110px] cursor-default items-center gap-2 rounded-t-lg pl-3 pr-1.5 text-[12px] ${on ? "bg-[#2b2b2b] text-white" : "text-[#cfcfcf] hover:bg-white/[.05]"}`}>
+            <TabIcon loc={tabLoc} className="size-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate">{locLabel(tabLoc)}</span>
+            <button type="button" aria-label="Close tab" onClick={(event) => { event.stopPropagation(); closeTab(item.id); }} className="grid size-6 place-items-center rounded hover:bg-white/10"><X className="size-3.5" /></button>
+          </div>
+        );
+      })}
+      <button type="button" aria-label="New tab" title="Add new tab (Ctrl+T)" onClick={newTab} className="mb-1 grid size-7 place-items-center rounded hover:bg-white/[.08]"><Plus className="size-4" /></button>
+    </div>
+  );
+
+  return (
+    <WindowFrame title={`${locLabel(loc)} - File Explorer`} icon={FolderIcon} close={close} bar={{ className: "explorer-bar bg-[#202020] text-white", content: bar }}>
+      <div
+        ref={root}
+        tabIndex={-1}
+        onKeyDown={onKey}
+        onPointerDown={(event) => { if (!(event.target as HTMLElement).closest("[data-drop]")) setDrop(null); }}
+        className="explorer relative flex min-h-0 flex-1 flex-col bg-[#191919] text-white outline-none"
+        style={{ fontFamily: "'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif", colorScheme: "dark" }}
+      >
+        <div className="flex h-12 shrink-0 items-center gap-1 bg-[#2b2b2b] px-2">
+          <button type="button" aria-label="Back" title="Back (Alt+Left)" disabled={tab.pos === 0} onClick={() => step(-1)} className={icoBtn}><ArrowLeft className="size-4" /></button>
+          <button type="button" aria-label="Forward" title="Forward (Alt+Right)" disabled={tab.pos >= tab.history.length - 1} onClick={() => step(1)} className={icoBtn}><ArrowRight className="size-4" /></button>
+          <button type="button" aria-label="Up" title="Up to parent folder" disabled={!upLoc} onClick={() => upLoc && go(upLoc)} className={icoBtn}><LuArrowUp className="size-4" /></button>
+          <button type="button" aria-label="Refresh" title="Refresh" onClick={() => setMeta(readFsMeta())} className={icoBtn}><RotateCw className="size-4" /></button>
+          {editingPath !== null ? (
+            <input
+              autoFocus
+              aria-label="Address"
+              value={editingPath}
+              onChange={(event) => setEditingPath(event.target.value)}
+              onBlur={() => setEditingPath(null)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setEditingPath(null);
+                if (event.key !== "Enter") return;
+                const raw = editingPath.trim().replace(/\\/g, "/").replace(/^c:/i, "").replace(/\/+$/, "") || "/";
+                const target = raw.startsWith("/") ? raw : `/${raw}`;
+                if (target === "/" || fs[target] === null) go(target);
+                else window.alert(`Windows can't find '${editingPath}'. Check the spelling and try again.`);
+              }}
+              className="mx-1 h-8 min-w-0 flex-1 rounded-[4px] border-b-2 border-[#60cdff] bg-[#1f1f1f] px-3 text-[12.5px] outline-none"
+            />
+          ) : (
+            <div onClick={(event) => { if (event.target === event.currentTarget) setEditingPath(inDir ? `C:${loc === "/" ? "\\" : loc.replace(/\//g, "\\")}` : locLabel(loc)); }} className="mx-1 flex h-8 min-w-0 flex-1 cursor-text items-center gap-0.5 overflow-hidden rounded-[4px] bg-[#1f1f1f] px-1.5 text-[12.5px] hover:bg-[#252525]">
+              <TabIcon loc={loc} className="mx-1 size-4 shrink-0" />
+              {crumbs.map((crumb, i) => (
+                <span key={crumb.loc} className="flex shrink-0 items-center">
+                  <ChevronRight className="size-3.5 text-[#9d9d9d]" />
+                  <button type="button" onClick={() => go(crumb.loc)} className={`rounded px-1.5 py-1 hover:bg-white/[.07] ${i === crumbs.length - 1 ? "text-white" : "text-[#cfcfcf]"}`}>{crumb.label}</button>
+                </span>
+              ))}
+            </div>
+          )}
+          <label className="hidden h-8 w-56 items-center gap-2 rounded-[4px] bg-[#1f1f1f] px-3 text-[12.5px] focus-within:border-b-2 focus-within:border-[#60cdff] md:flex lg:w-72">
+            <input value={query} onChange={(event) => { setQuery(event.target.value); setSelected([]); }} placeholder={`Search ${locLabel(loc)}`} aria-label="Search" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#9d9d9d]" />
+            <Search className="size-4 text-[#cfcfcf]" />
+          </label>
+        </div>
+        <div className="flex h-12 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-black/40 bg-[#2b2b2b] px-2">
+          <button type="button" data-drop onClick={(event) => toggleDrop("new", event)} className={`${cmd} pr-1.5`}><LuCirclePlus className="size-[18px] text-[#60cdff]" />New<ChevronDown className="size-3.5" /></button>
+          <span className="mx-1.5 h-6 w-px bg-white/[.1]" />
+          <button type="button" aria-label="Cut" title="Cut (Ctrl+X)" disabled={!selected.length || !inDir} onClick={() => setClip({ mode: "cut", paths: selected })} className={icoBtn}><LuScissors className="size-[18px]" /></button>
+          <button type="button" aria-label="Copy" title="Copy (Ctrl+C)" disabled={!selected.length} onClick={() => setClip({ mode: "copy", paths: selected })} className={icoBtn}><LuCopy className="size-[18px]" /></button>
+          <button type="button" aria-label="Paste" title="Paste (Ctrl+V)" disabled={!clip} onClick={() => paste(here, clip)} className={icoBtn}><LuClipboardPaste className="size-[18px]" /></button>
+          <button type="button" aria-label="Rename" title="Rename (F2)" disabled={!one || !inDir} onClick={() => one && setRenaming(one)} className={icoBtn}><LuTextCursorInput className="size-[18px]" /></button>
+          <button type="button" aria-label="Download" title="Download" disabled={!one || isFolder(one)} onClick={() => one && download(one)} className={icoBtn}><Download className="size-[18px]" /></button>
+          <button type="button" aria-label="Delete" title="Delete (Delete)" disabled={!selected.length || selected.includes("/")} onClick={() => removeItems(selected)} className={icoBtn}><LuTrash2 className="size-[18px]" /></button>
+          <span className="mx-1.5 h-6 w-px bg-white/[.1]" />
+          <button type="button" data-drop onClick={(event) => toggleDrop("sort", event)} className={cmd}><LuArrowUpDown className="size-[18px]" />Sort<ChevronDown className="size-3.5" /></button>
+          <button type="button" data-drop onClick={(event) => toggleDrop("view", event)} className={cmd}><LuLayoutList className="size-[18px]" />View<ChevronDown className="size-3.5" /></button>
+          <button type="button" aria-label="See more" title="See more" data-drop onClick={(event) => toggleDrop("more", event)} className={icoBtn}><LuEllipsis className="size-[18px]" /></button>
+          <button type="button" onClick={() => setDetails((value) => !value)} className={`${cmd} ml-auto ${details ? "bg-white/[.08]" : ""}`}><LuPanelRight className="size-[18px]" />Details</button>
+          <input ref={fileInput} type="file" multiple hidden onChange={(event) => { upload(event.target.files); event.target.value = ""; }} />
+        </div>
+        <div className="flex min-h-0 flex-1">
+          <nav className="hidden w-52 shrink-0 overflow-y-auto border-r border-white/[.06] px-1.5 py-2 md:block lg:w-56">
+            {navItem("home", "Home", <House className="size-4 shrink-0 text-[#60cdff]" />)}
+            {navItem("gallery", "Gallery", <LuImages className="size-4 shrink-0 text-[#60cdff]" />)}
+            <span className="mx-2 my-2 block h-px bg-white/[.08]" />
+            {KNOWN_FOLDERS.map((name) => navItem(`/${name}`, name, <FolderGlyph kind={name} className="size-[18px] shrink-0" />, false, true))}
+            <span className="mx-2 my-2 block h-px bg-white/[.08]" />
+            {navItem("pc", "This PC", <LuMonitor className="size-4 shrink-0 text-[#60cdff]" />)}
+            {navItem("/", "Local Disk (C:)", <LuHardDrive className="size-4 shrink-0 text-zinc-300" />, true)}
+          </nav>
+          <div
+            className="min-w-0 flex-1 overflow-auto px-3 py-2"
+            onClick={() => { setSelected([]); setMenu(null); }}
+            onContextMenu={(event) => openMenu(event, null)}
+            onDragOver={(event) => { if (inDir) event.preventDefault(); }}
+            onDrop={(event) => {
+              if (!inDir) return;
+              event.preventDefault();
+              const raw = event.dataTransfer.getData("application/x-pos-paths");
+              if (!raw) upload(event.dataTransfer.files);
+            }}
+          >
+            {body}
+          </div>
+          {details && (
+            <aside className="hidden w-64 shrink-0 overflow-y-auto border-l border-white/[.06] p-4 text-[12.5px] sm:block">
+              {one && one in fs ? (
+                <>
+                  <div className="grid h-36 place-items-center"><ItemIcon path={one} value={fs[one]} className="size-28" /></div>
+                  <p className="mt-2 break-words text-[14px] font-semibold">{baseName(one)}</p>
+                  <p className="text-[#9d9d9d]">{fileKind(one, isFolder(one)).type}</p>
+                  <dl className="mt-4 space-y-2">
+                    {!isFolder(one) && <div><dt className="text-[#9d9d9d]">Size</dt><dd>{fmtBytes(fsBytes(fs[one]))}</dd></div>}
+                    {isFolder(one) && <div><dt className="text-[#9d9d9d]">Contains</dt><dd>{childrenOf(fs, one).length} items</dd></div>}
+                    <div><dt className="text-[#9d9d9d]">Date modified</dt><dd>{fmtWhen(meta[one]) || "Unknown"}</dd></div>
+                    <div><dt className="text-[#9d9d9d]">Location</dt><dd className="break-words">C:{parentPath(one).replace(/\//g, "\\")}</dd></div>
+                  </dl>
+                </>
+              ) : (
+                <p className="pt-10 text-center text-[#9d9d9d]">{selected.length > 1 ? `${selected.length} items selected` : "Select a single file to get more information."}</p>
+              )}
+            </aside>
+          )}
+        </div>
+        <div className="flex h-7 shrink-0 items-center gap-5 bg-[#191919] px-3 text-[12px] text-[#cfcfcf]">
+          <span>{loc === "pc" ? 7 : loc === "home" && !searching ? KNOWN_FOLDERS.length + items.length : items.length} items</span>
+          {selected.length > 0 && <span>{selected.length} item{selected.length === 1 ? "" : "s"} selected{selectedBytes ? `  ${fmtBytes(selectedBytes)}` : ""}</span>}
+          {clip && <span className="text-[#9d9d9d]">{clip.paths.length} item{clip.paths.length === 1 ? "" : "s"} on the clipboard</span>}
+          <span className="ml-auto flex items-center gap-0.5">
+            <button type="button" aria-label="Details view" title="Displays information about each item in the window." onClick={() => setView("details")} className={`grid size-6 place-items-center rounded ${view === "details" ? "bg-white/[.1]" : "hover:bg-white/[.05]"}`}><LuLayoutList className="size-3.5" /></button>
+            <button type="button" aria-label="Large icons view" title="Displays items by using large thumbnails." onClick={() => setView("large")} className={`grid size-6 place-items-center rounded ${view === "large" ? "bg-white/[.1]" : "hover:bg-white/[.05]"}`}><LayoutGrid className="size-3.5" /></button>
+          </span>
+        </div>
+        {drop && (
+          <div className={`${panel} top-[5.6rem] w-60`} style={{ left: Math.max(4, drop.x) }} onPointerDown={(event) => event.stopPropagation()}>
+            {drop.id === "new" && newItems()}
+            {drop.id === "sort" && <>{sortItems()}{sep("s1")}{menuItem(null, "Ascending", () => setSort((value) => ({ ...value, dir: 1 })), { checked: sort.dir === 1 })}{menuItem(null, "Descending", () => setSort((value) => ({ ...value, dir: -1 })), { checked: sort.dir === -1 })}</>}
+            {drop.id === "view" && viewItems()}
+            {drop.id === "more" && (
+              <>
+                {menuItem(<Upload className="size-4" />, "Upload files", () => fileInput.current?.click())}
+                {menuItem(<LuCheckCheck className="size-4" />, "Select all", () => setSelected(items), { hint: "Ctrl+A" })}
+                {menuItem(<X className="size-4" />, "Select none", () => setSelected([]))}
+                {menuItem(<LuFlipHorizontal className="size-4" />, "Invert selection", () => setSelected(items.filter((path) => !selected.includes(path))))}
+              </>
+            )}
+          </div>
+        )}
+        {menu && (
+          <>
+            <div className="absolute inset-0 z-30" onPointerDown={() => setMenu(null)} onContextMenu={(event) => { event.preventDefault(); setMenu(null); }} />
+            <div className={`${panel} w-64`} style={{ left: Math.min(menu.x, (root.current?.clientWidth ?? 600) - 264), top: Math.min(menu.y, (root.current?.clientHeight ?? 400) - (menu.target ? 230 : 330)) }}>
+              {menu.target ? (
+                <>
+                  <div className="mb-1 flex justify-around border-b border-white/[.08] pb-1">
+                    <button type="button" aria-label="Cut" title="Cut" disabled={!inDir} onClick={() => { setClip({ mode: "cut", paths: selected }); setMenu(null); }} className={icoBtn}><LuScissors className="size-4" /></button>
+                    <button type="button" aria-label="Copy" title="Copy" onClick={() => { setClip({ mode: "copy", paths: selected }); setMenu(null); }} className={icoBtn}><LuCopy className="size-4" /></button>
+                    <button type="button" aria-label="Rename" title="Rename" disabled={selected.length !== 1 || menu.target === "/"} onClick={() => { setRenaming(menu.target); setMenu(null); }} className={icoBtn}><LuTextCursorInput className="size-4" /></button>
+                    <button type="button" aria-label="Delete" title="Delete" disabled={menu.target === "/"} onClick={() => removeItems(selected)} className={icoBtn}><LuTrash2 className="size-4" /></button>
+                  </div>
+                  {menuItem(<LuFolderOpen className="size-4" />, "Open", () => openItem(menu.target!), { hint: "Enter" })}
+                  {isFolder(menu.target) && menuItem(<Plus className="size-4" />, "Open in new tab", () => { const id = Math.max(...tabs.map((item) => item.id)) + 1; setTabs((list) => [...list, { id, history: [menu.target!], pos: 0 }]); setActiveTab(id); })}
+                  {!isFolder(menu.target) && menu.target !== "/" && menuItem(<Download className="size-4" />, "Download", () => download(menu.target!))}
+                  {isFolder(menu.target) && clip && menuItem(<LuClipboardPaste className="size-4" />, "Paste into folder", () => paste(menu.target!, clip))}
+                  {sep("m1")}
+                  {menuItem(<Info className="size-4" />, "Properties", () => setDetails(true), { hint: "Alt+Enter" })}
+                </>
+              ) : (
+                <>
+                  <p className="px-2.5 pb-0.5 pt-1 text-[11px] text-[#9d9d9d]">View</p>
+                  {viewItems()}
+                  <p className="px-2.5 pb-0.5 pt-1 text-[11px] text-[#9d9d9d]">Sort by</p>
+                  {sortItems()}
+                  {sep("b1")}
+                  {menuItem(<RotateCw className="size-4" />, "Refresh", () => setMeta(readFsMeta()))}
+                  {menuItem(<LuClipboardPaste className="size-4" />, "Paste", () => paste(here, clip), { disabled: !clip, hint: "Ctrl+V" })}
+                  {menuItem(<Upload className="size-4" />, "Upload files", () => fileInput.current?.click())}
+                  {sep("b2")}
+                  {newItems()}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </WindowFrame>
   );
 }
 
+// Private OneNote: each page is a text file in a folder (the section), saved as you type.
 function NotesApp({ close }: { close: () => void }) {
+  const brand = OFFICE.onenote;
+  const fs = useFs();
   const [path, setPath] = useState("/Documents/note.txt");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(() => {
+    const value = readFs()["/Documents/note.txt"];
+    return typeof value === "string" ? value : "";
+  });
+  const [tab, setTab] = useState("Home");
   const [msg, setMsg] = useState("");
+  const [search, setSearch] = useState("");
+  const [rev, setRev] = useState(0);
+  const area = useRef<HTMLTextAreaElement>(null);
+  const section = parentPath(path);
+  const meta = useMemo(() => readFsMeta(), [fs]);
+  const isPage = (file: string) => typeof fs[file] === "string" && !fs[file]!.startsWith("data:") && /\.(txt|md)$/i.test(file);
+  const pages = childrenOf(fs, section).filter(isPage).filter((file) => !search || baseName(file).toLowerCase().includes(search.toLowerCase()) || String(fs[file]).toLowerCase().includes(search.toLowerCase()));
+  const sections = Object.keys(fs).filter((dir) => fs[dir] === null && childrenOf(fs, dir).some(isPage)).sort();
+  if (!sections.includes(section)) sections.unshift(section);
+  const openPage = (next: string) => {
+    const value = readFs()[next];
+    setPath(next);
+    setText(typeof value === "string" ? value : "");
+    setRev(0);
+  };
   useEffect(() => {
     const pull = () => {
       try {
         const next = localStorage.getItem("pos-note-path");
         if (!next) return;
         localStorage.removeItem("pos-note-path");
-        setPath(next);
-        const value = readFs()[next];
-        setText(typeof value === "string" ? value : "");
-        setMsg("Opened");
+        openPage(next);
       } catch {
         // storage unavailable
       }
@@ -2367,30 +3090,148 @@ function NotesApp({ close }: { close: () => void }) {
     window.addEventListener("pos-note", pull);
     return () => window.removeEventListener("pos-note", pull);
   }, []);
-  const save = () => {
-    const fs = { ...readFs() };
-    const parent = path.slice(0, path.lastIndexOf("/"));
-    if (!path.startsWith("/") || (parent && fs[parent] !== null)) return setMsg("That folder doesn't exist");
-    fs[path] = text;
-    writeFs(fs);
-    setMsg("Saved");
+  const saveNow = (value = text) => {
+    const current = { ...readFs() };
+    if (section !== "/" && current[section] !== null) current[section] = null;
+    current[path] = value;
+    const ok = writeFs(current);
+    setMsg(ok ? "" : "Browser storage is full.");
+    return ok;
   };
-  const load = () => {
-    const value = readFs()[path];
-    if (typeof value === "string") {
-      setText(value);
-      setMsg("Opened");
-    } else setMsg("File not found");
+  useEffect(() => {
+    if (rev === 0) return;
+    const timer = window.setTimeout(() => saveNow(), 600);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rev]);
+  const type = (value: string) => {
+    setText(value);
+    setRev((n) => n + 1);
+  };
+  const addPage = () => {
+    const current = readFs();
+    let n = 1;
+    while (`${joinPath(section, `Untitled page${n > 1 ? ` ${n}` : ""}`)}.txt` in current) n += 1;
+    const next = `${joinPath(section, `Untitled page${n > 1 ? ` ${n}` : ""}`)}.txt`;
+    writeFs({ ...current, [next]: "" });
+    openPage(next);
+    window.setTimeout(() => area.current?.focus(), 0);
+  };
+  const deletePage = () => {
+    if (!window.confirm(`Delete the page "${baseName(path).replace(/\.[^.]+$/, "")}"?`)) return;
+    const current = { ...readFs() };
+    delete current[path];
+    writeFs(current);
+    const rest = childrenOf(current, section).filter((file) => typeof current[file] === "string" && /\.(txt|md)$/i.test(file));
+    if (rest[0]) openPage(rest[0]);
+    else {
+      setPath(joinPath(section, "note.txt"));
+      setText("");
+    }
+  };
+  const renamePage = (title: string) => {
+    const clean = title.trim().replace(/[\\/:*?"<>|]/g, "");
+    if (!clean) return;
+    const ext = path.slice(path.lastIndexOf("."));
+    const target = joinPath(section, `${clean}${ext}`);
+    if (target === path) return;
+    const current = readFs();
+    if (target in current) return setMsg("A page with that name already exists.");
+    const next: Record<string, FsNode> = {};
+    for (const [key, value] of Object.entries(current)) if (key !== path) next[key] = value;
+    next[target] = text;
+    writeFs(next, { [target]: path });
+    setPath(target);
+  };
+  const insert = (snippet: string) => {
+    const el = area.current;
+    if (!el) return type(text + snippet);
+    const start = el.selectionStart;
+    const next = text.slice(0, start) + snippet + text.slice(el.selectionEnd);
+    type(next);
+    window.setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + snippet.length, start + snippet.length);
+    }, 0);
+  };
+  const when = meta[path] ? new Date(meta[path]!) : new Date();
+  const title = baseName(path).replace(/\.[^.]+$/, "");
+  const ribbon: Record<string, ReactNode> = {
+    Home: (
+      <>
+        <RGroup label="Pages">
+          <RBig icon={LuSquarePlus} label="New Page" color={brand.color} onClick={addPage} />
+          <RBig icon={LuTrash2} label="Delete Page" onClick={deletePage} />
+        </RGroup>
+        <RGroup label="Tags">
+          <RStack>
+            <RSmall icon={LuSquareCheck} label="To Do" onClick={() => insert("☐ ")} className="justify-start" />
+            <RSmall icon={Star} label="Important" color="#e0a800" onClick={() => insert("★ ")} className="justify-start" />
+            <RSmall icon={Info} label="Question" color="#7719aa" onClick={() => insert("? ")} className="justify-start" />
+          </RStack>
+        </RGroup>
+        <RGroup label="Save">
+          <RBig icon={Download} label="Download" onClick={() => downloadBlob(baseName(path), new Blob([text], { type: "text/plain" }))} />
+        </RGroup>
+      </>
+    ),
+    Insert: (
+      <>
+        <RGroup label="Time Stamp">
+          <RBig icon={LuCalendar} label="Date" color={brand.color} onClick={() => insert(new Date().toLocaleDateString([], { dateStyle: "long" }))} />
+          <RBig icon={LuClock} label="Time" color={brand.color} onClick={() => insert(new Date().toLocaleTimeString([], { timeStyle: "short" }))} />
+          <RBig icon={LuCalendarClock} label="Date & Time" color={brand.color} onClick={() => insert(new Date().toLocaleString([], { dateStyle: "long", timeStyle: "short" }))} />
+        </RGroup>
+        <RGroup label="Insert">
+          <RBig icon={Minus} label="Divider" onClick={() => insert("\n────────────────────\n")} />
+        </RGroup>
+      </>
+    ),
+    View: (
+      <RGroup label="Pages">
+        <RBig icon={LuSquarePlus} label="New Page" color={brand.color} onClick={addPage} />
+      </RGroup>
+    ),
   };
   return (
-    <WindowFrame title="Private OneNote" icon={NotesIcon} close={close}>
-      <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
-        <input value={path} onChange={(event) => setPath(event.target.value)} aria-label="File path" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
-        <button type="button" onClick={load} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs">Open</button>
-        <button type="button" onClick={save} className="rounded-md bg-primary px-2.5 py-1.5 text-xs text-primary-foreground">Save</button>
+    <WindowFrame
+      title={`${title} - Private OneNote`}
+      icon={NotesIcon}
+      close={close}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={NotesIcon} name={title} status="Saved" search={search} onSearch={setSearch} /> }}
+    >
+      <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light", fontFamily: "'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif" } as React.CSSProperties}>
+        <Ribbon brand={brand} tabs={["Home", "Insert", "View"]} tab={tab} setTab={setTab} onFile={addPage}>{ribbon[tab]}</Ribbon>
+        <div className="flex min-h-0 flex-1 border-t border-black/[.06]">
+          <div className="hidden w-44 shrink-0 flex-col overflow-y-auto border-r border-black/[.08] bg-[#f7f2fa] py-2 sm:flex">
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-500">Sections</p>
+            {sections.map((dir) => (
+              <button key={dir} type="button" onClick={() => { const first = childrenOf(fs, dir).filter(isPage)[0]; if (first) openPage(first); else { setPath(joinPath(dir, "note.txt")); setText(""); } }} className={`flex items-center gap-2 border-l-4 px-3 py-1.5 text-left text-[13px] ${dir === section ? "bg-white font-semibold" : "border-transparent hover:bg-white/60"}`} style={dir === section ? { borderLeftColor: brand.color } : undefined}>
+                <span className="size-2.5 shrink-0 rounded-sm" style={{ background: ["#7719aa", "#1f8f4e", "#2f7ad1", "#e0570f", "#c43e1c"][sections.indexOf(dir) % 5] }} />
+                <span className="truncate">{dir === "/" ? "Quick Notes" : baseName(dir)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="hidden w-56 shrink-0 flex-col border-r border-black/[.08] bg-white md:flex">
+            <button type="button" onClick={addPage} className="flex items-center gap-2 border-b border-black/[.06] px-3 py-2 text-[13px] hover:bg-zinc-50" style={{ color: brand.color }}><Plus className="size-4" />Add page</button>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {pages.length === 0 && <p className="px-3 py-4 text-[12px] text-zinc-500">{search ? "No pages match." : "No pages yet."}</p>}
+              {pages.map((file) => (
+                <button key={file} type="button" onClick={() => openPage(file)} className={`block w-full border-b border-black/[.04] px-3 py-2 text-left ${file === path ? "bg-[#eadcf3]" : "hover:bg-zinc-50"}`}>
+                  <span className="block truncate text-[13px] font-semibold">{baseName(file).replace(/\.[^.]+$/, "")}</span>
+                  <span className="block truncate text-[11.5px] text-zinc-500">{String(fs[file]).split("\n").find((line) => line.trim()) || "No additional text"}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0 flex-1 overflow-auto bg-white px-10 py-8">
+            <input key={path} aria-label="Page title" defaultValue={title} onBlur={(event) => renamePage(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") area.current?.focus(); }} className="w-full max-w-xl border-b border-zinc-300 pb-1 text-[26px] font-light outline-none focus:border-[var(--office)]" style={{ fontFamily: docFont }} />
+            <p className="mt-1.5 text-[12px] text-zinc-500">{when.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric", year: "numeric" })}&nbsp;&nbsp;&nbsp;{when.toLocaleTimeString([], { timeStyle: "short" })}</p>
+            <textarea ref={area} value={text} onChange={(event) => type(event.target.value)} placeholder="Start typing your note…" spellCheck className="mt-5 min-h-[50vh] w-full resize-none text-[14.5px] leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400" style={{ fontFamily: docFont }} />
+          </div>
+        </div>
+        {msg && <p className="absolute bottom-2 right-3 rounded bg-white px-2 py-1 text-[11px] text-red-700 shadow">{msg}</p>}
       </div>
-      <textarea value={text} onChange={(event) => setText(event.target.value)} placeholder="Start typing…" className="flex-1 resize-none bg-transparent p-4 text-sm outline-none" />
-      <p className="h-6 shrink-0 px-4 text-[11px] text-muted-foreground">{msg}</p>
     </WindowFrame>
   );
 }
@@ -4263,19 +5104,156 @@ function SheetsIcon({ className }: { className?: string }) { return <AppImage to
 function PdfIcon({ className }: { className?: string }) { return <AppImage tone="from-red-500 to-red-800" src="pdf" className={className} />; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
-const tbPrimary = "rounded-lg bg-primary px-3 py-1.5 text-[11px] font-bold text-primary-foreground";
+
+// Recent files for an Office app's File page, newest first.
+function officeRecent(fs: Record<string, FsNode>, pattern: RegExp) {
+  const meta = readFsMeta();
+  return Object.keys(fs)
+    .filter((path) => typeof fs[path] === "string" && pattern.test(path))
+    .sort((a, b) => (meta[b] ?? 0) - (meta[a] ?? 0))
+    .slice(0, 12)
+    .map((path) => ({ name: baseName(path), path, when: fmtWhen(meta[path]) }));
+}
+
+async function fsBuffer(path: string) {
+  const value = readFs()[path];
+  if (typeof value !== "string") return null;
+  return value.startsWith("data:") ? await (await fetch(value)).arrayBuffer() : (new TextEncoder().encode(value).buffer as ArrayBuffer);
+}
+
+// Undo/redo for apps whose content lives in React state.
+function useHistory<T>(initial: () => T) {
+  const [value, setValue] = useState<T>(initial);
+  const past = useRef<T[]>([]);
+  const future = useRef<T[]>([]);
+  const set = (next: T | ((prev: T) => T)) => {
+    setValue((prev) => {
+      const resolved = typeof next === "function" ? (next as (prev: T) => T)(prev) : next;
+      if (resolved !== prev) {
+        past.current = [...past.current.slice(-99), prev];
+        future.current = [];
+      }
+      return resolved;
+    });
+  };
+  const reset = (next: T) => {
+    past.current = [];
+    future.current = [];
+    setValue(next);
+  };
+  const undo = () => setValue((prev) => {
+    const last = past.current.pop();
+    if (last === undefined) return prev;
+    future.current.push(prev);
+    return last;
+  });
+  const redo = () => setValue((prev) => {
+    const next = future.current.pop();
+    if (next === undefined) return prev;
+    past.current.push(prev);
+    return next;
+  });
+  return { value, set, reset, undo, redo };
+}
+
+// Save after a pause while AutoSave is on. `rev` counts edits; the returned flag says whether the latest is saved.
+function useAutoSave(on: boolean, rev: number, save: () => Promise<boolean>) {
+  const [savedRev, setSavedRev] = useState(-1);
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    if (!on || rev === savedRev) return;
+    const timer = window.setTimeout(() => void saveRef.current().then((ok) => ok && setSavedRev(rev)), 1500);
+    return () => window.clearTimeout(timer);
+  }, [on, rev, savedRev]);
+  return { saved: savedRev === rev, markSaved: () => setSavedRev(rev) };
+}
+
+const WORD_FONTS = ["Aptos", "Calibri", "Arial", "Times New Roman", "Georgia", "Verdana", "Segoe UI", "Courier New", "Comic Sans MS"];
+const WORD_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72];
+const WORD_MARGINS = { Narrow: 48, Normal: 96, Wide: 192 } as const;
+const WORD_STYLES = [
+  { label: "Normal", tag: "p", sample: "text-[13px]" },
+  { label: "Heading 1", tag: "h1", sample: "text-[15px] text-[#0f4761]" },
+  { label: "Heading 2", tag: "h2", sample: "text-[13.5px] text-[#0f4761]" },
+  { label: "Heading 3", tag: "h3", sample: "text-[12.5px] text-[#0f4761]" },
+  { label: "Quote", tag: "blockquote", sample: "text-[12.5px] italic text-[#404040]" },
+] as const;
+const docFont = "Aptos, Calibri, 'Segoe UI', Arial, sans-serif";
+
+type WordState = { bold: boolean; italic: boolean; underline: boolean; strike: boolean; sub: boolean; sup: boolean; ul: boolean; ol: boolean; align: string; font: string; block: string };
+const WORD_IDLE: WordState = { bold: false, italic: false, underline: false, strike: false, sub: false, sup: false, ul: false, ol: false, align: "left", font: "Aptos", block: "p" };
 
 function WriterApp({ close }: { close: () => void }) {
+  const brand = OFFICE.word;
+  const fs = useFs();
   const page = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
-  const [name, setName] = useState("Untitled");
+  const picture = useRef<HTMLInputElement>(null);
+  const canvas = useRef<HTMLDivElement>(null);
+  const [name, setName] = useState("Document1");
   const [words, setWords] = useState(0);
+  const [pages, setPages] = useState(1);
   const [msg, setMsg] = useState("");
-  const count = () => setWords(page.current?.innerText.trim().split(/\s+/).filter(Boolean).length ?? 0);
+  const [tab, setTab] = useState("Home");
+  const [backstage, setBackstage] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [ruler, setRuler] = useState(true);
+  const [margin, setMargin] = useState<keyof typeof WORD_MARGINS>("Normal");
+  const [landscape, setLandscape] = useState(false);
+  const [autoSave, setAutoSave] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [fmt, setFmt] = useState<WordState>(WORD_IDLE);
+  const [size, setSize] = useState(12);
+  const [color, setColor] = useState("#c00000");
+  const [mark, setMark] = useState("#ffff00");
+  const [search, setSearch] = useState("");
+  const pageW = landscape ? 1056 : 816;
+  const pageH = landscape ? 816 : 1056;
+  const pad = WORD_MARGINS[margin];
+
+  const count = () => {
+    setWords(page.current?.innerText.trim().split(/\s+/).filter(Boolean).length ?? 0);
+    setPages(Math.max(1, Math.ceil((page.current?.scrollHeight ?? pageH) / pageH)));
+  };
+  const readState = () => {
+    const sel = window.getSelection();
+    if (!sel?.anchorNode || !page.current?.contains(sel.anchorNode)) return;
+    const q = (name: string) => {
+      try {
+        return document.queryCommandState(name);
+      } catch {
+        return false;
+      }
+    };
+    const font = String(document.queryCommandValue("fontName") || "Aptos").replace(/["']/g, "").split(",")[0]!.trim();
+    const block = String(document.queryCommandValue("formatBlock") || "p").toLowerCase();
+    setFmt({ bold: q("bold"), italic: q("italic"), underline: q("underline"), strike: q("strikeThrough"), sub: q("subscript"), sup: q("superscript"), ul: q("insertUnorderedList"), ol: q("insertOrderedList"), align: q("justifyCenter") ? "center" : q("justifyRight") ? "right" : q("justifyFull") ? "justify" : "left", font, block: block === "div" || block === "" ? "p" : block });
+    let node: Node | null = sel.anchorNode;
+    while (node && node.nodeType !== 1) node = node.parentNode;
+    if (node && node !== page.current) setSize(Math.round(parseFloat(getComputedStyle(node as Element).fontSize) * 0.75));
+  };
+  useEffect(() => {
+    document.addEventListener("selectionchange", readState);
+    return () => document.removeEventListener("selectionchange", readState);
+  });
+  const changed = () => {
+    count();
+    readState();
+    setRev((value) => value + 1);
+  };
   const cmd = (command: string, value?: string) => {
     page.current?.focus();
     document.execCommand(command, false, value);
-    count();
+    changed();
+  };
+  const setFontSize = (pt: number) => {
+    cmd("fontSize", "7");
+    page.current?.querySelectorAll('font[size="7"]').forEach((node) => {
+      node.removeAttribute("size");
+      (node as HTMLElement).style.fontSize = `${pt}pt`;
+    });
+    setSize(pt);
   };
   const loadBuffer = async (fileName: string, buffer: ArrayBuffer) => {
     try {
@@ -4289,7 +5267,8 @@ function WriterApp({ close }: { close: () => void }) {
       }
       if (page.current) page.current.innerHTML = html || "<p><br></p>";
       setName(fileName.replace(/\.[^.]+$/, ""));
-      setMsg(`Opened ${fileName}`);
+      setMsg("");
+      setBackstage(false);
       count();
     } catch (error) {
       setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
@@ -4297,79 +5276,348 @@ function WriterApp({ close }: { close: () => void }) {
   };
   useOpenFromFiles("writer", loadBuffer);
   const html = () => page.current?.innerHTML ?? "";
-  const docBlob = () => new Blob([`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${name}</title></head><body style="font-family:Calibri,Arial,sans-serif">${html()}</body></html>`], { type: "application/msword" });
+  const docBlob = () => new Blob([`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${name}</title></head><body style="font-family:Aptos,Calibri,Arial,sans-serif">${html()}</body></html>`], { type: "application/msword" });
+  const save = () => saveToFiles(`${name}.doc`, docBlob());
+  const auto = useAutoSave(autoSave, rev, save);
+  const saveNow = () => void save().then((ok) => { if (ok) { auto.markSaved(); setMsg(`Saved to Documents`); } });
   const print = () => {
     const win = window.open("", "_blank");
-    if (!win) return setMsg("Allow pop-ups to save as PDF.");
-    win.document.write(`<title>${name}</title><body style="font-family:Calibri,Arial,sans-serif;max-width:800px;margin:40px auto;line-height:1.5">${html()}</body>`);
+    if (!win) return setMsg("Allow pop-ups to print or save as PDF.");
+    win.document.write(`<title>${name}</title><body style="font-family:Aptos,Calibri,Arial,sans-serif;max-width:${pageW - pad * 2}px;margin:40px auto;line-height:1.15">${html()}</body>`);
     win.document.close();
     win.focus();
     win.print();
   };
-  const keep = (event: React.MouseEvent) => event.preventDefault();
+  const newDoc = () => {
+    if (page.current) page.current.innerHTML = "<p><br></p>";
+    setName("Document1");
+    setBackstage(false);
+    setRev(0);
+    count();
+  };
+  const findText = (text: string) => {
+    if (!text || !page.current) return;
+    const sel = window.getSelection();
+    const range = document.createRange();
+    range.setStart(page.current, 0);
+    range.collapse(true);
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+    const found = (window as unknown as { find?: (text: string) => boolean }).find?.(text);
+    setMsg(found ? "" : `We couldn't find "${text}".`);
+  };
+  const replaceAll = () => {
+    const from = window.prompt("Find what:");
+    if (!from || !page.current) return;
+    const to = window.prompt(`Replace "${from}" with:`) ?? "";
+    let total = 0;
+    const walker = document.createTreeWalker(page.current, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const parts = (node.nodeValue ?? "").split(from);
+      if (parts.length > 1) {
+        total += parts.length - 1;
+        node.nodeValue = parts.join(to);
+      }
+    }
+    setMsg(total ? `We made ${total} replacement${total === 1 ? "" : "s"}.` : `We couldn't find "${from}".`);
+    changed();
+  };
+  const pasteText = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      cmd("insertText", text);
+    } catch {
+      setMsg("Use Ctrl+V to paste here.");
+    }
+  };
+  const insertPicture = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => cmd("insertHTML", `<img src="${String(reader.result)}" style="max-width:100%" />`);
+    reader.readAsDataURL(file);
+  };
+  const block = fmt.block.replace(/[<>]/g, "");
+  const status = auto.saved && rev > 0 ? "Saved to this PC" : autoSave && rev > 0 ? "Saving…" : "";
+  const ribbon: Record<string, ReactNode> = {
+    Home: (
+      <>
+        <RGroup label="Clipboard">
+          <RBig icon={LuClipboardPaste} label="Paste" color="#8a6a3a" onClick={() => void pasteText()} />
+          <RStack>
+            <RSmall icon={LuScissors} label="Cut" onClick={() => cmd("cut")} />
+            <RSmall icon={LuCopy} label="Copy" onClick={() => cmd("copy")} />
+            <RSmall icon={LuRemoveFormatting} label="Clear" title="Clear all formatting" onClick={() => cmd("removeFormat")} />
+          </RStack>
+        </RGroup>
+        <RGroup label="Font">
+          <RStack>
+            <RRow>
+              <select aria-label="Font" value={WORD_FONTS.includes(fmt.font) ? fmt.font : "Aptos"} onChange={(event) => cmd("fontName", event.target.value)} className={`${rSelect} w-36`} style={{ fontFamily: fmt.font }}>{WORD_FONTS.map((font) => <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>)}</select>
+              <select aria-label="Font size" value={WORD_SIZES.includes(size) ? size : 12} onChange={(event) => setFontSize(Number(event.target.value))} className={`${rSelect} w-14`}>{WORD_SIZES.map((pt) => <option key={pt} value={pt}>{pt}</option>)}</select>
+              <RSmall icon={LuAArrowUp} title="Increase font size" onClick={() => setFontSize(WORD_SIZES.find((pt) => pt > size) ?? 72)} />
+              <RSmall icon={LuAArrowDown} title="Decrease font size" onClick={() => setFontSize([...WORD_SIZES].reverse().find((pt) => pt < size) ?? 8)} />
+            </RRow>
+            <RRow>
+              <RSmall icon={LuBold} title="Bold (Ctrl+B)" active={fmt.bold} onClick={() => cmd("bold")} />
+              <RSmall icon={LuItalic} title="Italic (Ctrl+I)" active={fmt.italic} onClick={() => cmd("italic")} />
+              <RSmall icon={LuUnderline} title="Underline (Ctrl+U)" active={fmt.underline} onClick={() => cmd("underline")} />
+              <RSmall icon={LuStrikethrough} title="Strikethrough" active={fmt.strike} onClick={() => cmd("strikeThrough")} />
+              <RSmall icon={LuSubscript} title="Subscript" active={fmt.sub} onClick={() => cmd("subscript")} />
+              <RSmall icon={LuSuperscript} title="Superscript" active={fmt.sup} onClick={() => cmd("superscript")} />
+              <span className="mx-0.5 h-4 w-px bg-black/10" />
+              <RColor icon={LuHighlighter} title="Text highlight color" value={mark} onPick={(value) => { setMark(value); cmd("hiliteColor", value); }} />
+              <RColor icon={LuBaseline} title="Font color" value={color} onPick={(value) => { setColor(value); cmd("foreColor", value); }} />
+            </RRow>
+          </RStack>
+        </RGroup>
+        <RGroup label="Paragraph">
+          <RStack>
+            <RRow>
+              <RSmall icon={LuList} title="Bullets" active={fmt.ul} onClick={() => cmd("insertUnorderedList")} />
+              <RSmall icon={LuListOrdered} title="Numbering" active={fmt.ol} onClick={() => cmd("insertOrderedList")} />
+              <RSmall icon={LuIndentDecrease} title="Decrease indent" onClick={() => cmd("outdent")} />
+              <RSmall icon={LuIndentIncrease} title="Increase indent" onClick={() => cmd("indent")} />
+            </RRow>
+            <RRow>
+              <RSmall icon={LuAlignLeft} title="Align left (Ctrl+L)" active={fmt.align === "left"} onClick={() => cmd("justifyLeft")} />
+              <RSmall icon={LuAlignCenter} title="Center (Ctrl+E)" active={fmt.align === "center"} onClick={() => cmd("justifyCenter")} />
+              <RSmall icon={LuAlignRight} title="Align right (Ctrl+R)" active={fmt.align === "right"} onClick={() => cmd("justifyRight")} />
+              <RSmall icon={LuAlignJustify} title="Justify (Ctrl+J)" active={fmt.align === "justify"} onClick={() => cmd("justifyFull")} />
+            </RRow>
+          </RStack>
+        </RGroup>
+        <RGroup label="Styles">
+          <div className="flex gap-1">
+            {WORD_STYLES.map((style) => (
+              <button key={style.label} type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => cmd("formatBlock", style.tag)} className={`flex h-[58px] w-[76px] flex-col justify-between rounded border bg-white px-1.5 py-1 text-left hover:border-zinc-400 ${block === style.tag ? "border-2" : "border-zinc-200"}`} style={block === style.tag ? { borderColor: brand.color } : undefined}>
+                <span className={`truncate leading-tight ${style.sample}`} style={{ fontFamily: docFont }}>AaBbCcDd</span>
+                <span className="truncate text-[10.5px] text-zinc-600">{style.label}</span>
+              </button>
+            ))}
+          </div>
+        </RGroup>
+        <RGroup label="Editing">
+          <RStack>
+            <RSmall icon={Search} label="Find" onClick={() => { const text = window.prompt("Find what:"); if (text) findText(text); }} />
+            <RSmall icon={LuReplace} label="Replace" onClick={replaceAll} />
+            <RSmall icon={LuTextSelect} label="Select All" onClick={() => cmd("selectAll")} />
+          </RStack>
+        </RGroup>
+      </>
+    ),
+    Insert: (
+      <>
+        <RGroup label="Pages">
+          <RBig icon={LuSeparatorHorizontal} label="Page Break" color={brand.color} onClick={() => cmd("insertHTML", '<hr style="page-break-after:always;border:0;border-top:1px dashed #bbb;margin:24px 0" /><p><br></p>')} />
+        </RGroup>
+        <RGroup label="Tables">
+          <RBig icon={LuTable} label="Table" color={brand.color} onClick={() => cmd("insertHTML", `<table style="width:100%;border-collapse:collapse"><tbody>${"<tr>" + '<td style="border:1px solid #000;padding:4px 8px">&nbsp;</td>'.repeat(3) + "</tr>"}${("<tr>" + '<td style="border:1px solid #000;padding:4px 8px">&nbsp;</td>'.repeat(3) + "</tr>").repeat(2)}</tbody></table><p><br></p>`)} />
+        </RGroup>
+        <RGroup label="Illustrations">
+          <RBig icon={LuImagePlus} label="Pictures" color="#2f7ad1" onClick={() => picture.current?.click()} />
+        </RGroup>
+        <RGroup label="Links">
+          <RBig icon={LuLink} label="Link" color={brand.color} onClick={() => { const url = window.prompt("Address:", "https://"); if (url) cmd("createLink", url); }} />
+        </RGroup>
+        <RGroup label="Text">
+          <RBig icon={LuCalendarClock} label="Date & Time" color={brand.color} onClick={() => cmd("insertText", new Date().toLocaleString([], { dateStyle: "long", timeStyle: "short" }))} />
+          <RBig icon={Minus} label="Line" color="#424242" onClick={() => cmd("insertHorizontalRule")} />
+        </RGroup>
+      </>
+    ),
+    Layout: (
+      <>
+        <RGroup label="Margins">
+          <RStack>{(Object.keys(WORD_MARGINS) as (keyof typeof WORD_MARGINS)[]).map((key) => <RSmall key={key} label={key} active={margin === key} onClick={() => setMargin(key)} className="justify-start px-2" />)}</RStack>
+        </RGroup>
+        <RGroup label="Orientation">
+          <RBig icon={LuFileText} label="Portrait" active={!landscape} color={brand.color} onClick={() => setLandscape(false)} />
+          <RBig icon={LuFileText} label="Landscape" active={landscape} color={brand.color} onClick={() => setLandscape(true)} />
+        </RGroup>
+      </>
+    ),
+    View: (
+      <>
+        <RGroup label="Show">
+          <RStack><label className="flex items-center gap-1.5 px-1 text-[12px]"><input type="checkbox" checked={ruler} onChange={(event) => setRuler(event.target.checked)} className="accent-[var(--office)]" />Ruler</label></RStack>
+        </RGroup>
+        <RGroup label="Zoom">
+          <RBig icon={LuZoomIn} label="Zoom In" onClick={() => setZoom((value) => Math.min(300, value + 10))} />
+          <RBig icon={LuZoomOut} label="Zoom Out" onClick={() => setZoom((value) => Math.max(25, value - 10))} />
+          <RStack>
+            <RSmall label="100%" onClick={() => setZoom(100)} className="justify-start px-2" />
+            <RSmall label="Page Width" onClick={() => setZoom(Math.max(25, Math.min(300, Math.floor(((canvas.current?.clientWidth ?? pageW) - 48) / pageW * 100))))} className="justify-start px-2" />
+          </RStack>
+        </RGroup>
+      </>
+    ),
+  };
   return (
-    <WindowFrame title={`Private Word – ${name}`} icon={WriterIcon} close={close}>
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
-        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
-        <button type="button" className={tbBtn} onClick={() => void saveToFiles(`${name}.doc`, docBlob()).then((ok) => ok && setMsg(`Saved ${name}.doc to Documents`))}>Save</button>
-        <button type="button" className={tbBtn} onClick={() => downloadBlob(`${name}.doc`, docBlob())}>Download .doc</button>
-        <button type="button" className={tbBtn} onClick={print}>PDF</button>
+    <WindowFrame
+      title={`${name} - Private Word`}
+      icon={WriterIcon}
+      close={close}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={WriterIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={() => cmd("undo")} onRedo={() => cmd("redo")} search={search} onSearch={(value) => { setSearch(value); findText(value); }} /> }}
+    >
+      <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light" } as React.CSSProperties}>
+        <Ribbon brand={brand} tabs={["Home", "Insert", "Layout", "View"]} tab={tab} setTab={setTab} onFile={() => setBackstage(true)} onShare={() => downloadBlob(`${name}.doc`, docBlob())}>{ribbon[tab]}</Ribbon>
         <input ref={input} type="file" accept=".docx,.doc,.html,.htm,.txt" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => loadBuffer(file.name, buffer)); event.target.value = ""; }} />
-        <span className="mx-1 h-5 w-px bg-white/15" />
-        <button type="button" className={`${tbBtn} font-black`} onMouseDown={keep} onClick={() => cmd("bold")}>B</button>
-        <button type="button" className={`${tbBtn} italic`} onMouseDown={keep} onClick={() => cmd("italic")}>I</button>
-        <button type="button" className={`${tbBtn} underline`} onMouseDown={keep} onClick={() => cmd("underline")}>U</button>
-        <select aria-label="Style" defaultValue="p" onChange={(event) => cmd("formatBlock", event.target.value)} className="rounded-lg bg-white/10 px-2 py-1.5 text-[11px]"><option value="p">Normal</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option></select>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("insertUnorderedList")}>• List</button>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("insertOrderedList")}>1. List</button>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyLeft")}>Left</button>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyCenter")}>Center</button>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("justifyRight")}>Right</button>
-        <input type="color" aria-label="Text colour" defaultValue="#111111" onChange={(event) => cmd("foreColor", event.target.value)} className="h-7 w-9 rounded bg-transparent" />
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("undo")}>Undo</button>
-        <button type="button" className={tbBtn} onMouseDown={keep} onClick={() => cmd("redo")}>Redo</button>
+        <input ref={picture} type="file" accept="image/*" hidden onChange={(event) => { insertPicture(event.target.files?.[0]); event.target.value = ""; }} />
+        <div ref={canvas} className="min-h-0 flex-1 overflow-auto bg-[#e9e9e9] px-6 py-5">
+          <div className="mx-auto w-max" style={{ zoom: zoom / 100 }}>
+            {ruler && (
+              <div aria-hidden className="relative mb-3 h-[22px] border border-[#cfcfcf] bg-white text-[9px] text-zinc-500" style={{ width: pageW }}>
+                <span className="absolute inset-y-0 left-0 bg-[#e3e3e3]" style={{ width: pad }} />
+                <span className="absolute inset-y-0 right-0 bg-[#e3e3e3]" style={{ width: pad }} />
+                <span className="absolute inset-x-0 bottom-0 h-[5px]" style={{ backgroundImage: "repeating-linear-gradient(to right, #9a9a9a 0 1px, transparent 1px 12px)", left: pad, right: pad }} />
+                {Array.from({ length: Math.floor((pageW - pad * 2) / 96) }, (_, i) => <span key={i} className="absolute top-0.5 -translate-x-1/2" style={{ left: pad + (i + 1) * 96 }}>{i + 1}</span>)}
+              </div>
+            )}
+            <div
+              ref={page}
+              contentEditable
+              suppressContentEditableWarning
+              spellCheck
+              onInput={changed}
+              onKeyDown={(event) => {
+                if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); saveNow(); }
+              }}
+              dangerouslySetInnerHTML={{ __html: "<p><br></p>" }}
+              className="doc-page bg-white text-[12pt] leading-[1.15] text-black shadow-[0_0_0_1px_rgb(0_0_0/.06),0_2px_8px_rgb(0_0_0/.12)] outline-none"
+              style={{ width: pageW, minHeight: pageH, padding: pad, fontFamily: docFont }}
+            />
+          </div>
+        </div>
+        <OfficeStatus
+          left={<><span>Page 1 of {pages}</span><span>{words.toLocaleString()} word{words === 1 ? "" : "s"}</span><span className="hidden sm:inline">English (United States)</span>{msg && <span className="truncate text-zinc-800">{msg}</span>}</>}
+          zoom={zoom}
+          setZoom={setZoom}
+        />
+        {backstage && (
+          <Backstage
+            brand={brand}
+            onBack={() => setBackstage(false)}
+            onNew={newDoc}
+            newLabel="Blank document"
+            onBrowse={() => { setBackstage(false); input.current?.click(); }}
+            recent={officeRecent(fs, /\.(docx?|html?)$/i)}
+            onOpenRecent={(path) => void fsBuffer(path).then((buffer) => buffer && loadBuffer(baseName(path), buffer))}
+            items={[
+              { label: "Save", icon: Save, onClick: () => { saveNow(); setBackstage(false); } },
+              { label: "Save a Copy", icon: Download, onClick: () => downloadBlob(`${name}.doc`, docBlob()) },
+              { label: "Rename", icon: LuFilePen, onClick: () => { const next = window.prompt("File name:", name)?.trim(); if (next) setName(next); } },
+              { label: "Print", icon: LuPrinter, onClick: print },
+              { label: "Export as PDF", icon: LuFileDown, onClick: print },
+              { label: "Close", icon: X, onClick: close },
+            ]}
+          />
+        )}
       </div>
-      <div className="min-h-0 flex-1 overflow-auto bg-black/30 p-4">
-        <div ref={page} contentEditable suppressContentEditableWarning spellCheck onInput={count} dangerouslySetInnerHTML={{ __html: "<p><br></p>" }} className="doc-page mx-auto min-h-[60vh] w-full max-w-3xl rounded-sm bg-white p-10 text-zinc-900 shadow-2xl outline-none" style={{ fontFamily: "Calibri, Arial, sans-serif" }} />
-      </div>
-      <p className="flex h-6 shrink-0 items-center justify-between px-3 text-[11px] text-muted-foreground"><span>{msg}</span><span>{words} words</span></p>
     </WindowFrame>
   );
 }
 
-type SlideData = { title: string; body: string; bg: string };
-const SLIDE_BGS = ["#1e293b", "#0f766e", "#7c2d12", "#4c1d95", "#9f1239", "#ffffff"];
+type SlideData = { id: number; title: string; body: string; bg: string; img?: string | undefined; notes?: string | undefined };
+const SLIDE_BGS = ["#ffffff", "#1e293b", "#0f766e", "#7c2d12", "#4c1d95", "#9f1239"];
+const SLIDE_THEMES = [
+  { name: "Office Theme", bg: "#ffffff" },
+  { name: "Slate", bg: "#1e293b" },
+  { name: "Lagoon", bg: "#0f766e" },
+  { name: "Rust", bg: "#7c2d12" },
+  { name: "Violet", bg: "#4c1d95" },
+  { name: "Berry", bg: "#9f1239" },
+];
+let slideSeq = 1;
+const newSlide = (patch: Partial<SlideData> = {}): SlideData => ({ id: slideSeq++, title: "", body: "", bg: "#ffffff", ...patch });
 
 function SlideView({ slide, className = "" }: { slide: SlideData; className?: string }) {
   const light = readableOn(slide.bg) === "#ffffff";
   return (
-    <div className={`flex aspect-video w-full flex-col overflow-hidden rounded-lg p-[6%] ${className}`} style={{ background: slide.bg, color: light ? "#fff" : "#111" }}>
-      <p className="font-bold leading-tight" style={{ fontSize: "clamp(.7rem, 3.4cqw, 2.2rem)" }}>{slide.title || "Title"}</p>
-      <ul className="mt-[4%] space-y-[2%] pl-[4%]" style={{ fontSize: "clamp(.5rem, 2.2cqw, 1.4rem)", listStyle: "disc" }}>
+    <div className={`relative flex aspect-video w-full flex-col overflow-hidden p-[6%] ${className}`} style={{ background: slide.bg, color: light ? "#fff" : "#111", fontFamily: docFont }}>
+      <p className="font-semibold leading-tight" style={{ fontSize: "clamp(.5rem, 4.4cqw, 2.8rem)" }}>{slide.title}</p>
+      <ul className="mt-[4%] space-y-[1.5%] pl-[4%]" style={{ fontSize: "clamp(.4rem, 2.6cqw, 1.6rem)", listStyle: "disc", width: slide.img ? "52%" : undefined }}>
         {slide.body.split("\n").filter(Boolean).map((line, index) => <li key={index}>{line}</li>)}
       </ul>
+      {slide.img && <img src={slide.img} alt="" className="absolute bottom-[8%] right-[6%] h-[60%] w-[38%] object-contain" />}
+    </div>
+  );
+}
+
+// The slide being edited: title and text boxes typed into directly, like PowerPoint's placeholders.
+function EditableSlide({ slide, onChange }: { slide: SlideData; onChange: (patch: Partial<SlideData>) => void }) {
+  const title = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (title.current) title.current.innerText = slide.title;
+    if (body.current) body.current.innerHTML = slide.body ? `<ul>${slide.body.split("\n").map((line) => `<li>${line.replace(/&/g, "&amp;").replace(/</g, "&lt;") || "<br>"}</li>`).join("")}</ul>` : "";
+    // Only when switching slides; typing must not reset the caret.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slide.id]);
+  const light = readableOn(slide.bg) === "#ffffff";
+  const box = `ppt-box rounded-[2px] border border-dashed outline-none ${light ? "border-white/0 hover:border-white/50 focus:border-white/70" : "border-black/0 hover:border-black/40 focus:border-black/60"}`;
+  return (
+    <div className="relative flex aspect-video w-full flex-col overflow-hidden p-[5%]" style={{ background: slide.bg, color: light ? "#fff" : "#111", fontFamily: docFont }}>
+      <div ref={title} contentEditable suppressContentEditableWarning data-placeholder="Click to add title" onInput={(event) => onChange({ title: event.currentTarget.innerText.trim() })} className={`${box} px-[1.5%] py-[1%] font-semibold leading-tight`} style={{ fontSize: "clamp(.7rem, 4.4cqw, 2.8rem)" }} />
+      <div
+        ref={body}
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder="Click to add text"
+        onFocus={(event) => { if (!event.currentTarget.innerHTML.trim()) event.currentTarget.innerHTML = "<ul><li><br></li></ul>"; }}
+        onBlur={(event) => { if (!event.currentTarget.innerText.trim()) event.currentTarget.innerHTML = ""; }}
+        onInput={(event) => {
+          const items = Array.from(event.currentTarget.querySelectorAll("li")).map((li) => li.innerText.replace(/\n/g, " ").trim());
+          onChange({ body: (items.length ? items : event.currentTarget.innerText.split("\n")).filter(Boolean).join("\n") });
+        }}
+        className={`${box} ppt-body mt-[3%] flex-1 px-[1.5%] py-[1%]`}
+        style={{ fontSize: "clamp(.5rem, 2.6cqw, 1.6rem)", width: slide.img ? "56%" : undefined }}
+      />
+      {slide.img && <img src={slide.img} alt="" className="absolute bottom-[8%] right-[6%] h-[60%] w-[38%] object-contain" />}
     </div>
   );
 }
 
 function SlidesApp({ close }: { close: () => void }) {
-  const [slides, setSlides] = useState<SlideData[]>([{ title: "My presentation", body: "Click to edit the text\nAdd slides on the left", bg: SLIDE_BGS[0]! }]);
+  const brand = OFFICE.powerpoint;
+  const fs = useFs();
+  const history = useHistory<SlideData[]>(() => [newSlide({ title: "", body: "" })]);
+  const slides = history.value;
+  const setSlides = history.set;
   const [index, setIndex] = useState(0);
-  const [name, setName] = useState("Presentation");
+  const [name, setName] = useState("Presentation1");
   const [present, setPresent] = useState(false);
   const [msg, setMsg] = useState("");
+  const [tab, setTab] = useState("Home");
+  const [backstage, setBackstage] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [notes, setNotes] = useState(true);
+  const [autoSave, setAutoSave] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [epoch, setEpoch] = useState(0);
+  const undo = () => { history.undo(); setEpoch((value) => value + 1); setRev((value) => value + 1); };
+  const redo = () => { history.redo(); setEpoch((value) => value + 1); setRev((value) => value + 1); };
   const input = useRef<HTMLInputElement>(null);
-  const slide = slides[Math.min(index, slides.length - 1)]!;
-  const update = (patch: Partial<SlideData>) => setSlides((list) => list.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+  const picture = useRef<HTMLInputElement>(null);
+  const at = Math.min(index, slides.length - 1);
+  const slide = slides[at]!;
+  const edit = (next: SlideData[] | ((prev: SlideData[]) => SlideData[])) => {
+    setSlides(next);
+    setRev((value) => value + 1);
+  };
+  const update = (patch: Partial<SlideData>) => edit((list) => list.map((item, i) => (i === at ? { ...item, ...patch } : item)));
   const move = (delta: number) => {
-    const target = index + delta;
+    const target = at + delta;
     if (target < 0 || target >= slides.length) return;
-    setSlides((list) => {
+    edit((list) => {
       const next = [...list];
-      [next[index], next[target]] = [next[target]!, next[index]!];
+      [next[at], next[target]] = [next[target]!, next[at]!];
       return next;
     });
     setIndex(target);
+  };
+  const addSlide = () => {
+    edit((list) => [...list.slice(0, at + 1), newSlide({ bg: slide.bg }), ...list.slice(at + 1)]);
+    setIndex(at + 1);
   };
   const importPptx = async (fileName: string, buffer: ArrayBuffer) => {
     try {
@@ -4381,13 +5629,14 @@ function SlidesApp({ close }: { close: () => void }) {
       for (const file of files) {
         const xml = (await zip.file(file).async("string")) as string;
         const paragraphs = xml.split("</a:p>").map((chunk) => decode([...chunk.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => m[1]).join(""))).filter((text) => text.trim());
-        loaded.push({ title: paragraphs[0] ?? "", body: paragraphs.slice(1).join("\n"), bg: SLIDE_BGS[loaded.length % 5]! });
+        loaded.push(newSlide({ title: paragraphs[0] ?? "", body: paragraphs.slice(1).join("\n"), bg: "#ffffff" }));
       }
       if (!loaded.length) throw new Error("No slides found in that file.");
-      setSlides(loaded);
+      history.reset(loaded);
       setIndex(0);
       setName(fileName.replace(/\.[^.]+$/, ""));
-      setMsg(`Opened ${fileName} (text only, layouts and pictures aren't imported)`);
+      setMsg("Opened (text only; layouts and pictures aren't imported)");
+      setBackstage(false);
     } catch (error) {
       setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
     }
@@ -4396,21 +5645,34 @@ function SlidesApp({ close }: { close: () => void }) {
   const build = async () => {
     await loadLibScript(LIBS.pptx);
     const pptx = new (lib("PptxGenJS"))();
+    pptx.layout = "LAYOUT_16x9";
     slides.forEach((item) => {
       const s = pptx.addSlide();
       s.background = { color: item.bg.slice(1) };
       const color = readableOn(item.bg) === "#ffffff" ? "FFFFFF" : "111111";
-      s.addText(item.title, { x: 0.6, y: 0.4, w: 8.8, h: 1, fontSize: 32, bold: true, color });
+      s.addText(item.title, { x: 0.6, y: 0.4, w: 8.8, h: 1, fontSize: 32, bold: true, color, fontFace: "Aptos" });
       const lines = item.body.split("\n").filter(Boolean);
-      if (lines.length) s.addText(lines.map((text) => ({ text, options: { bullet: true, breakLine: true } })), { x: 0.8, y: 1.6, w: 8.4, h: 3.6, fontSize: 20, color, valign: "top" });
+      if (lines.length) s.addText(lines.map((text) => ({ text, options: { bullet: true, breakLine: true } })), { x: 0.8, y: 1.6, w: item.img ? 4.6 : 8.4, h: 3.6, fontSize: 20, color, valign: "top", fontFace: "Aptos" });
+      if (item.img) s.addImage({ data: item.img, x: 5.6, y: 1.6, w: 3.8, h: 3.2, sizing: { type: "contain", w: 3.8, h: 3.2 } });
+      if (item.notes) s.addNotes(item.notes);
     });
     return (await pptx.write({ outputType: "blob" })) as Blob;
+  };
+  const save = () => build().then((blob) => saveToFiles(`${name}.pptx`, blob)).catch((error: Error) => { setMsg(error.message); return false; });
+  const auto = useAutoSave(autoSave, rev, save);
+  const saveNow = () => void save().then((ok) => { if (ok) { auto.markSaved(); setMsg("Saved to Documents"); } });
+  const download = () => void build().then((blob) => downloadBlob(`${name}.pptx`, blob)).catch((error: Error) => setMsg(error.message));
+  const addPicture = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => update({ img: String(reader.result) });
+    reader.readAsDataURL(file);
   };
   useEffect(() => {
     if (!present) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "ArrowRight" || event.key === " " || event.key === "Enter") setIndex((value) => Math.min(value + 1, slides.length - 1));
-      else if (event.key === "ArrowLeft") setIndex((value) => Math.max(value - 1, 0));
+      if (event.key === "ArrowRight" || event.key === " " || event.key === "Enter" || event.key === "PageDown") setIndex((value) => Math.min(value + 1, slides.length - 1));
+      else if (event.key === "ArrowLeft" || event.key === "PageUp") setIndex((value) => Math.max(value - 1, 0));
       else if (event.key === "Escape") setPresent(false);
       else return;
       event.stopPropagation();
@@ -4418,45 +5680,140 @@ function SlidesApp({ close }: { close: () => void }) {
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, [present, slides.length]);
+  const status = auto.saved && rev > 0 ? "Saved to this PC" : autoSave && rev > 0 ? "Saving…" : "";
+  const themeGallery = (
+    <div className="flex gap-1.5">
+      {SLIDE_THEMES.map((theme) => (
+        <button key={theme.bg} type="button" title={theme.name} onClick={() => edit((list) => list.map((item) => ({ ...item, bg: theme.bg })))} className={`relative h-[54px] w-[86px] overflow-hidden rounded-sm border ${slide.bg === theme.bg ? "border-2" : "border-zinc-300 hover:border-zinc-500"}`} style={{ background: theme.bg, ...(slide.bg === theme.bg ? { borderColor: brand.color } : {}) }}>
+          <span className="absolute left-2 top-1.5 text-[15px] font-semibold" style={{ color: readableOn(theme.bg) === "#ffffff" ? "#fff" : "#111", fontFamily: docFont }}>Aa</span>
+          <span className="absolute bottom-1.5 left-2 flex gap-0.5">{["#c43e1c", "#156082", "#e97132", "#196b24"].map((c) => <span key={c} className="h-1.5 w-3" style={{ background: c }} />)}</span>
+        </button>
+      ))}
+    </div>
+  );
+  const ribbon: Record<string, ReactNode> = {
+    Home: (
+      <>
+        <RGroup label="Slides">
+          <RBig icon={LuSquarePlus} label="New Slide" color={brand.color} onClick={addSlide} />
+          <RStack>
+            <RSmall icon={LuCopy} label="Duplicate" onClick={() => { edit((list) => [...list.slice(0, at + 1), { ...slide, id: slideSeq++ }, ...list.slice(at + 1)]); setIndex(at + 1); }} />
+            <RSmall icon={LuTrash2} label="Delete" disabled={slides.length < 2} onClick={() => { edit((list) => list.filter((_, i) => i !== at)); setIndex(Math.max(0, at - 1)); }} />
+            <RSmall icon={LuEraser} label="Reset" onClick={() => update({ title: "", body: "", img: undefined })} />
+          </RStack>
+        </RGroup>
+        <RGroup label="Arrange">
+          <RStack>
+            <RSmall icon={LuMoveUp} label="Move Up" disabled={at === 0} onClick={() => move(-1)} />
+            <RSmall icon={LuMoveDown} label="Move Down" disabled={at === slides.length - 1} onClick={() => move(1)} />
+          </RStack>
+        </RGroup>
+        <RGroup label="Background">
+          <RColor icon={LuPaintBucket} title="Slide background" value={slide.bg} onPick={(value) => update({ bg: value })} />
+          <RSmall label="Apply to All" onClick={() => edit((list) => list.map((item) => ({ ...item, bg: slide.bg })))} className="px-2" />
+        </RGroup>
+        <RGroup label="Slide Show">
+          <RBig icon={Play} label="From Beginning" color={brand.color} onClick={() => { setIndex(0); setPresent(true); }} />
+        </RGroup>
+      </>
+    ),
+    Insert: (
+      <>
+        <RGroup label="Slides"><RBig icon={LuSquarePlus} label="New Slide" color={brand.color} onClick={addSlide} /></RGroup>
+        <RGroup label="Images">
+          <RBig icon={LuImagePlus} label="Pictures" color="#2f7ad1" onClick={() => picture.current?.click()} />
+          <RBig icon={LuImageOff} label="Remove Picture" disabled={!slide.img} onClick={() => update({ img: undefined })} />
+        </RGroup>
+        <RGroup label="Text">
+          <RBig icon={LuCalendarClock} label="Date & Time" color={brand.color} onClick={() => update({ body: [slide.body, new Date().toLocaleDateString([], { dateStyle: "long" })].filter(Boolean).join("\n") })} />
+        </RGroup>
+      </>
+    ),
+    Design: (
+      <>
+        <RGroup label="Themes">{themeGallery}</RGroup>
+        <RGroup label="Customize"><RStack><RColor icon={LuPaintBucket} title="Format Background" label="Format Background" value={slide.bg} onPick={(value) => update({ bg: value })} /><RSmall label="Apply to All" onClick={() => edit((list) => list.map((item) => ({ ...item, bg: slide.bg })))} className="justify-start px-1" /></RStack></RGroup>
+      </>
+    ),
+    "Slide Show": (
+      <RGroup label="Start Slide Show">
+        <RBig icon={Play} label="From Beginning" color={brand.color} onClick={() => { setIndex(0); setPresent(true); }} />
+        <RBig icon={LuPresentation} label="From Current Slide" color={brand.color} onClick={() => setPresent(true)} />
+      </RGroup>
+    ),
+    View: (
+      <>
+        <RGroup label="Show"><RBig icon={LuStickyNote} label="Notes" active={notes} onClick={() => setNotes((value) => !value)} /></RGroup>
+        <RGroup label="Zoom">
+          <RBig icon={LuZoomIn} label="Zoom In" onClick={() => setZoom((value) => Math.min(200, value + 10))} />
+          <RBig icon={LuZoomOut} label="Zoom Out" onClick={() => setZoom((value) => Math.max(40, value - 10))} />
+          <RBig icon={LuExpand} label="Fit to Window" onClick={() => setZoom(100)} />
+        </RGroup>
+      </>
+    ),
+  };
   return (
-    <WindowFrame title={`Private PowerPoint – ${name}`} icon={SlidesIcon} close={close}>
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
-        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
-        <button type="button" className={tbBtn} onClick={() => void build().then((blob) => saveToFiles(`${name}.pptx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.pptx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
-        <button type="button" className={tbBtn} onClick={() => void build().then((blob) => downloadBlob(`${name}.pptx`, blob)).catch((error: Error) => setMsg(error.message))}>Download .pptx</button>
+    <WindowFrame
+      title={`${name} - Private PowerPoint`}
+      icon={SlidesIcon}
+      close={close}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={SlidesIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={undo} onRedo={redo} /> }}
+    >
+      <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light" } as React.CSSProperties}>
+        <Ribbon brand={brand} tabs={["Home", "Insert", "Design", "Slide Show", "View"]} tab={tab} setTab={setTab} onFile={() => setBackstage(true)} onShare={download}>{ribbon[tab]}</Ribbon>
         <input ref={input} type="file" accept=".pptx" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => importPptx(file.name, buffer)); event.target.value = ""; }} />
-        <span className="mx-1 h-5 w-px bg-white/15" />
-        <button type="button" className={tbBtn} onClick={() => { setSlides((list) => [...list, { title: "New slide", body: "", bg: slide.bg }]); setIndex(slides.length); }}>+ Slide</button>
-        <button type="button" className={tbBtn} onClick={() => { setSlides((list) => [...list.slice(0, index + 1), { ...slide }, ...list.slice(index + 1)]); setIndex(index + 1); }}>Duplicate</button>
-        <button type="button" className={tbBtn} disabled={slides.length < 2} onClick={() => { setSlides((list) => list.filter((_, i) => i !== index)); setIndex(Math.max(0, index - 1)); }}>Delete</button>
-        <button type="button" className={tbBtn} onClick={() => move(-1)}>↑</button>
-        <button type="button" className={tbBtn} onClick={() => move(1)}>↓</button>
-        <button type="button" className={`${tbPrimary} ml-auto`} onClick={() => setPresent(true)}>▶ Present</button>
-      </div>
-      <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <div className="stagger flex shrink-0 gap-2 overflow-auto border-b border-border p-2 md:w-44 md:flex-col md:border-b-0 md:border-r">
-          {slides.map((item, i) => (
-            <button key={i} type="button" onClick={() => setIndex(i)} className={`w-32 shrink-0 rounded-lg border-2 p-0.5 md:w-full ${i === index ? "border-primary" : "border-transparent"}`} style={{ containerType: "inline-size" }}>
-              <SlideView slide={item} />
-              <span className="block text-[10px] text-muted-foreground">{i + 1}</span>
-            </button>
-          ))}
-        </div>
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto p-4">
-          <div className="mx-auto w-full max-w-3xl" style={{ containerType: "inline-size" }}><SlideView slide={slide} className="shadow-2xl" /></div>
-          <div className="mx-auto w-full max-w-3xl space-y-2">
-            <input aria-label="Slide title" value={slide.title} onChange={(event) => update({ title: event.target.value })} placeholder="Slide title" className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold outline-none" />
-            <textarea aria-label="Slide text" value={slide.body} onChange={(event) => update({ body: event.target.value })} placeholder="One bullet per line" rows={4} className="w-full rounded-lg bg-white/10 px-3 py-2 text-sm outline-none" />
-            <div className="flex items-center gap-2">{SLIDE_BGS.map((color) => <button key={color} type="button" aria-label={`Background ${color}`} onClick={() => update({ bg: color })} className={`size-6 rounded-full border-2 ${slide.bg === color ? "border-primary" : "border-white/20"}`} style={{ background: color }} />)}<input aria-label="Presentation name" value={name} onChange={(event) => setName(event.target.value)} className="ml-auto w-40 rounded-lg bg-white/10 px-2 py-1 text-xs outline-none" /></div>
-            <p className="text-[11px] text-muted-foreground">{msg}</p>
+        <input ref={picture} type="file" accept="image/*" hidden onChange={(event) => { addPicture(event.target.files?.[0]); event.target.value = ""; }} />
+        <div className="flex min-h-0 flex-1">
+          <div className="hidden w-48 shrink-0 overflow-y-auto py-2 pl-1 pr-3 sm:block">
+            {slides.map((item, i) => (
+              <div key={item.id} className="mb-2 flex gap-1.5">
+                <span className="w-5 pt-0.5 text-right text-[11px] text-zinc-600">{i + 1}</span>
+                <button type="button" onClick={() => setIndex(i)} className={`min-w-0 flex-1 overflow-hidden rounded-[3px] border-2 bg-white ${i === at ? "" : "border-transparent hover:border-zinc-300"}`} style={{ containerType: "inline-size", ...(i === at ? { borderColor: brand.color } : {}) }}>
+                  <SlideView slide={item} className="shadow-[0_0_0_1px_rgb(0_0_0/.1)]" />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto bg-[#e6e6e6] p-6">
+              <div className="w-full shadow-[0_2px_10px_rgb(0_0_0/.18)]" style={{ maxWidth: `${(zoom / 100) * 880}px`, containerType: "inline-size" }}>
+                <EditableSlide key={`${slide.id}-${epoch}`} slide={slide} onChange={update} />
+              </div>
+            </div>
+            {notes && (
+              <textarea aria-label="Notes" value={slide.notes ?? ""} onChange={(event) => update({ notes: event.target.value })} placeholder="Click to add notes" className="h-20 shrink-0 resize-none border-t border-black/10 bg-white px-4 py-2 text-[13px] text-zinc-800 outline-none placeholder:text-zinc-500" />
+            )}
           </div>
         </div>
+        <OfficeStatus
+          left={<><span>Slide {at + 1} of {slides.length}</span><span className="hidden sm:inline">English (United States)</span>{msg && <span className="truncate text-zinc-800">{msg}</span>}</>}
+          right={<button type="button" onClick={() => setNotes((value) => !value)} className={`rounded px-1.5 hover:bg-black/5 ${notes ? "bg-black/[.06]" : ""}`}>Notes</button>}
+          zoom={zoom}
+          setZoom={(value) => setZoom(Math.max(40, Math.min(200, value)))}
+        />
+        {backstage && (
+          <Backstage
+            brand={brand}
+            onBack={() => setBackstage(false)}
+            onNew={() => { history.reset([newSlide()]); setIndex(0); setName("Presentation1"); setRev(0); setBackstage(false); }}
+            newLabel="Blank Presentation"
+            onBrowse={() => { setBackstage(false); input.current?.click(); }}
+            recent={officeRecent(fs, /\.pptx$/i)}
+            onOpenRecent={(path) => void fsBuffer(path).then((buffer) => buffer && importPptx(baseName(path), buffer))}
+            items={[
+              { label: "Save", icon: Save, onClick: () => { saveNow(); setBackstage(false); } },
+              { label: "Save a Copy", icon: Download, onClick: download },
+              { label: "Rename", icon: LuFilePen, onClick: () => { const next = window.prompt("File name:", name)?.trim(); if (next) setName(next); } },
+              { label: "Close", icon: X, onClick: close },
+            ]}
+          />
+        )}
       </div>
       {present && (
-        <div onClick={() => setIndex((value) => Math.min(value + 1, slides.length - 1))} className="fixed inset-0 z-[90] flex cursor-pointer items-center justify-center bg-black p-4">
-          <div key={index} className="w-full max-w-[min(100%,calc((100dvh-2rem)*16/9))] [animation:rise_.4s_cubic-bezier(.22,1,.36,1)_both]" style={{ containerType: "inline-size" }}><SlideView slide={slide} /></div>
-          <button type="button" aria-label="Exit presentation" onClick={(event) => { event.stopPropagation(); setPresent(false); }} className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white"><X className="size-4" /></button>
-          <p className="absolute bottom-3 text-[11px] text-white/50">{index + 1} / {slides.length} · arrows or click to move · Esc to exit</p>
+        <div onClick={() => setIndex((value) => Math.min(value + 1, slides.length - 1))} className="fixed inset-0 z-[90] flex cursor-pointer items-center justify-center bg-black">
+          <div key={at} className="w-full max-w-[min(100%,calc(100dvh*16/9))] [animation:rise_.4s_cubic-bezier(.22,1,.36,1)_both]" style={{ containerType: "inline-size" }}><SlideView slide={slide} /></div>
+          <button type="button" aria-label="End slide show" onClick={(event) => { event.stopPropagation(); setPresent(false); }} className="absolute right-4 top-4 rounded-full bg-white/15 p-2 text-white opacity-30 hover:opacity-100"><X className="size-4" /></button>
+          <p className="absolute bottom-3 left-4 text-[11px] text-white/40">Slide {at + 1} of {slides.length}</p>
         </div>
       )}
     </WindowFrame>
@@ -4513,16 +5870,174 @@ function cellValue(data: string[][], r: number, c: number, depth = 0): string {
   }
 }
 
+type CellFmt = { b?: boolean; i?: boolean; u?: boolean; align?: "left" | "center" | "right"; color?: string | undefined; fill?: string | undefined; num?: "general" | "number" | "currency" | "percent" | undefined };
+type Book = { data: string[][]; fmt: Record<string, CellFmt> };
+
+function showCell(value: string, num: CellFmt["num"]) {
+  const n = Number(value);
+  if (value === "" || !Number.isFinite(n) || !num || num === "general") return value;
+  if (num === "currency") return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+  if (num === "percent") return `${Math.round(n * 100)}%`;
+  return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function SheetsApp({ close }: { close: () => void }) {
+  const brand = OFFICE.excel;
+  const fs = useFs();
   const make = (rows: number, cols: number) => Array.from({ length: rows }, () => Array.from({ length: cols }, () => ""));
-  const [data, setData] = useState<string[][]>(() => make(30, 10));
+  const history = useHistory<Book>(() => ({ data: make(40, 14), fmt: {} }));
+  const { data, fmt } = history.value;
   const [sel, setSel] = useState<{ r: number; c: number }>({ r: 0, c: 0 });
+  const [end, setEnd] = useState<{ r: number; c: number }>({ r: 0, c: 0 });
   const [editing, setEditing] = useState<string | null>(null);
-  const [name, setName] = useState("Spreadsheet");
+  const [name, setName] = useState("Book1");
   const [msg, setMsg] = useState("");
+  const [tab, setTab] = useState("Home");
+  const [backstage, setBackstage] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [grid, setGrid] = useState(true);
+  const [headings, setHeadings] = useState(true);
+  const [autoSave, setAutoSave] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [nameBox, setNameBox] = useState<string | null>(null);
+  const [fill, setFill] = useState("#ffff00");
+  const [ink, setInk] = useState("#c00000");
+  const clip = useRef<string[][] | null>(null);
+  const dragging = useRef(false);
   const input = useRef<HTMLInputElement>(null);
-  const cols = data[0]?.length ?? 10;
-  const setCell = (r: number, c: number, value: string) => setData((grid) => grid.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)));
+  const formula = useRef<HTMLInputElement>(null);
+  const cols = data[0]?.length ?? 14;
+  const r0 = Math.min(sel.r, end.r);
+  const r1 = Math.max(sel.r, end.r);
+  const c0 = Math.min(sel.c, end.c);
+  const c1 = Math.max(sel.c, end.c);
+  const multi = r0 !== r1 || c0 !== c1;
+  const inRange = (r: number, c: number) => r >= r0 && r <= r1 && c >= c0 && c <= c1;
+  useEffect(() => {
+    const up = () => { dragging.current = false; };
+    window.addEventListener("mouseup", up);
+    return () => window.removeEventListener("mouseup", up);
+  }, []);
+  const commit = (next: Book | ((prev: Book) => Book)) => {
+    history.set(next);
+    setRev((value) => value + 1);
+  };
+  const setCell = (r: number, c: number, value: string) => commit((book) => ({ ...book, data: book.data.map((row, ri) => (ri === r ? row.map((cell, ci) => (ci === c ? value : cell)) : row)) }));
+  const forRange = (fn: (key: string, current: CellFmt) => CellFmt) =>
+    commit((book) => {
+      const next = { ...book.fmt };
+      for (let r = r0; r <= r1; r += 1) for (let c = c0; c <= c1; c += 1) next[`${r}-${c}`] = fn(`${r}-${c}`, next[`${r}-${c}`] ?? {});
+      return { ...book, fmt: next };
+    });
+  const active = fmt[`${sel.r}-${sel.c}`] ?? {};
+  const toggle = (key: "b" | "i" | "u") => {
+    const on = !active[key];
+    forRange((_key, current) => ({ ...current, [key]: on }));
+  };
+  const setFmt = (patch: CellFmt) => forRange((_key, current) => ({ ...current, ...patch }));
+  const goTo = (r: number, c: number, extend = false) => {
+    const rr = Math.max(0, Math.min(data.length - 1, r));
+    const cc = Math.max(0, Math.min(cols - 1, c));
+    if (extend) setEnd({ r: rr, c: cc });
+    else document.getElementById(`cell-${rr}-${cc}`)?.focus();
+  };
+  const rangeValues = () => data.slice(r0, r1 + 1).map((row) => row.slice(c0, c1 + 1));
+  const copy = (cut: boolean) => {
+    clip.current = rangeValues();
+    void navigator.clipboard?.writeText(clip.current.map((row) => row.join("\t")).join("\n")).catch(() => undefined);
+    if (cut) commit((book) => ({ ...book, data: book.data.map((row, r) => row.map((cell, c) => (inRange(r, c) ? "" : cell))) }));
+    setMsg(cut ? "Cut. Select a cell and Paste." : "Copied. Select a cell and Paste.");
+  };
+  const pasteAt = (block: string[][]) =>
+    commit((book) => {
+      const next = book.data.map((row) => [...row]);
+      while (next.length < sel.r + block.length) next.push(Array.from({ length: cols }, () => ""));
+      block.forEach((line, dr) => line.forEach((value, dc) => {
+        const row = next[sel.r + dr]!;
+        while (row.length <= sel.c + dc) row.push("");
+        row[sel.c + dc] = value;
+      }));
+      const width = Math.max(...next.map((row) => row.length));
+      return { ...book, data: next.map((row) => [...row, ...Array.from({ length: width - row.length }, () => "")]) };
+    });
+  const paste = async () => {
+    if (clip.current) return pasteAt(clip.current);
+    try {
+      const text = await navigator.clipboard.readText();
+      pasteAt(text.split(/\r?\n/).filter((line, i, all) => line || i < all.length - 1).map((line) => line.split("\t")));
+    } catch {
+      setMsg("Use Ctrl+V to paste here.");
+    }
+  };
+  // AutoSum and friends: with a range selected, the result goes under it; otherwise it covers the numbers above.
+  const autoFn = (fn: string) => {
+    if (multi) {
+      const target = Math.min(r1 + 1, data.length - 1);
+      setCell(target, c0, `=${fn}(${colName(c0)}${r0 + 1}:${colName(c0)}${r1 + 1})`);
+      goTo(target, c0);
+      return;
+    }
+    let top = sel.r - 1;
+    while (top >= 0 && data[top]![sel.c] !== "" && Number.isFinite(Number(cellValue(data, top, sel.c)))) top -= 1;
+    const from = top + 1;
+    setCell(sel.r, sel.c, from < sel.r ? `=${fn}(${colName(sel.c)}${from + 1}:${colName(sel.c)}${sel.r})` : `=${fn}()`);
+    formula.current?.focus();
+  };
+  const sortBy = (dir: 1 | -1) =>
+    commit((book) => {
+      const rows = book.data.filter((row) => row.some(Boolean));
+      const empty = book.data.length - rows.length;
+      const key = (row: string[]) => row[sel.c] ?? "";
+      rows.sort((a, b) => {
+        const x = key(a);
+        const y = key(b);
+        if (x === "" || y === "") return x === "" ? 1 : -1;
+        const nx = Number(x);
+        const ny = Number(y);
+        return (Number.isFinite(nx) && Number.isFinite(ny) ? nx - ny : x.localeCompare(y, undefined, { numeric: true })) * dir;
+      });
+      return { data: [...rows, ...make(empty, cols)], fmt: {} };
+    });
+  const insertRow = () => commit((book) => {
+    const shifted: Record<string, CellFmt> = {};
+    for (const [key, value] of Object.entries(book.fmt)) {
+      const [r, c] = key.split("-").map(Number) as [number, number];
+      shifted[`${r >= sel.r ? r + 1 : r}-${c}`] = value;
+    }
+    return { data: [...book.data.slice(0, sel.r), Array.from({ length: cols }, () => ""), ...book.data.slice(sel.r)], fmt: shifted };
+  });
+  const deleteRow = () => commit((book) => {
+    const shifted: Record<string, CellFmt> = {};
+    for (const [key, value] of Object.entries(book.fmt)) {
+      const [r, c] = key.split("-").map(Number) as [number, number];
+      if (r < r0) shifted[key] = value;
+      else if (r > r1) shifted[`${r - (r1 - r0 + 1)}-${c}`] = value;
+    }
+    const rest = book.data.filter((_row, r) => r < r0 || r > r1);
+    return { data: [...rest, ...make(Math.max(0, 40 - rest.length), cols)], fmt: shifted };
+  });
+  const insertCol = () => commit((book) => {
+    const shifted: Record<string, CellFmt> = {};
+    for (const [key, value] of Object.entries(book.fmt)) {
+      const [r, c] = key.split("-").map(Number) as [number, number];
+      shifted[`${r}-${c >= sel.c ? c + 1 : c}`] = value;
+    }
+    return { data: book.data.map((row) => [...row.slice(0, sel.c), "", ...row.slice(sel.c)]), fmt: shifted };
+  });
+  const deleteCol = () => commit((book) => {
+    const shifted: Record<string, CellFmt> = {};
+    for (const [key, value] of Object.entries(book.fmt)) {
+      const [r, c] = key.split("-").map(Number) as [number, number];
+      if (c < c0) shifted[key] = value;
+      else if (c > c1) shifted[`${r}-${c - (c1 - c0 + 1)}`] = value;
+    }
+    return { data: book.data.map((row) => { const rest = row.filter((_cell, c) => c < c0 || c > c1); return rest.length ? rest : [""]; }), fmt: shifted };
+  });
+  const clearRange = () => commit((book) => {
+    const next = { ...book.fmt };
+    for (let r = r0; r <= r1; r += 1) for (let c = c0; c <= c1; c += 1) delete next[`${r}-${c}`];
+    return { data: book.data.map((row, r) => row.map((cell, c) => (inRange(r, c) ? "" : cell))), fmt: next };
+  });
   const importBuffer = async (fileName: string, buffer: ArrayBuffer) => {
     try {
       await loadLibScript(LIBS.xlsx);
@@ -4530,16 +6045,17 @@ function SheetsApp({ close }: { close: () => void }) {
       const wb = XLSX.read(buffer, { type: "array" });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const range = XLSX.utils.decode_range(ws["!ref"] ?? "A1:A1");
-      const grid = make(Math.max(30, range.e.r + 1), Math.max(10, range.e.c + 1));
+      const next = make(Math.max(40, range.e.r + 1), Math.max(14, range.e.c + 1));
       for (let r = range.s.r; r <= range.e.r; r += 1) {
         for (let c = range.s.c; c <= range.e.c; c += 1) {
           const cell = ws[XLSX.utils.encode_cell({ r, c })];
-          if (cell) grid[r]![c] = cell.f ? `=${cell.f}` : String(cell.w ?? cell.v ?? "");
+          if (cell) next[r]![c] = cell.f ? `=${cell.f}` : String(cell.v ?? cell.w ?? "");
         }
       }
-      setData(grid);
+      history.reset({ data: next, fmt: {} });
       setName(fileName.replace(/\.[^.]+$/, ""));
-      setMsg(`Opened ${fileName}`);
+      setMsg("");
+      setBackstage(false);
     } catch (error) {
       setMsg(error instanceof Error ? error.message : "Couldn't open that file.");
     }
@@ -4548,7 +6064,7 @@ function SheetsApp({ close }: { close: () => void }) {
   const workbook = async () => {
     await loadLibScript(LIBS.xlsx);
     const XLSX = lib("XLSX");
-    const values = data.map((row, r) => row.map((_cell, c) => (data[r]![c]!.startsWith("=") ? "" : data[r]![c]!)));
+    const values = data.map((row) => row.map((raw) => (raw.startsWith("=") ? "" : raw !== "" && Number.isFinite(Number(raw)) ? Number(raw) : raw)));
     const ws = XLSX.utils.aoa_to_sheet(values);
     data.forEach((row, r) => row.forEach((raw, c) => { if (raw.startsWith("=")) ws[XLSX.utils.encode_cell({ r, c })] = { t: "n", f: raw.slice(1), v: Number(cellValue(data, r, c)) || 0 }; }));
     const wb = XLSX.utils.book_new();
@@ -4563,56 +6079,268 @@ function SheetsApp({ close }: { close: () => void }) {
     const { XLSX, ws } = await workbook();
     return new Blob([XLSX.utils.sheet_to_csv(ws)], { type: "text/csv" });
   };
+  const save = () => xlsxBlob().then((blob) => saveToFiles(`${name}.xlsx`, blob)).catch((error: Error) => { setMsg(error.message); return false; });
+  const auto = useAutoSave(autoSave, rev, save);
+  const saveNow = () => void save().then((ok) => { if (ok) { auto.markSaved(); setMsg("Saved to Documents"); } });
+  const download = () => void xlsxBlob().then((blob) => downloadBlob(`${name}.xlsx`, blob)).catch((error: Error) => setMsg(error.message));
   const raw = data[sel.r]?.[sel.c] ?? "";
+  const address = multi ? `${colName(c0)}${r0 + 1}:${colName(c1)}${r1 + 1}` : `${colName(sel.c)}${sel.r + 1}`;
+  const nums: number[] = [];
+  let filled = 0;
+  if (multi) for (let r = r0; r <= r1; r += 1) for (let c = c0; c <= c1; c += 1) {
+    const v = cellValue(data, r, c);
+    if (v !== "") filled += 1;
+    if (v !== "" && Number.isFinite(Number(v))) nums.push(Number(v));
+  }
+  const fmtNum = (n: number) => String(+n.toFixed(6));
+  const status = auto.saved && rev > 0 ? "Saved to this PC" : autoSave && rev > 0 ? "Saving…" : "";
+  const ribbon: Record<string, ReactNode> = {
+    Home: (
+      <>
+        <RGroup label="Clipboard">
+          <RBig icon={LuClipboardPaste} label="Paste" color="#8a6a3a" onClick={() => void paste()} />
+          <RStack>
+            <RSmall icon={LuScissors} label="Cut" onClick={() => copy(true)} />
+            <RSmall icon={LuCopy} label="Copy" onClick={() => copy(false)} />
+          </RStack>
+        </RGroup>
+        <RGroup label="Font">
+          <RStack>
+            <RRow>
+              <RSmall icon={LuBold} title="Bold (Ctrl+B)" active={Boolean(active.b)} onClick={() => toggle("b")} />
+              <RSmall icon={LuItalic} title="Italic (Ctrl+I)" active={Boolean(active.i)} onClick={() => toggle("i")} />
+              <RSmall icon={LuUnderline} title="Underline (Ctrl+U)" active={Boolean(active.u)} onClick={() => toggle("u")} />
+            </RRow>
+            <RRow>
+              <RColor icon={LuPaintBucket} title="Fill Color" value={fill} onPick={(value) => { setFill(value); setFmt({ fill: value }); }} />
+              <RColor icon={LuBaseline} title="Font Color" value={ink} onPick={(value) => { setInk(value); setFmt({ color: value }); }} />
+              <RSmall label="No Fill" onClick={() => setFmt({ fill: undefined, color: undefined })} className="px-1.5 text-[11px]" />
+            </RRow>
+          </RStack>
+        </RGroup>
+        <RGroup label="Alignment">
+          <RRow>
+            <RSmall icon={LuAlignLeft} title="Align Left" active={active.align === "left"} onClick={() => setFmt({ align: "left" })} />
+            <RSmall icon={LuAlignCenter} title="Center" active={active.align === "center"} onClick={() => setFmt({ align: "center" })} />
+            <RSmall icon={LuAlignRight} title="Align Right" active={active.align === "right"} onClick={() => setFmt({ align: "right" })} />
+          </RRow>
+        </RGroup>
+        <RGroup label="Number">
+          <RStack>
+            <select aria-label="Number format" value={active.num ?? "general"} onChange={(event) => setFmt({ num: event.target.value as CellFmt["num"] })} className={`${rSelect} w-32`}>
+              <option value="general">General</option><option value="number">Number</option><option value="currency">Currency</option><option value="percent">Percentage</option>
+            </select>
+            <RRow>
+              <RSmall icon={LuDollarSign} title="Currency" active={active.num === "currency"} onClick={() => setFmt({ num: "currency" })} />
+              <RSmall icon={LuPercent} title="Percent Style" active={active.num === "percent"} onClick={() => setFmt({ num: "percent" })} />
+              <RSmall label="," title="Comma Style" active={active.num === "number"} onClick={() => setFmt({ num: "number" })} className="w-6 text-[15px] font-bold" />
+            </RRow>
+          </RStack>
+        </RGroup>
+        <RGroup label="Cells">
+          <RStack>
+            <RSmall icon={LuBetweenHorizontalStart} label="Insert Row" onClick={insertRow} className="justify-start" />
+            <RSmall icon={LuBetweenVerticalStart} label="Insert Column" onClick={insertCol} className="justify-start" />
+            <RSmall icon={LuTrash2} label="Delete Row" onClick={deleteRow} className="justify-start" />
+          </RStack>
+          <RStack><RSmall icon={LuTrash2} label="Delete Column" onClick={deleteCol} className="justify-start" /></RStack>
+        </RGroup>
+        <RGroup label="Editing">
+          <RBig icon={LuSigma} label="AutoSum" color="#424242" onClick={() => autoFn("SUM")} />
+          <RStack>
+            <RSmall icon={LuEraser} label="Clear" onClick={clearRange} className="justify-start" />
+            <RSmall icon={LuArrowDownAZ} label="Sort A to Z" onClick={() => sortBy(1)} className="justify-start" />
+            <RSmall icon={LuArrowDownZA} label="Sort Z to A" onClick={() => sortBy(-1)} className="justify-start" />
+          </RStack>
+        </RGroup>
+      </>
+    ),
+    Insert: (
+      <>
+        <RGroup label="Rows & Columns">
+          <RBig icon={LuRows3} label="Add 10 Rows" color={brand.color} onClick={() => commit((book) => ({ ...book, data: [...book.data, ...make(10, cols)] }))} />
+          <RBig icon={LuColumns3} label="Add Column" color={brand.color} onClick={() => commit((book) => ({ ...book, data: book.data.map((row) => [...row, ""]) }))} />
+        </RGroup>
+        <RGroup label="Functions">
+          <RBig icon={LuSquareFunction} label="Insert Function" color={brand.color} onClick={() => { if (!raw.startsWith("=")) setCell(sel.r, sel.c, "="); formula.current?.focus(); }} />
+        </RGroup>
+      </>
+    ),
+    Formulas: (
+      <RGroup label="Function Library">
+        <RBig icon={LuSigma} label="AutoSum" color={brand.color} onClick={() => autoFn("SUM")} />
+        <RStack>
+          <RSmall label="Average" onClick={() => autoFn("AVERAGE")} className="justify-start px-2" />
+          <RSmall label="Count Numbers" onClick={() => autoFn("COUNT")} className="justify-start px-2" />
+        </RStack>
+        <RStack>
+          <RSmall label="Max" onClick={() => autoFn("MAX")} className="justify-start px-2" />
+          <RSmall label="Min" onClick={() => autoFn("MIN")} className="justify-start px-2" />
+        </RStack>
+      </RGroup>
+    ),
+    Data: (
+      <>
+        <RGroup label="Sort">
+          <RBig icon={LuArrowDownAZ} label="Sort A to Z" color={brand.color} onClick={() => sortBy(1)} />
+          <RBig icon={LuArrowDownZA} label="Sort Z to A" color={brand.color} onClick={() => sortBy(-1)} />
+        </RGroup>
+        <RGroup label="Data Tools">
+          <RBig icon={LuEraser} label="Clear All" onClick={() => commit({ data: make(40, 14), fmt: {} })} />
+        </RGroup>
+      </>
+    ),
+    View: (
+      <>
+        <RGroup label="Show">
+          <RStack>
+            <label className="flex items-center gap-1.5 px-1 text-[12px]"><input type="checkbox" checked={grid} onChange={(event) => setGrid(event.target.checked)} className="accent-[var(--office)]" />Gridlines</label>
+            <label className="flex items-center gap-1.5 px-1 text-[12px]"><input type="checkbox" checked={headings} onChange={(event) => setHeadings(event.target.checked)} className="accent-[var(--office)]" />Headings</label>
+          </RStack>
+        </RGroup>
+        <RGroup label="Zoom">
+          <RBig icon={LuZoomIn} label="Zoom In" onClick={() => setZoom((value) => Math.min(300, value + 10))} />
+          <RBig icon={LuZoomOut} label="Zoom Out" onClick={() => setZoom((value) => Math.max(25, value - 10))} />
+          <RBig icon={LuSearch} label="100%" onClick={() => setZoom(100)} />
+        </RGroup>
+      </>
+    ),
+  };
+  const headCls = "border-b border-r border-[#d4d4d4] bg-[#f5f5f5] text-[11px] font-normal text-[#444]";
   return (
-    <WindowFrame title={`Private Excel – ${name}`} icon={SheetsIcon} close={close}>
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
-        <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
-        <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => saveToFiles(`${name}.xlsx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.xlsx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
-        <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => downloadBlob(`${name}.xlsx`, blob)).catch((error: Error) => setMsg(error.message))}>Download .xlsx</button>
-        <button type="button" className={tbBtn} onClick={() => void csvBlob().then((blob) => downloadBlob(`${name}.csv`, blob)).catch((error: Error) => setMsg(error.message))}>.csv</button>
+    <WindowFrame
+      title={`${name} - Private Excel`}
+      icon={SheetsIcon}
+      close={close}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={SheetsIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={() => { history.undo(); setRev((value) => value + 1); }} onRedo={() => { history.redo(); setRev((value) => value + 1); }} /> }}
+    >
+      <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light" } as React.CSSProperties}>
+        <Ribbon brand={brand} tabs={["Home", "Insert", "Formulas", "Data", "View"]} tab={tab} setTab={setTab} onFile={() => setBackstage(true)} onShare={download}>{ribbon[tab]}</Ribbon>
         <input ref={input} type="file" accept=".xlsx,.xls,.csv" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void file.arrayBuffer().then((buffer) => importBuffer(file.name, buffer)); event.target.value = ""; }} />
-        <span className="mx-1 h-5 w-px bg-white/15" />
-        <button type="button" className={tbBtn} onClick={() => setData((grid) => [...grid, ...make(10, cols)])}>+ 10 rows</button>
-        <button type="button" className={tbBtn} onClick={() => setData((grid) => grid.map((row) => [...row, ""]))}>+ Column</button>
-        <button type="button" className={tbBtn} onClick={() => setData(make(30, 10))}>Clear</button>
-        <input aria-label="File name" value={name} onChange={(event) => setName(event.target.value)} className="ml-auto w-36 rounded-lg bg-white/10 px-2 py-1 text-xs outline-none" />
+        <div className="flex h-8 shrink-0 items-center gap-1 border-b border-[#d4d4d4] bg-white px-2 text-[12px]">
+          <input
+            aria-label="Name Box"
+            value={nameBox ?? address}
+            onFocus={(event) => { setNameBox(address); event.currentTarget.select(); }}
+            onChange={(event) => setNameBox(event.target.value)}
+            onBlur={() => setNameBox(null)}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              const m = /^([A-Z]+)(\d+)$/i.exec((nameBox ?? "").trim());
+              setNameBox(null);
+              if (m) goTo(parseInt(m[2]!, 10) - 1, colIndex(m[1]!.toUpperCase()));
+            }}
+            className="h-6 w-24 rounded-sm border border-[#d4d4d4] px-1.5 outline-none focus:border-[var(--office)]"
+          />
+          <span className="mx-1 text-zinc-400">⋮</span>
+          <button type="button" aria-label="Cancel" onClick={() => document.getElementById(`cell-${sel.r}-${sel.c}`)?.blur()} className="grid size-6 place-items-center rounded text-zinc-500 hover:bg-black/5"><X className="size-3.5" /></button>
+          <button type="button" aria-label="Enter" onClick={() => goTo(sel.r + 1, sel.c)} className="grid size-6 place-items-center rounded text-zinc-500 hover:bg-black/5"><Check className="size-3.5" /></button>
+          <span className="px-1 font-serif italic text-zinc-600">fx</span>
+          <input ref={formula} aria-label="Formula bar" value={raw} onChange={(event) => setCell(sel.r, sel.c, event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") goTo(sel.r + 1, sel.c); }} className="h-6 min-w-0 flex-1 border-l border-[#e1e1e1] px-2 outline-none" />
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto bg-white">
+          <table className="border-separate border-spacing-0 text-[14.5px] text-black" style={{ zoom: zoom / 100, fontFamily: "'Aptos Narrow', Calibri, 'Segoe UI', Arial, sans-serif" }}>
+            {headings && (
+              <thead className="sticky top-0 z-10">
+                <tr>
+                  <th className={`${headCls} sticky left-0 z-20 h-5 w-10`}><span className="absolute bottom-0.5 right-0.5 size-0 border-b-[7px] border-l-[7px] border-b-[#b6b6b6] border-l-transparent" /></th>
+                  {Array.from({ length: cols }, (_, c) => {
+                    const on = c >= c0 && c <= c1;
+                    return <th key={c} onClick={() => { setSel({ r: 0, c }); setEnd({ r: data.length - 1, c }); }} className={`${headCls} h-5 min-w-[88px] ${on ? "border-b-2 !bg-[#d3f0e0] font-semibold !text-[#0b5a2f]" : ""}`} style={on ? { borderBottomColor: brand.color } : undefined}>{colName(c)}</th>;
+                  })}
+                </tr>
+              </thead>
+            )}
+            <tbody>
+              {data.map((row, r) => {
+                const rowOn = r >= r0 && r <= r1;
+                return (
+                  <tr key={r}>
+                    {headings && <th onClick={() => { setSel({ r, c: 0 }); setEnd({ r, c: cols - 1 }); }} className={`${headCls} sticky left-0 z-[5] h-5 px-1.5 text-center ${rowOn ? "border-r-2 !bg-[#d3f0e0] font-semibold !text-[#0b5a2f]" : ""}`} style={rowOn ? { borderRightColor: brand.color } : undefined}>{r + 1}</th>}
+                    {row.map((cell, c) => {
+                      const key = `${r}-${c}`;
+                      const f = fmt[key] ?? {};
+                      const shown = cellValue(data, r, c);
+                      const numeric = shown !== "" && Number.isFinite(Number(shown));
+                      const isActive = sel.r === r && sel.c === c;
+                      const ranged = multi && inRange(r, c);
+                      return (
+                        <td
+                          key={c}
+                          onMouseDown={(event) => {
+                            if (event.shiftKey) {
+                              event.preventDefault();
+                              setEnd({ r, c });
+                            } else {
+                              dragging.current = true;
+                              setEnd({ r, c });
+                            }
+                          }}
+                          onMouseEnter={() => { if (dragging.current) setEnd({ r, c }); }}
+                          className={`relative h-5 p-0 ${grid ? "border-b border-r border-[#e1e1e1]" : "border-b border-r border-transparent"}`}
+                          style={{ background: ranged && !isActive ? "rgb(16 124 65 / .1)" : f.fill }}
+                        >
+                          <input
+                            id={`cell-${r}-${c}`}
+                            aria-label={`${colName(c)}${r + 1}`}
+                            value={editing === key ? cell : showCell(shown, f.num)}
+                            onFocus={() => { setSel({ r, c }); if (!dragging.current) setEnd({ r, c }); setEditing(key); }}
+                            onBlur={() => setEditing(null)}
+                            onChange={(event) => setCell(r, c, event.target.value)}
+                            onKeyDown={(event) => {
+                              const mod = event.ctrlKey || event.metaKey;
+                              if (event.key === "Enter" || event.key === "ArrowDown") { event.preventDefault(); goTo(r + 1, c, event.shiftKey && event.key === "ArrowDown"); }
+                              else if (event.key === "ArrowUp") { event.preventDefault(); goTo(r - 1, c, event.shiftKey); }
+                              else if (event.key === "Tab") { event.preventDefault(); goTo(r, c + (event.shiftKey ? -1 : 1)); }
+                              else if ((event.key === "ArrowRight" || event.key === "ArrowLeft") && (event.currentTarget.selectionStart === (event.key === "ArrowRight" ? cell.length : 0) || cell === "")) { event.preventDefault(); goTo(r, c + (event.key === "ArrowRight" ? 1 : -1), event.shiftKey); }
+                              else if (mod && event.key.toLowerCase() === "b") { event.preventDefault(); toggle("b"); }
+                              else if (mod && event.key.toLowerCase() === "i") { event.preventDefault(); toggle("i"); }
+                              else if (mod && event.key.toLowerCase() === "u") { event.preventDefault(); toggle("u"); }
+                              else if (mod && event.key.toLowerCase() === "s") { event.preventDefault(); saveNow(); }
+                              else if (event.key === "Delete" && multi) { event.preventDefault(); clearRange(); }
+                            }}
+                            className="h-5 w-[88px] bg-transparent px-1 outline-none"
+                            style={{ fontWeight: f.b ? 700 : undefined, fontStyle: f.i ? "italic" : undefined, textDecoration: f.u ? "underline" : undefined, color: f.color, textAlign: editing === key ? "left" : f.align ?? (numeric ? "right" : "left") }}
+                          />
+                          {isActive && <span className="pointer-events-none absolute -inset-px z-[3] border-2" style={{ borderColor: brand.color }}><span className="absolute -bottom-[4px] -right-[4px] size-[7px] border border-white" style={{ background: brand.color }} /></span>}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex h-8 shrink-0 items-stretch border-t border-[#d4d4d4] bg-[#f3f3f3] text-[12px]">
+          <span className="flex items-center gap-1 px-2 text-zinc-400"><ChevronLeft className="size-3.5" /><ChevronRight className="size-3.5" /></span>
+          <span className="relative -mt-px flex items-center bg-white px-5 font-semibold shadow-[1px_0_0_#d4d4d4,-1px_0_0_#d4d4d4]" style={{ color: brand.color }}>Sheet1<span className="absolute inset-x-3 bottom-0.5 h-[3px] rounded-full" style={{ background: brand.color }} /></span>
+        </div>
+        <OfficeStatus
+          left={<><span>Ready</span>{msg && <span className="truncate text-zinc-800">{msg}</span>}</>}
+          right={multi ? <span className="flex gap-4">{nums.length > 0 && <span>Average: {fmtNum(nums.reduce((a, b) => a + b, 0) / nums.length)}</span>}<span>Count: {filled}</span>{nums.length > 0 && <span>Sum: {fmtNum(nums.reduce((a, b) => a + b, 0))}</span>}</span> : undefined}
+          zoom={zoom}
+          setZoom={setZoom}
+        />
+        {backstage && (
+          <Backstage
+            brand={brand}
+            onBack={() => setBackstage(false)}
+            onNew={() => { history.reset({ data: make(40, 14), fmt: {} }); setName("Book1"); setRev(0); setBackstage(false); }}
+            newLabel="Blank workbook"
+            onBrowse={() => { setBackstage(false); input.current?.click(); }}
+            recent={officeRecent(fs, /\.(xlsx?|csv)$/i)}
+            onOpenRecent={(path) => void fsBuffer(path).then((buffer) => buffer && importBuffer(baseName(path), buffer))}
+            items={[
+              { label: "Save", icon: Save, onClick: () => { saveNow(); setBackstage(false); } },
+              { label: "Save a Copy", icon: Download, onClick: download },
+              { label: "Export as CSV", icon: LuFileDown, onClick: () => void csvBlob().then((blob) => downloadBlob(`${name}.csv`, blob)).catch((error: Error) => setMsg(error.message)) },
+              { label: "Rename", icon: LuFilePen, onClick: () => { const next = window.prompt("File name:", name)?.trim(); if (next) setName(next); } },
+              { label: "Close", icon: X, onClick: close },
+            ]}
+          />
+        )}
       </div>
-      <div className="flex shrink-0 items-center gap-2 border-b border-border px-2 py-1 text-xs">
-        <span className="w-12 rounded bg-white/10 px-2 py-1 text-center font-semibold">{colName(sel.c)}{sel.r + 1}</span>
-        <span className="text-muted-foreground">fx</span>
-        <input aria-label="Formula bar" value={raw} onChange={(event) => setCell(sel.r, sel.c, event.target.value)} placeholder="Type a value or =SUM(A1:A5)" className="min-w-0 flex-1 rounded bg-white/10 px-2 py-1 outline-none" />
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto">
-        <table className="border-separate border-spacing-0 text-xs">
-          <thead className="sticky top-0 z-10"><tr><th className="sticky left-0 z-20 w-10 bg-zinc-800" />{Array.from({ length: cols }, (_, c) => <th key={c} className="min-w-24 border-b border-r border-white/10 bg-zinc-800 py-1 font-semibold text-muted-foreground">{colName(c)}</th>)}</tr></thead>
-          <tbody>
-            {data.map((row, r) => (
-              <tr key={r}>
-                <th className="sticky left-0 z-10 border-b border-r border-white/10 bg-zinc-800 px-2 text-muted-foreground">{r + 1}</th>
-                {row.map((cell, c) => {
-                  const key = `${r}-${c}`;
-                  return (
-                    <td key={c} className={`border-b border-r border-white/10 p-0 ${sel.r === r && sel.c === c ? "outline outline-2 -outline-offset-2 outline-primary" : ""}`}>
-                      <input
-                        id={`cell-${r}-${c}`}
-                        aria-label={`${colName(c)}${r + 1}`}
-                        value={editing === key ? cell : cellValue(data, r, c)}
-                        onFocus={() => { setSel({ r, c }); setEditing(key); }}
-                        onBlur={() => setEditing(null)}
-                        onChange={(event) => setCell(r, c, event.target.value)}
-                        onKeyDown={(event) => { if (event.key === "Enter") document.getElementById(`cell-${Math.min(r + 1, data.length - 1)}-${c}`)?.focus(); }}
-                        className="h-7 w-24 bg-transparent px-1.5 outline-none"
-                      />
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="h-6 shrink-0 px-3 text-[11px] leading-6 text-muted-foreground">{msg || "Formulas: =A1+B1, =SUM(A1:A5), AVERAGE, MIN, MAX, COUNT"}</p>
     </WindowFrame>
   );
 }

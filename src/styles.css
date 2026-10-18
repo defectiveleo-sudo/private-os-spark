@@ -293,11 +293,14 @@ main[data-ctl="large"] .win-ctl { width: 44px; height: 32px; border-radius: 9px;
 .win-ctl.win-close { margin-left: 4px; }
 
 /* document pages (Writer) */
-.doc-page h1 { font-size: 2rem; font-weight: 700; margin: .6em 0; }
-.doc-page h2 { font-size: 1.5rem; font-weight: 700; margin: .6em 0; }
+.doc-page h1 { font-size: 20pt; font-weight: 400; color: #0f4761; margin: 18pt 0 4pt; line-height: 1.15; }
+.doc-page h2 { font-size: 16pt; font-weight: 400; color: #0f4761; margin: 8pt 0 4pt; }
+.doc-page h3 { font-size: 14pt; font-weight: 400; color: #0f4761; margin: 8pt 0 4pt; }
+.doc-page blockquote { font-style: italic; text-align: center; color: #404040; margin: 10pt 43pt; }
 .doc-page ul { list-style: disc; padding-left: 1.5rem; }
 .doc-page ol { list-style: decimal; padding-left: 1.5rem; }
-.doc-page p { margin: .4em 0; }
+.doc-page p { margin: 0 0 8pt; }
+.doc-page img { display: inline-block; }
 .doc-page a { color: #2563eb; text-decoration: underline; }
 .doc-page table { border-collapse: collapse; }
 .doc-page td, .doc-page th { border: 1px solid #bbb; padding: 4px 8px; }
@@ -459,3 +462,17 @@ main[data-lite] .os-window-anim, main[data-reduce] .os-window-anim { animation: 
 main[data-lite] .taskbar, main[data-lite] .taskbar-liquid { backdrop-filter: none !important; background: color-mix(in oklab, var(--background) 94%, transparent) !important; }
 main[data-taskbar="bottom"] section.os-window.rounded-none { bottom: 48px !important; }
 main[data-taskbar="top"] section.os-window.rounded-none { top: 48px !important; bottom: 0 !important; }
+
+/* Windows-style title bars and caption buttons (Office apps, File Explorer). */
+.os-bar { user-select: none; touch-action: none; }
+.win-caption > button { width: 46px; display: grid; place-items: center; color: rgb(255 255 255 / .9); transition: background-color .1s; }
+.win-caption > button:hover { background: rgb(255 255 255 / .1); }
+.win-caption-light > button { color: #1f1f1f; }
+.win-caption-light > button:hover { background: rgb(0 0 0 / .06); }
+.win-caption > .win-caption-close:hover { background: #c42b1c; color: #fff; }
+section.os-window:has(> header.os-bar) { border-radius: 8px; background: #202020; backdrop-filter: none; }
+section.os-window.rounded-none:has(> header.os-bar) { border-radius: 0; }
+.ppt-box:empty::before { content: attr(data-placeholder); opacity: .55; pointer-events: none; }
+.ppt-body ul { list-style: disc; padding-left: 1.2em; }
+.office-zoom { accent-color: #616161; height: 4px; }
+.explorer ::-webkit-scrollbar-thumb { background: rgb(255 255 255 / .25); }

@@ -1,4 +1,4 @@
-// macOS-style apps for the Liquid Glass theme: Messages, Mail, Contacts and Maps.
+// Messages, Mail, Contacts and Maps apps.
 // Everything is stored in this browser (localStorage); nothing is sent to a server.
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -269,7 +269,7 @@ const WELCOME_MAIL: MailItem[] = [
     from: "PRIVATE OS",
     to: "you",
     subject: "Welcome to Mail",
-    body: "Mail in PRIVATE OS keeps your messages on this device.\n\nWrite a message with the pencil button. It is saved in Sent, and you can open it in your own email app to really send it.\n\nEnjoy the new Liquid Glass look!",
+    body: "Mail in PRIVATE OS keeps your messages on this device.\n\nWrite a message with the pencil button. It is saved in Sent, and you can open it in your own email app to really send it.",
     at: Date.now(),
     read: false,
   },

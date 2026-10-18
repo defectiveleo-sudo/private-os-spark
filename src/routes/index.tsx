@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { installUiSounds, playClick, playHover } from "@/lib/ui-sound";
+import { MINI_GAMES, MiniGame, type MiniGameId } from "@/components/mini-games";
+import { WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
 import { Component } from "react";
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +24,8 @@ import {
   Plus,
   RefreshCw,
   Search,
+  ChevronUp,
+  Check,
   Crown,
   RotateCcw,
   Check as CheckMark,
@@ -64,6 +68,9 @@ import {
   KeyRound,
   Mic,
   Globe,
+  House,
+  Star,
+  EllipsisVertical,
   MessageCircle,
   Mail,
   BookUser,
@@ -132,7 +139,7 @@ function PrivateBrowserIcon({ className }: { className?: string }) {
   );
 }
 
-const WindowContext = createContext<{ minimized: boolean; minimize: () => void; focus: () => void; z: number; top: boolean }>({ minimized: false, minimize: () => {}, focus: () => {}, z: 10, top: false });
+const WindowContext = createContext<{ minimized: boolean; minimize: () => void; focus: () => void; z: number; top: boolean; closing?: boolean }>({ minimized: false, minimize: () => {}, focus: () => {}, z: 10, top: false });
 
 const GLYPH_WHITE = "[&>svg]:size-[56%] [&>svg]:text-white";
 
@@ -147,7 +154,7 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
 }
 
 // Icons cut from the Windows 11 icon sheet (public/icons/apps/win); they bring their own shape, so no tile.
-const WIN_ICONS = new Set(["calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
+const WIN_ICONS = new Set(["word", "powerpoint", "excel", "outlook", "onenote", "onedrive", "calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
 
 // App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
 function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
@@ -157,12 +164,12 @@ function AppImage({ className, tone, src }: { className?: string | undefined; to
   return <Tile tone={tone} glyph="[&>img]:relative [&>img]:size-[68%] [&>img]:drop-shadow-[0_2px_2px_rgb(0_0_0/.35)]" className={className}><img src={`/icons/apps/${src}.svg`} alt="" draggable={false} decoding="async" /></Tile>;
 }
 
-const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="cloud" className={className} />;
+const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="onedrive" className={className} />;
 const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
 const FolderIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="files" className={className} />;
 const SettingsIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-400 to-zinc-700" src="settings" className={className} />;
 const BeeZIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-yellow-600" glyph="[&>svg]:size-[62%] [&>svg]:text-zinc-900" className={className}><Hexagon className="fill-zinc-900/25" /></Tile>;
-const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="notes" className={className} />;
+const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="onenote" className={className} />;
 const CalcIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-500 to-zinc-800" src="calc" className={className} />;
 const TerminalIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-black" src="terminal" className={className} />;
 
@@ -218,8 +225,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "1.9";
+const OS_VERSION = "2.0";
 const CHANGELOG = [
+  { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner", "Windows 11 style taskbar: apps in the middle, tray and clock on the right, all in one bar", "Right-click the taskbar to change its transparency, turn on liquid glass, switch to the floating dock or add apps", "Private Word, Private Excel, Private PowerPoint, Private Outlook and Private OneNote with new icons", "Cleaner app icons with no white edges"] },
   { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
   { v: "1.8", date: "10 Oct 2026", items: ["Writer, Sheets, Slides and PDF Reader: open and save .docx, .xlsx, .csv, .pptx and .pdf", "Files opens each document in the right app", "Date & time settings: pick a time zone and add world clocks", "Search results now always show, with Wikipedia as a backup"] },
   { v: "1.7", date: "10 Oct 2026", items: ["Bigger, easier-to-click title bar buttons with a size setting", "New apps: Sticky Notes, Focus Timer, Converter, Passwords and Recorder", "New settings: auto-lock, skip start screen, week start, desktop labels"] },
@@ -264,14 +272,14 @@ const PasswordIcon: IconComponent = ({ className }) => <AppImage tone="from-slat
 const RecorderIcon: IconComponent = ({ className }) => <AppImage tone="from-red-500 to-pink-700" src="recorder" className={className} />;
 
 const MessagesIcon: IconComponent = ({ className }) => <AppImage tone="from-green-400 to-green-600" src="messages" className={className} />;
-const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="mail" className={className} />;
+const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="outlook" className={className} />;
 const ContactsIcon: IconComponent = ({ className }) => <AppImage tone="from-stone-300 to-stone-500" src="contacts" className={className} />;
 const MapsIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-300 to-teal-600" src="maps" className={className} />;
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
-  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "notes", label: "Private OneNote", icon: NotesIcon },
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
@@ -285,7 +293,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
-  { id: "notes", label: "Notes", icon: NotesIcon },
+  { id: "notes", label: "Private OneNote", icon: NotesIcon },
   { id: "calc", label: "Calculator", icon: CalcIcon },
   { id: "terminal", label: "Terminal", icon: TerminalIcon },
   { id: "taskmgr", label: "Task Manager", icon: TaskIcon },
@@ -297,7 +305,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "writer", label: "Writer", icon: WriterIcon }, { id: "sheets", label: "Sheets", icon: SheetsIcon }, { id: "slides", label: "Slides", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Mail", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -356,10 +364,13 @@ function PrivateOS() {
   const [runText, setRunText] = useState("");
   const [runIndex, setRunIndex] = useState(0);
   const [dockShown, setDockShown] = useState(false);
+  const [barMenu, setBarMenu] = useState<{ x: number; y: number } | null>(null);
   const [dockMenu, setDockMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [battery, setBattery] = useState(100);
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [closingWins, setClosingWins] = useState<string[]>([]);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
 
   useEffect(() => {
@@ -468,6 +479,7 @@ function PrivateOS() {
     } catch {
       // storage unavailable
     }
+    setSettingsReady(true);
     refreshWalls().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -541,10 +553,21 @@ function PrivateOS() {
     return () => window.clearInterval(timer);
   }, [settings.slideshow, allWalls.length]);
 
-  const closeWindow = (id: string) => {
+  const removeWindow = (id: string) => {
+    setClosingWins((list) => list.filter((item) => item !== id));
     setOpenWins((list) => list.filter((item) => item !== id));
     setMinWins((list) => list.filter((item) => item !== id));
     setZOrder((list) => list.filter((item) => item !== id));
+  };
+  // Play the close animation first, then remove the window.
+  const closeWindow = (id: string) => {
+    if (settings.reduceMotion || settings.lite) return removeWindow(id);
+    setClosingWins((list) => (list.includes(id) ? list : [...list, id]));
+    window.setTimeout(() => removeWindow(id), 190);
+  };
+  const finishSetup = (result: WelcomeResult) => {
+    patchSettings({ ...result, onboarded: true });
+    setLocked(false);
   };
 
   // DOM order of windows never changes (moving an iframe in the DOM would reload it); only z-index does.
@@ -579,8 +602,13 @@ function PrivateOS() {
   };
   // The theme accent and the Modern interface style apply to every app, not only Settings.
   const modernUi = settings.uiStyle === "modern";
-  const glassTheme = Boolean(THEMES.find((theme) => theme.id === settings.theme)?.glass) && settings.theme !== "liquid";
-  const themeStyle = ({ ...extraStyle, ...(settings.accent
+  const themeDef = THEMES.find((theme) => theme.id === settings.theme);
+  const glassTheme = Boolean(themeDef?.glass) && settings.theme !== "liquid";
+  // Themes with a base colour also tint the desktop, cards, menus and windows.
+  const baseStyle = themeDef?.base
+    ? { "--background": themeDef.base, "--theme-base": themeDef.base, "--card": `color-mix(in oklab, ${themeDef.base} 78%, transparent)`, "--popover": `color-mix(in oklab, ${themeDef.base} 86%, transparent)`, ...(settings.glassOpacity > 0 ? {} : { "--glass-tint": `color-mix(in oklab, ${themeDef.base} ${themeDef.glass ? 42 : 62}%, transparent)` }) }
+    : {};
+  const themeStyle = ({ ...extraStyle, ...baseStyle, ...(settings.accent
     ? { "--primary": settings.accent, "--ring": settings.accent, "--primary-foreground": readableOn(settings.accent), "--scroll": settings.scrollAccent || settings.accent }
     : modernUi
       ? { "--primary": "#8b7cff", "--ring": "#8b7cff", "--primary-foreground": "#ffffff", "--scroll": settings.scrollAccent || "#8b7cff" }
@@ -617,7 +645,21 @@ function PrivateOS() {
     { label: "Restart…", run: () => window.location.reload() },
     { label: "Shut Down…", run: () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); } },
   ];
-  const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !launcher && !taskView && !quickMenu;
+  const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !barMenu && !launcher && !taskView && !quickMenu;
+  // Windows 11 style: one full-width bar with the apps centred and the tray on the right.
+  const taskbarMode = settings.dockStyle === "taskbar" && settings.dockPos !== "right";
+  const openStartMenu = () => {
+    const anchor = document.getElementById("start-anchor");
+    if (anchor) {
+      const box = anchor.getBoundingClientRect();
+      const width = Math.min(416, window.innerWidth - 16);
+      setStartPos({ left: Math.max(8, Math.min(box.left - 8, window.innerWidth - width - 8)), bottom: settings.dockPos === "top" ? window.innerHeight - box.bottom - 460 : window.innerHeight - box.top + 10 });
+    }
+    setStartMenu((value) => !value);
+    setLauncher(false);
+    setQuickMenu(false);
+  };
+  const dockSurface = { "--dock-alpha": `${settings.dockOpacity}%` } as React.CSSProperties;
   const hideShift = settings.dockPos === "right" ? "translateX(160%)" : settings.dockPos === "top" ? "translateY(-160%)" : "translateY(160%)";
 
   const webSearch = (text: string) => {
@@ -731,7 +773,7 @@ function PrivateOS() {
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
       case "messages": return <WindowFrame title="Messages" icon={MessagesIcon} close={close}><MessagesContent /></WindowFrame>;
-      case "mail": return <WindowFrame title="Mail" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
+      case "mail": return <WindowFrame title="Private Outlook" icon={MailIcon} close={close}><MailContent /></WindowFrame>;
       case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
@@ -743,7 +785,7 @@ function PrivateOS() {
   if (phase === "boot") return <BootScreen />;
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-liquid={liquid ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={!liquid && taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {liquid ? <LiquidWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
@@ -758,7 +800,54 @@ function PrivateOS() {
       )}
       {!liquid && <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-transparent to-background/35" />}
 
-      {!liquid && (<>
+      {!liquid && taskbarMode && (<>
+      {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed inset-x-0 z-30 h-2 ${settings.dockPos === "top" ? "top-0" : "bottom-0"}`} />}
+      <div
+        onMouseEnter={() => setDockShown(true)}
+        onMouseLeave={() => setDockShown(false)}
+        onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }}
+        style={{ ...dockSurface, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? (settings.dockPos === "top" ? "translateY(-110%)" : "translateY(110%)") : undefined }}
+        className={`taskbar ${settings.dockLiquid ? "taskbar-liquid" : ""} absolute inset-x-0 z-40 flex h-12 items-center px-2 text-white ${settings.dockPos === "top" ? "top-0 border-b" : "bottom-0 border-t"}`}
+      >
+        <div className="hidden w-48 shrink-0 md:block" aria-hidden />
+        <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
+          <span data-start id="start-anchor" className="inline-flex">
+            <OsButton label="Start" onClick={openStartMenu} className={`taskbar-btn ${startMenu ? "is-on" : ""}`}><StartGlyph /></OsButton>
+          </span>
+          <OsButton label="Search" onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`taskbar-btn ${launcher ? "is-on" : ""}`}><Search className="size-[18px]" /></OsButton>
+          <OsButton label="Task view" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className={`taskbar-btn ${taskView ? "is-on" : ""}`}><PanelsTopLeft className="size-[18px]" /></OsButton>
+          {dockList.map(({ id, app }) => {
+            const Icon = app.icon;
+            const open = openWins.includes(id);
+            const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
+            return (
+              <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
+                <OsButton label={app.label} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className={`taskbar-btn group ${focused ? "is-on" : ""}`}>
+                  <Icon className={settings.bigIcons ? "size-7" : "size-6"} />
+                  <span className="taskbar-tip">{app.label}</span>
+                  {open && <span className={`taskbar-dot ${focused ? "is-focused" : ""}`} />}
+                </OsButton>
+              </span>
+            );
+          })}
+        </nav>
+        <div className="flex shrink-0 items-center gap-0.5 md:w-48 md:justify-end">
+          <OsButton label="Show hidden icons" onClick={() => setLauncher((value) => !value)} className="taskbar-btn hidden w-7 sm:inline-flex"><ChevronUp className="size-4" /></OsButton>
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
+            <span className="hidden text-[11px] font-medium leading-tight sm:block">ENG</span>
+            <Wifi className="size-4" />
+            <Volume2 className="size-4" />
+            <BatteryFull className="size-4" />
+          </button>
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Date and time" className="taskbar-btn w-auto px-2 text-right">
+            <span className="flex flex-col items-end text-[11px] leading-tight tabular-nums"><span>{timeLabel}</span>{settings.showDate && <span className="text-white/75">{time.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}</span>
+          </button>
+          {canFullscreen && <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="taskbar-btn hidden w-8 sm:inline-flex">{fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</OsButton>}
+        </div>
+      </div>
+      </>)}
+
+      {!liquid && !taskbarMode && (<>
       {settings.dockAutoHide && <div aria-hidden onMouseEnter={() => setDockShown(true)} className={`fixed z-30 ${settings.dockPos === "right" ? "inset-y-0 right-0 w-3" : settings.dockPos === "top" ? "inset-x-0 top-0 h-3" : "inset-x-0 bottom-0 h-3"}`} />}
       <div onMouseEnter={() => setDockShown(true)} onMouseLeave={() => setDockShown(false)} style={{ zoom: settings.dockScale / 100, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? hideShift : undefined }} className={`absolute z-40 flex items-center gap-1.5 md:gap-2 ${settings.dockPos === "right" ? "right-3 top-1/2 -translate-y-1/2 flex-col" : `inset-x-0 mx-auto w-max max-w-[calc(100%-1rem)] flex-wrap justify-center ${settings.dockPos === "top" ? "top-3" : "bottom-3 md:bottom-4"}`}`}>
         <div
@@ -772,7 +861,7 @@ function PrivateOS() {
           }}
           className={`absolute cursor-grab touch-none rounded-full bg-white/50 ${settings.dockPos === "right" ? "-left-2.5 top-1/2 h-8 w-1 -translate-y-1/2" : settings.dockPos === "top" ? "-bottom-2 left-1/2 h-1 w-8 -translate-x-1/2" : "-top-2 left-1/2 h-1 w-8 -translate-x-1/2"}`}
         />
-        <nav aria-label="PRIVATE OS dock" className={`dock-bar dock-glass flex items-center gap-3.5 rounded-2xl px-4 py-2.5 ${settings.dockPos === "right" ? "flex-col" : ""}`}>
+        <nav aria-label="PRIVATE OS dock" onContextMenu={(event) => { if (event.target !== event.currentTarget) return; event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }} style={dockSurface} className={`dock-bar dock-glass ${settings.dockLiquid ? "taskbar-liquid" : ""} flex items-center gap-3.5 rounded-2xl px-4 ${settings.dockPos === "right" ? "flex-col py-3" : "h-[52px]"}`}>
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label="Menu (lock, sleep, power)" onClick={() => {
               const anchor = document.getElementById("start-anchor");
@@ -814,7 +903,7 @@ function PrivateOS() {
           </OsButton>
         </nav>
 
-        <div className={`dock-glass flex h-9 items-center gap-2 rounded-2xl px-2.5 text-xs font-medium tabular-nums text-white md:h-10 md:gap-3 md:px-3 ${settings.dockPos === "right" ? "hidden" : ""}`}>
+        <div onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }} style={dockSurface} className={`dock-bar dock-glass ${settings.dockLiquid ? "taskbar-liquid" : ""} flex h-[52px] items-center gap-2 rounded-2xl px-3 text-xs font-medium tabular-nums text-white md:gap-3 md:px-4 ${settings.dockPos === "right" ? "hidden" : ""}`}>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className="flex items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring md:gap-3">
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
@@ -981,6 +1070,43 @@ function PrivateOS() {
         </div>
       )}
 
+      {barMenu && (
+        <div role="menu" aria-label="Taskbar options" onClick={(event) => event.stopPropagation()} style={{ left: Math.max(8, barMenu.x), ...(settings.dockPos === "top" ? { top: barMenu.y + 12 } : { bottom: window.innerHeight - barMenu.y + 12 }) }} className="soft-glass fixed z-50 w-64 rounded-2xl p-3 text-[11px] text-white shadow-2xl [animation:start-menu-in_.22s_cubic-bezier(.16,1.1,.3,1)]">
+          <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-white/55">Taskbar</p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5">
+            {([["taskbar", "Windows bar"], ["floating", "Floating dock"]] as const).map(([value, label]) => (
+              <button key={value} type="button" aria-pressed={settings.dockStyle === value} onClick={() => patchSettings({ dockStyle: value })} className={`rounded-xl border px-2 py-2 font-semibold ${settings.dockStyle === value ? "border-primary bg-primary/20" : "border-white/10 hover:bg-white/10"}`}>{label}</button>
+            ))}
+          </div>
+          <label className="mt-3 block px-1">
+            <span className="flex justify-between"><span>Transparency</span><span className="tabular-nums text-white/60">{100 - settings.dockOpacity}%</span></span>
+            <input type="range" min={0} max={95} value={100 - settings.dockOpacity} aria-label="Taskbar transparency" onChange={(event) => patchSettings({ dockOpacity: 100 - Number(event.target.value) })} className="mt-1.5 w-full accent-primary" />
+          </label>
+          <button type="button" role="menuitemcheckbox" aria-checked={settings.dockLiquid} onClick={() => patchSettings((current) => ({ dockLiquid: !current.dockLiquid }))} className="mt-2 flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
+            <span>Liquid glass</span>
+            <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockLiquid ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockLiquid ? "left-3.5" : "left-0.5"}`} /></span>
+          </button>
+          <button type="button" role="menuitemcheckbox" aria-checked={settings.dockAutoHide} onClick={() => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide }))} className="flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
+            <span>Auto-hide</span>
+            <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockAutoHide ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockAutoHide ? "left-3.5" : "left-0.5"}`} /></span>
+          </button>
+          <p className="mt-2 border-t border-white/10 px-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">Apps on the taskbar</p>
+          <div className="mt-1 max-h-48 overflow-auto pr-1">
+            {launcherApps.map((app) => {
+              const pinned = settings.dockPins.includes(app.id);
+              const Icon = app.icon;
+              return (
+                <button key={app.id} type="button" role="menuitemcheckbox" aria-checked={pinned} onClick={() => patchSettings((current) => ({ dockPins: current.dockPins.includes(app.id) ? current.dockPins.filter((entry) => entry !== app.id) : [...current.dockPins, app.id] }))} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white/10">
+                  <Icon className="size-5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate">{app.label}</span>
+                  {pinned && <Check className="size-3.5 text-primary" />}
+                </button>
+              );
+            })}
+          </div>
+          <button type="button" onClick={() => { setBarMenu(null); openApp("settings"); }} className="mt-2 w-full rounded-lg border-t border-white/10 px-2 pt-2.5 text-left text-white/80 hover:text-white">Taskbar settings…</button>
+        </div>
+      )}
       {dockMenu && (() => {
         const app = lookupApp(dockMenu.id);
         const open = openWins.includes(dockMenu.id);
@@ -1020,14 +1146,15 @@ function PrivateOS() {
       {launcher && <AppLauncher query={query} setQuery={setQuery} openApp={openApp} close={() => setLauncher(false)} />}
       <LiquidContext.Provider value={liquid}>
       {openWins.map((id) => (
-        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id && !minWins.includes(id) }}>
+        <WindowContext.Provider key={id} value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id && !minWins.includes(id), closing: closingWins.includes(id) }}>
           <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
         </WindowContext.Provider>
       ))}
       </LiquidContext.Provider>
 
 
-      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} />
+      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} name={settings.userName} />
+      {settingsReady && !settings.onboarded && <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} lowPower={isLowPowerDevice()} onDone={finishSetup} />}
     </main>
   );
 }
@@ -1043,7 +1170,16 @@ function Wallpaper({ index, options }: { index: number; options: WallpaperOption
   return <div className="absolute inset-0 bg-[linear-gradient(to_bottom,#0d1b2a,#1b3a4b_55%,#5c7f8a)]" />;
 }
 
-function LockScreen({ locked, unlock, day, date, clock, dim, blur }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string; dim: number; blur: number }) {
+// Four rounded panes in the theme colour: the Start button.
+function StartGlyph() {
+  return (
+    <span aria-hidden className="grid size-[18px] grid-cols-2 gap-[2px]">
+      {[0, 1, 2, 3].map((i) => <span key={i} className="rounded-[2px] bg-gradient-to-br from-[color-mix(in_oklab,var(--primary)_55%,#7dd3fc)] to-[color-mix(in_oklab,var(--primary)_85%,#1d4ed8)]" />)}
+    </span>
+  );
+}
+
+function LockScreen({ locked, unlock, day, date, clock, dim, blur, name }: { locked: boolean; unlock: () => void; day: string; date: string; clock: string; dim: number; blur: number; name?: string }) {
   return (
     <div
       role="button"
@@ -1057,6 +1193,7 @@ function LockScreen({ locked, unlock, day, date, clock, dim, blur }: { locked: b
       <p className="pl-[.1em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(2.4rem,11vw,5rem)] leading-none tracking-[.1em] [text-shadow:0_0_22px_rgb(240_170_70/.45),0_2px_12px_rgb(0_0_0/.6)]">{day.slice(0, 3)}</p>
       <p className="mt-4 pl-[.25em] font-['Rajdhani',sans-serif] text-[11px] font-semibold tracking-[.25em] text-[#eadfc4]/90 sm:text-sm">{date}</p>
       <p className="mt-3 pl-[.15em] font-['Orbitron',sans-serif] text-[clamp(1.1rem,5vw,1.8rem)] font-bold leading-none tracking-[.12em] text-[#f9e2ae] [text-shadow:0_0_14px_rgb(240_170_70/.4)]">{clock}</p>
+      {name && <p className="mt-6 font-['Rajdhani',sans-serif] text-sm font-semibold tracking-[.18em] text-white/80 [animation:rise_.6s_.2s_both]">WELCOME BACK, {name.toUpperCase()}</p>}
       <div className="mt-10 flex items-center gap-3" aria-hidden>
         <span className="size-3 rounded-full border border-white/40" />
         <span className="size-4 rounded-full bg-emerald-400" />
@@ -1103,6 +1240,7 @@ function BootScreen() {
         <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-muted-foreground">Private by design</p>
         <p className="mx-auto mt-3 w-fit rounded-full border border-primary/50 px-2.5 py-0.5 text-[9px] font-bold tracking-[.3em] text-primary">IN BETA</p>
         <div className="mx-auto mt-6 h-px w-40 overflow-hidden bg-muted"><div className="h-full origin-left bg-primary [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+        <div className="boot-spinner mx-auto mt-8" aria-hidden>{Array.from({ length: 5 }, (_, i) => <span key={i} style={{ animationDelay: `${i * 0.14}s` }} />)}</div>
       </div>
     </main>
   );
@@ -1131,7 +1269,7 @@ function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQu
 }
 
 function WindowFrame({ title, icon: Icon, close, children, startMaximized = false, actions }: { title: string; icon: IconComponent; close: () => void; children: React.ReactNode; app?: boolean; startMaximized?: boolean; actions?: ReactNode }) {
-  const { minimized, minimize, focus, z, top } = useContext(WindowContext);
+  const { minimized, minimize, focus, z, top, closing } = useContext(WindowContext);
   const liquid = useContext(LiquidContext);
   const topGap = liquid ? 36 : 8;
   const el = useRef<HTMLElement>(null);
@@ -1285,7 +1423,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         if (live.current) setRect(live.current);
         if (zone) snapTo(zone);
       }}
-      className={`absolute flex flex-col overflow-hidden [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)] ${surface} ${minimized ? "pointer-events-none translate-y-8 scale-90 opacity-0" : ""} ${position}`}
+      className={`os-window-anim absolute flex flex-col overflow-hidden ${surface} ${minimized ? "os-window-min pointer-events-none" : ""} ${closing ? "os-window-closing pointer-events-none" : ""} ${position}`}
     >
       {liquid ? (
       <header className="window-titlebar liquid-titlebar relative flex h-10 shrink-0 items-center gap-2 px-4">
@@ -1763,38 +1901,98 @@ function isDirectHost(url: string) {
   }
 }
 
+type TabInfo = { title: string; host: string; loading: boolean };
+type Bookmark = { title: string; url: string };
+const NTP_SHORTCUTS = [
+  { title: "YouTube", url: "https://www.youtube.com/" },
+  { title: "Wikipedia", url: "https://en.wikipedia.org/" },
+  { title: "GitHub", url: "https://github.com/" },
+  { title: "Reddit", url: "https://www.reddit.com/" },
+  { title: "Cherrion", url: CHERRION_URL },
+  { title: "DuckDuckGo", url: "https://duckduckgo.com/" },
+  { title: "Coolmath", url: "https://www.coolmathgames.com/" },
+  { title: "Twitch", url: "https://www.twitch.tv/" },
+];
+const hostOf = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+};
+
+function SiteIcon({ host, className = "size-4" }: { host: string; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [host]);
+  if (!host || failed) return <span className={`grid shrink-0 place-items-center rounded-full bg-white/15 text-[9px] font-bold uppercase ${className}`}>{host ? host[0] : <Globe className="size-3" />}</span>;
+  return <img src={viaLoader(`https://icons.duckduckgo.com/ip3/${host}.ico`)} alt="" loading="lazy" onError={() => setFailed(true)} className={`shrink-0 rounded-sm object-contain ${className}`} />;
+}
+
 function PrivateBrowser({ initialUrl, close }: { initialUrl: string | null; close: () => void }) {
   const [tabs, setTabs] = useState<{ id: number; url: string | null }[]>([{ id: 1, url: initialUrl }]);
   const [activeTab, setActiveTab] = useState(1);
+  const [info, setInfo] = useState<Record<number, TabInfo>>({});
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const nextId = useRef(2);
-  const addTab = () => {
+  useEffect(() => {
+    try {
+      setBookmarks(JSON.parse(localStorage.getItem("pos-bookmarks") ?? "[]") as Bookmark[]);
+    } catch {
+      // storage unavailable
+    }
+  }, []);
+  const toggleBookmark = (mark: Bookmark) => {
+    setBookmarks((list) => {
+      const next = list.some((item) => item.url === mark.url) ? list.filter((item) => item.url !== mark.url) : [...list, mark];
+      try {
+        localStorage.setItem("pos-bookmarks", JSON.stringify(next));
+      } catch {
+        // storage unavailable
+      }
+      return next;
+    });
+  };
+  const addTab = (url: string | null = null) => {
     const id = nextId.current++;
-    setTabs((list) => [...list, { id, url: null }]);
+    setTabs((list) => [...list, { id, url }]);
     setActiveTab(id);
   };
   const closeTab = (id: number) => {
     if (tabs.length === 1) return close();
+    const index = tabs.findIndex((tab) => tab.id === id);
     const rest = tabs.filter((tab) => tab.id !== id);
     setTabs(rest);
-    if (activeTab === id) setActiveTab(rest[rest.length - 1]!.id);
+    if (activeTab === id) setActiveTab(rest[Math.min(index, rest.length - 1)]!.id);
   };
+  const report = useCallback((id: number, next: TabInfo) => setInfo((current) => {
+    const old = current[id];
+    if (old && old.title === next.title && old.host === next.host && old.loading === next.loading) return current;
+    return { ...current, [id]: next };
+  }), []);
   return (
     <WindowFrame title="PRIVATE Browser" icon={PrivateBrowserIcon} close={close}>
-      <div className="flex h-9 shrink-0 items-center gap-1 overflow-x-auto border-b border-border bg-background/60 px-2">
-        {tabs.map((tab, index) => (
-          <div key={tab.id} className={`flex h-7 shrink-0 items-center gap-1 rounded-md pl-3 pr-1 text-xs ${tab.id === activeTab ? "bg-secondary" : "hover:bg-secondary/50"}`}>
-            <button type="button" onClick={() => setActiveTab(tab.id)}>Tab {index + 1}</button>
-            <button type="button" aria-label={`Close tab ${index + 1}`} onClick={() => closeTab(tab.id)} className="rounded p-0.5 hover:bg-background/60"><X className="size-3" /></button>
-          </div>
-        ))}
-        <button type="button" aria-label="New tab" onClick={addTab} className="grid size-7 shrink-0 place-items-center rounded-md hover:bg-secondary"><Plus className="size-4" /></button>
+      <div className="chrome-strip flex h-10 shrink-0 items-end overflow-x-auto px-3 pt-1.5" onDoubleClick={(event) => { if (event.target === event.currentTarget) addTab(); }}>
+        {tabs.map((tab, index) => {
+          const meta = info[tab.id];
+          const active = tab.id === activeTab;
+          return (
+            <div key={tab.id} data-active={active ? "" : undefined} onMouseDown={(event) => { if (event.button === 1) { event.preventDefault(); closeTab(tab.id); } }} className={`chrome-tab group flex h-[34px] min-w-[3.5rem] max-w-[15rem] flex-1 items-center gap-2 pl-3 pr-1.5 text-xs ${active ? "text-foreground" : "text-foreground/65 hover:text-foreground"}`}>
+              <button type="button" role="tab" aria-selected={active} onClick={() => setActiveTab(tab.id)} title={meta?.title ?? "New Tab"} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+                {meta?.loading ? <RefreshCw className="size-3.5 shrink-0 animate-spin text-primary" /> : meta?.host ? <SiteIcon host={meta.host} /> : <PrivateBrowserIcon className="size-4 shrink-0" />}
+                <span className="truncate">{meta?.title || "New Tab"}</span>
+              </button>
+              <button type="button" aria-label={`Close tab ${index + 1}`} onClick={() => closeTab(tab.id)} className={`grid size-5 shrink-0 place-items-center rounded-full hover:bg-white/15 ${active ? "" : "opacity-0 group-hover:opacity-100"}`}><X className="size-3" /></button>
+            </div>
+          );
+        })}
+        <button type="button" aria-label="New tab" title="New tab" onClick={() => addTab()} className="mb-1 ml-1.5 grid size-7 shrink-0 place-items-center rounded-full hover:bg-white/10"><Plus className="size-4" /></button>
       </div>
-      {tabs.map((tab) => <BrowserTab key={tab.id} initialUrl={tab.url} active={tab.id === activeTab} />)}
+      {tabs.map((tab) => <BrowserTab key={tab.id} initialUrl={tab.url} active={tab.id === activeTab} onInfo={(next) => report(tab.id, next)} newTab={addTab} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />)}
     </WindowFrame>
   );
 }
 
-function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active: boolean }) {
+function BrowserTab({ initialUrl, active, onInfo, newTab, bookmarks, toggleBookmark }: { initialUrl: string | null; active: boolean; onInfo: (info: TabInfo) => void; newTab: (url?: string | null) => void; bookmarks: Bookmark[]; toggleBookmark: (mark: Bookmark) => void }) {
   const searchStart = initialUrl?.startsWith("search:") ? decodeURIComponent(initialUrl.slice(7)) : null;
   const startUrl = searchStart ? null : initialUrl;
   const [address, setAddress] = useState(startUrl ?? "");
@@ -1923,49 +2121,123 @@ function BrowserTab({ initialUrl, active }: { initialUrl: string | null; active:
         ? { mode: "loader" as const, src: `/api/proxy?url=${encodeURIComponent(frameTarget)}` }
         : { mode: "engine" as const, src: undefined }
     : null;
+  const goHome = () => {
+    setResults(null);
+    setFrameTarget(null);
+    setAddress("");
+    setLoading(false);
+  };
+
+  // Tell the tab strip what to show: page title (when the page lets us read it), site icon, loading.
+  const [docTitle, setDocTitle] = useState("");
+  useEffect(() => {
+    setDocTitle("");
+    if (!frameTarget) return;
+    const read = () => {
+      try {
+        const title = frameRef.current?.contentDocument?.title?.trim();
+        if (title) setDocTitle(title);
+      } catch {
+        // cross-origin page: keep the site name
+      }
+    };
+    const timer = window.setInterval(read, 1500);
+    return () => window.clearInterval(timer);
+  }, [frameTarget, frameKey]);
+  const shownUrl = page ?? frameTarget;
+  useEffect(() => {
+    if (results) return onInfo({ title: `${results.query} - Search`, host: "duckduckgo.com", loading: results.hits === null });
+    if (!shownUrl) return onInfo({ title: "New Tab", host: "", loading: false });
+    const host = hostOf(shownUrl);
+    onInfo({ title: docTitle || host || shownUrl, host, loading });
+  }, [results, shownUrl, docTitle, loading, onInfo]);
+
+  const marked = Boolean(page && bookmarks.some((item) => item.url === page));
+  const [menuOpen, setMenuOpen] = useState(false);
+  const omnibox = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const pretty = !focused && address && /^https?:\/\//i.test(address) ? address.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "") : address;
+  const iconBtn = "grid size-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent";
+
   return (
     <div className={active ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
-      <div className="flex h-12 shrink-0 items-center gap-1.5 border-b border-border bg-background/40 px-2">
-        <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowLeft className="size-4" /></OsButton><OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ArrowRight className="size-4" /></OsButton><OsButton label="Reload" disabled={!page} onClick={() => { if (page) show(page); }} className="hidden size-8 rounded-md hover:bg-secondary disabled:opacity-30 sm:inline-flex"><RefreshCw className="size-4" /></OsButton>
-        <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-input px-2 sm:px-3"><LockKeyhole className="size-3.5 shrink-0 text-primary" /><input aria-label="Search or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search or enter address" className="min-w-0 flex-1 bg-transparent text-xs outline-none" /></form>
-        <OsButton label="Open this page in a new tab" disabled={!page} onClick={() => page && window.open(page, "_blank", "noopener,noreferrer")} className="size-8 rounded-md hover:bg-secondary disabled:opacity-30"><ExternalLink className="size-4" /></OsButton>
+      <div className="chrome-toolbar relative flex h-11 shrink-0 items-center gap-0.5 px-2">
+        <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className={iconBtn}><ArrowLeft className="size-4" /></OsButton>
+        <OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className={iconBtn}><ArrowRight className="size-4" /></OsButton>
+        <OsButton label={loading ? "Stop" : "Reload"} disabled={!page && !results} onClick={() => { if (loading) setLoading(false); else if (results) runSearch(results.query); else if (page) show(page); }} className={iconBtn}>{loading ? <X className="size-4" /> : <RefreshCw className="size-4" />}</OsButton>
+        <OsButton label="Home" onClick={goHome} className={`${iconBtn} hidden sm:grid`}><House className="size-4" /></OsButton>
+        <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); omnibox.current?.blur(); }} className="chrome-omnibox mx-1.5 flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full px-3">
+          {page && !results ? <LockKeyhole className="size-3.5 shrink-0 text-foreground/60" /> : <Search className="size-3.5 shrink-0 text-foreground/60" />}
+          <input ref={omnibox} aria-label="Search or enter address" value={pretty} onFocus={(event) => { setFocused(true); window.setTimeout(() => event.target.select(), 0); }} onBlur={() => setFocused(false)} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or type a URL" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-foreground/45" />
+          {page && <button type="button" aria-label={marked ? "Remove bookmark" : "Bookmark this page"} aria-pressed={marked} onClick={() => toggleBookmark({ title: docTitle || hostOf(page) || page, url: page })} className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-white/10"><Star className={`size-3.5 ${marked ? "fill-primary text-primary" : "text-foreground/60"}`} /></button>}
+        </form>
+        <div className="relative">
+          <OsButton label="Browser menu" onClick={() => setMenuOpen((value) => !value)} className={iconBtn}><EllipsisVertical className="size-4" /></OsButton>
+          {menuOpen && (
+            <div role="menu" onMouseLeave={() => setMenuOpen(false)} className="soft-glass absolute right-0 top-full z-30 mt-1 w-52 rounded-xl p-1.5 text-xs shadow-2xl [animation:window-in_.16s_cubic-bezier(.22,1,.36,1)]">
+              {([
+                ["New tab", () => newTab(), true],
+                ["Bookmark this page", () => page && toggleBookmark({ title: docTitle || hostOf(page) || page, url: page }), Boolean(page) && !marked],
+                ["Open in a real browser tab", () => page && window.open(page, "_blank", "noopener,noreferrer"), Boolean(page)],
+                ["Go home", goHome, true],
+              ] as [string, () => void, boolean][]).map(([label, run, enabled]) => (
+                <button key={label} type="button" role="menuitem" disabled={!enabled} onClick={() => { run(); setMenuOpen(false); }} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-35 disabled:hover:bg-transparent">{label}</button>
+              ))}
+            </div>
+          )}
+        </div>
+        {(loading || results?.hits === null) && <div className="absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"><div className="chrome-progress h-full w-full origin-left bg-primary" /></div>}
       </div>
+      {bookmarks.length > 0 && (
+        <div className="chrome-toolbar flex h-8 shrink-0 items-center gap-1 overflow-x-auto border-b border-white/[.06] px-2.5">
+          {bookmarks.map((mark) => (
+            <button key={mark.url} type="button" title={mark.url} onClick={() => navigateTo(mark.url)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); toggleBookmark(mark); }} className="flex max-w-[10rem] shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] text-foreground/80 hover:bg-white/10">
+              <SiteIcon host={hostOf(mark.url)} className="size-3.5" /><span className="truncate">{mark.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
       <div className="relative flex-1 overflow-hidden bg-background">
         {results && (
-          <div className="absolute inset-0 z-20 overflow-auto bg-background p-4">
+          <div className="absolute inset-0 z-20 overflow-auto bg-background p-4 [animation:rise_.25s_cubic-bezier(.22,1,.36,1)]">
             <div className="mx-auto max-w-2xl">
               <p className="text-xs text-muted-foreground">Results for “{results.query}”</p>
               {results.note && <p className="mt-1 text-[11px] text-muted-foreground/80">{results.note}</p>}
-              {results.hits === null && <p className="mt-6 text-sm">Searching…</p>}
+              {results.hits === null && <div className="mt-4 space-y-4">{[0, 1, 2, 3].map((i) => <div key={i} className="animate-pulse space-y-2"><div className="h-3 w-32 rounded bg-white/10" /><div className="h-4 w-2/3 rounded bg-white/10" /><div className="h-3 w-full rounded bg-white/[.06]" /></div>)}</div>}
               {results.error && (
                 <p className="mt-6 text-sm">
                   No results came back. <button type="button" className="underline" onClick={() => window.open(`https://duckduckgo.com/?q=${encodeURIComponent(results.query)}`, "_blank", "noopener,noreferrer")}>Open DuckDuckGo in a new tab</button>
                 </p>
               )}
-              {results.hits?.map((hit) => <SearchResult key={hit.url} hit={hit} open={() => navigateTo(hit.url)} />)}
+              <div className="stagger">{results.hits?.map((hit) => <SearchResult key={hit.url} hit={hit} open={() => navigateTo(hit.url)} />)}</div>
             </div>
           </div>
         )}
         {frame ? <>
-          {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><RefreshCw className="mx-auto size-6 animate-spin text-primary" /><p className="mt-3 text-xs text-muted-foreground">Opening securely…</p></div></div>}
+          {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><SiteIcon host={hostOf(frameTarget ?? "")} className="mx-auto size-10 animate-pulse" /><p className="mt-3 text-xs text-muted-foreground">Opening {hostOf(frameTarget ?? "") || "page"} securely…</p></div></div>}
           <iframe ref={frameRef} key={frame.mode === "engine" ? "engine" : `${frame.mode}-${frameKey}`} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="fullscreen; clipboard-read; clipboard-write; autoplay" sandbox={frame.mode === "direct" ? DIRECT_SANDBOX : frame.mode === "loader" ? PROXY_SANDBOX : undefined} />
         </> : (
-          <div className="flex size-full flex-col items-center justify-center px-5 text-center">
-            <div className="flex size-16 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-xl"><ShieldCheck className="size-8" /></div>
-            <h2 className="mt-5 text-2xl font-semibold">Browse without being followed.</h2>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">Search privately or open a website directly. Use the external-open button when a site does not allow an embedded view.</p>
-            <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="mt-6 flex w-full max-w-lg items-center gap-2 rounded-md border border-border bg-input px-3"><Search className="size-4 shrink-0 text-muted-foreground" /><input id="home-search" aria-label="Search DuckDuckGo or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or enter address" className="h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" /></form>
-            <div className="mt-3 grid w-full max-w-lg grid-cols-2 gap-2">
-              <OsButton label="Open Cherrion" onClick={() => navigateTo(CHERRION_URL)} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-accent text-accent-foreground"><Cherry className="size-5" /></span><span><strong className="block text-xs">Cherrion</strong><span className="text-[10px] text-muted-foreground">Recommended app</span></span></OsButton>
-              <OsButton label="Search with DuckDuckGo" onClick={() => document.getElementById("home-search")?.focus()} className="justify-start gap-3 rounded-md border border-border bg-card p-3 text-left hover:bg-secondary"><span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><Search className="size-5" /></span><span><strong className="block text-xs">DuckDuckGo</strong><span className="text-[10px] text-muted-foreground">Private search</span></span></OsButton>
+          <div className="flex size-full flex-col items-center overflow-auto px-5 pt-[12%] text-center [animation:rise_.35s_cubic-bezier(.22,1,.36,1)]">
+            <div className="relative">
+              <h2 className="font-['Orbitron',sans-serif] text-[clamp(2rem,6vw,3.4rem)] font-bold leading-none tracking-[.08em] text-primary [text-shadow:0_0_24px_color-mix(in_oklab,var(--primary)_40%,transparent)]">PRIVATE</h2>
+              <span className="absolute -right-4 -top-1.5 rounded-[3px] bg-primary px-1 py-px font-['Orbitron',sans-serif] text-[8px] font-bold leading-none text-primary-foreground">SEARCH</span>
             </div>
-            <div className="mt-8 grid w-full max-w-lg grid-cols-3 gap-2">
-              {["Private search", "Block trackers", "Clear session"].map((text, index) => <div key={text} className="rounded-md border border-border bg-card p-3 text-xs"><span className="mb-2 block text-primary">{index === 0 ? <Search className="mx-auto size-5" /> : index === 1 ? <ShieldCheck className="mx-auto size-5" /> : <Sparkles className="mx-auto size-5" />}</span>{text}</div>)}
+            <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="chrome-omnibox mt-8 flex h-12 w-full max-w-xl items-center gap-3 rounded-full px-5 shadow-lg">
+              <Search className="size-4 shrink-0 text-foreground/60" />
+              <input id="home-search" autoFocus={active} aria-label="Search DuckDuckGo or enter address" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or type a URL" className="h-full min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-foreground/45" />
+            </form>
+            <div className="stagger mt-8 grid w-full max-w-xl grid-cols-4 gap-2 sm:grid-cols-4">
+              {NTP_SHORTCUTS.map((item) => (
+                <button key={item.url} type="button" aria-label={`Open ${item.title}`} onClick={() => navigateTo(item.url)} className="chrome-tile flex flex-col items-center gap-2 rounded-2xl p-3 hover:bg-white/[.07]">
+                  <span className="grid size-12 place-items-center rounded-full bg-white/10">{item.url === CHERRION_URL ? <Cherry className="size-5 text-rose-300" /> : <SiteIcon host={hostOf(item.url)} className="size-6" />}</span>
+                  <span className="w-full truncate text-[11px] text-foreground/80">{item.title}</span>
+                </button>
+              ))}
             </div>
+            <p className="mt-8 flex items-center gap-1.5 pb-6 text-[11px] text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />Shields on · trackers blocked · nothing saved after you close</p>
           </div>
         )}
       </div>
-      <footer className="flex h-7 items-center justify-between border-t border-border px-3 text-[10px] text-muted-foreground"><span>Shields active</span><span>0 trackers on this page</span></footer>
     </div>
   );
 }
@@ -2159,7 +2431,7 @@ function NotesApp({ close }: { close: () => void }) {
     } else setMsg("File not found");
   };
   return (
-    <WindowFrame title="Notes" icon={StickyNote} close={close}>
+    <WindowFrame title="Private OneNote" icon={NotesIcon} close={close}>
       <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
         <input value={path} onChange={(event) => setPath(event.target.value)} aria-label="File path" className="min-w-0 flex-1 rounded-md bg-secondary px-3 py-1.5 text-xs outline-none" />
         <button type="button" onClick={load} className="rounded-md bg-secondary px-2.5 py-1.5 text-xs">Open</button>
@@ -2405,8 +2677,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -2935,7 +3207,7 @@ function AboutApp({ close }: { close: () => void }) {
   );
 }
 
-type ThemeDef = { id: string; name: string; sub: string; accent: string; glass?: boolean };
+type ThemeDef = { id: string; name: string; sub: string; accent: string; glass?: boolean; base?: string };
 const THEMES: ThemeDef[] = [
   { id: "private", name: "Private", sub: "Original gold", accent: "" },
   { id: "liquid", name: "Liquid Glass", sub: "macOS-style desktop: menu bar, widgets, Spotlight and dock", accent: "#0a84ff", glass: true },
@@ -2953,7 +3225,16 @@ const THEMES: ThemeDef[] = [
   { id: "vault-glass", name: "Vault Glass", sub: "Smoked graphite with a quiet violet glow", accent: "#8b7cff", glass: true },
   { id: "arctic-glass", name: "Arctic Glass", sub: "Cool graphite with a soft blue glow", accent: "#5aa9ff", glass: true },
   { id: "rose-glass", name: "Rose Glass", sub: "Soft rose reflections on slate glass", accent: "#f59fb8", glass: true },
+  { id: "tokyo-night", name: "Tokyo Night", sub: "Neon city blues on ink", accent: "#7aa2f7", base: "#1a1b26" },
+  { id: "dracula", name: "Dracula", sub: "Dark purple with a neon glow", accent: "#bd93f9", base: "#282a36" },
+  { id: "nord", name: "Nord", sub: "Calm arctic blue-grey", accent: "#88c0d0", base: "#2e3440" },
+  { id: "sunset", name: "Sunset", sub: "Warm dusk orange on plum", accent: "#ff7a59", base: "#2a1520" },
+  { id: "mono", name: "Mono", sub: "Clean black and white", accent: "#e5e5e5", base: "#0b0b0c" },
+  { id: "ocean-glass", name: "Ocean Glass", sub: "Deep sea glass with cyan light", accent: "#22d3ee", glass: true, base: "#06303a" },
+  { id: "forest-glass", name: "Forest Glass", sub: "Mossy green glass", accent: "#4ade80", glass: true, base: "#0e2618" },
 ];
+
+const WELCOME_THEMES = ["private", "liquid", "tokyo-night", "dracula", "nord", "sunset", "mono", "ocean-glass", "forest-glass", "aurora", "plasma", "vault-glass"];
 
 function readableOn(hex: string) {
   const value = hex.replace("#", "");
@@ -3643,10 +3924,31 @@ function GamesApp({ close, launch }: { close: () => void; launch: (url: string) 
     setUrl("");
   };
   const card = "fx-card flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-left hover:bg-white/10";
+  const [playing, setPlaying] = useState<MiniGameId | null>(null);
+  const current = MINI_GAMES.find((game) => game.id === playing);
+  if (current) {
+    return (
+      <WindowFrame title={`Games · ${current.name}`} icon={GamesIcon} close={close}>
+        <div className="flex-1 overflow-auto p-4">
+          <button type="button" onClick={() => setPlaying(null)} className="mb-3 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15"><ArrowLeft className="size-3.5" />All games</button>
+          <div key={current.id} className="mx-auto max-w-lg [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]"><MiniGame id={current.id} /></div>
+        </div>
+      </WindowFrame>
+    );
+  }
   return (
     <WindowFrame title="Games" icon={GamesIcon} close={close}>
       <div className="flex-1 overflow-auto p-4">
-        <p className="text-xs font-semibold text-muted-foreground">FREE TO PLAY</p>
+        <p className="text-xs font-semibold text-muted-foreground">BUILT-IN · PLAY OFFLINE</p>
+        <div className="stagger mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {MINI_GAMES.map((game) => (
+            <button key={game.id} type="button" aria-label={`Play ${game.name}`} onClick={() => setPlaying(game.id)} className="fx-card group overflow-hidden rounded-2xl border border-white/10 bg-black/20 text-left">
+              <span className={`grid h-20 place-items-center bg-gradient-to-br ${game.tone} text-4xl transition-transform duration-300 group-hover:scale-105`}>{game.emoji}</span>
+              <span className="block p-2.5"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.sub}</span></span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-6 text-xs font-semibold text-muted-foreground">FREE TO PLAY ON THE WEB</p>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           {FREE_GAMES.map((game) => (
             <button key={game.url} type="button" onClick={() => launch(game.url)} className={card}>
@@ -4003,9 +4305,9 @@ function useOpenFromFiles(appId: string, onLoad: (name: string, data: ArrayBuffe
   }, [appId]);
 }
 
-function WriterIcon({ className }: { className?: string }) { return <Tile tone="from-blue-500 to-blue-800" className={className}><span className="text-lg font-black text-white">W</span></Tile>; }
-function SlidesIcon({ className }: { className?: string }) { return <Tile tone="from-orange-400 to-red-600" className={className}><span className="text-lg font-black text-white">P</span></Tile>; }
-function SheetsIcon({ className }: { className?: string }) { return <Tile tone="from-green-500 to-emerald-800" className={className}><span className="text-lg font-black text-white">X</span></Tile>; }
+function WriterIcon({ className }: { className?: string }) { return <AppImage tone="from-blue-500 to-blue-800" src="word" className={className} />; }
+function SlidesIcon({ className }: { className?: string }) { return <AppImage tone="from-orange-400 to-red-600" src="powerpoint" className={className} />; }
+function SheetsIcon({ className }: { className?: string }) { return <AppImage tone="from-green-500 to-emerald-800" src="excel" className={className} />; }
 function PdfIcon({ className }: { className?: string }) { return <AppImage tone="from-red-500 to-red-800" src="pdf" className={className} />; }
 
 const tbBtn = "rounded-lg bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/20";
@@ -4054,7 +4356,7 @@ function WriterApp({ close }: { close: () => void }) {
   };
   const keep = (event: React.MouseEvent) => event.preventDefault();
   return (
-    <WindowFrame title={`Writer – ${name}`} icon={WriterIcon} close={close}>
+    <WindowFrame title={`Private Word – ${name}`} icon={WriterIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void saveToFiles(`${name}.doc`, docBlob()).then((ok) => ok && setMsg(`Saved ${name}.doc to Documents`))}>Save</button>
@@ -4165,7 +4467,7 @@ function SlidesApp({ close }: { close: () => void }) {
     return () => window.removeEventListener("keydown", onKey, true);
   }, [present, slides.length]);
   return (
-    <WindowFrame title={`Slides – ${name}`} icon={SlidesIcon} close={close}>
+    <WindowFrame title={`Private PowerPoint – ${name}`} icon={SlidesIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void build().then((blob) => saveToFiles(`${name}.pptx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.pptx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>
@@ -4311,7 +4613,7 @@ function SheetsApp({ close }: { close: () => void }) {
   };
   const raw = data[sel.r]?.[sel.c] ?? "";
   return (
-    <WindowFrame title={`Sheets – ${name}`} icon={SheetsIcon} close={close}>
+    <WindowFrame title={`Private Excel – ${name}`} icon={SheetsIcon} close={close}>
       <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border p-2">
         <button type="button" className={tbBtn} onClick={() => input.current?.click()}>Open</button>
         <button type="button" className={tbBtn} onClick={() => void xlsxBlob().then((blob) => saveToFiles(`${name}.xlsx`, blob)).then((ok) => ok && setMsg(`Saved ${name}.xlsx to Documents`)).catch((error: Error) => setMsg(error.message))}>Save</button>

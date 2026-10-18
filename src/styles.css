@@ -404,7 +404,7 @@ main[data-lite] section.os-window { box-shadow: 0 10px 30px rgb(0 0 0 / .35); }
 section.os-window .window-titlebar { box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--primary) 24%, transparent); }
 section.os-window :is(input, textarea, select) { accent-color: var(--primary); caret-color: var(--primary); }
 section.os-window ::selection { background: color-mix(in oklab, var(--primary) 40%, transparent); }
-main[data-glass]:not([data-liquid]) section.os-window { background: linear-gradient(160deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent 45%), rgb(18 20 28 / .42); border-color: color-mix(in oklab, var(--primary) 30%, rgb(255 255 255 / .18)); }
+main[data-glass]:not([data-liquid]) section.os-window { background: linear-gradient(160deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent 45%), color-mix(in oklab, var(--theme-base, rgb(18 20 28)) 42%, transparent); border-color: color-mix(in oklab, var(--primary) 30%, rgb(255 255 255 / .18)); }
 main[data-ui="modern"] { font-family: "Poppins", "Manrope", system-ui, sans-serif; }
 main[data-ui="modern"]:not([data-liquid]):not([data-glass]) section.os-window { background: radial-gradient(120% 80% at 70% 0%, color-mix(in oklab, var(--primary) 9%, #0b0c12) 0%, #0b0c12 60%); border-color: rgb(255 255 255 / .07); }
 main[data-ui="modern"]:not([data-liquid]) section.os-window { border-radius: 14px; }
@@ -416,3 +416,76 @@ main[data-ui="modern"] section.os-window [role="switch"][aria-checked="true"] > 
 main[data-ui="modern"] section.os-window [role="switch"][aria-checked="false"] { background: rgb(255 255 255 / .1); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .08); }
 main[data-ui="modern"] section.os-window .rounded-2xl.border { border-color: rgb(255 255 255 / .07); }
 main[data-lite][data-glass] section.os-window { background: linear-gradient(160deg, color-mix(in oklab, var(--primary) 16%, transparent), transparent 45%), rgb(18 20 28 / .94); }
+
+/* v2.0 motion: windows open with a soft spring, minimize toward the dock and fade out when closed. */
+.os-window-anim { animation: window-open .34s cubic-bezier(.16, 1.12, .3, 1) both; transition: opacity .22s ease, transform .26s cubic-bezier(.22, 1, .36, 1), filter .22s ease; }
+.os-window-min { opacity: 0; transform: translateY(40vh) scale(.35); filter: blur(4px); }
+.os-window-closing { animation: window-close .19s cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes window-open { 0% { opacity: 0; transform: translateY(18px) scale(.92); filter: blur(6px); } 60% { opacity: 1; filter: blur(0); } 100% { opacity: 1; transform: none; filter: none; } }
+@keyframes window-close { to { opacity: 0; transform: scale(.94) translateY(8px); filter: blur(3px); } }
+@keyframes tile-pop { 0% { transform: scale(.6); opacity: .4; } 70% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1); } }
+.os-start-menu { animation: start-menu-in .32s cubic-bezier(.16, 1.1, .3, 1) both !important; transform-origin: bottom left; }
+@keyframes start-menu-in { from { opacity: 0; transform: translateY(24px) scale(.96); filter: blur(5px); } to { opacity: 1; transform: none; filter: none; } }
+main[data-lite] .os-window-anim, main[data-reduce] .os-window-anim { animation: window-in .18s ease both; filter: none !important; }
+
+/* First-run welcome / setup screen */
+.welcome-root { background: radial-gradient(120% 90% at 50% 110%, color-mix(in oklab, var(--wa) 22%, #05060a), #020204 70%); animation: desktop-in .9s cubic-bezier(.22, 1, .36, 1) both; }
+.welcome-orb { position: absolute; border-radius: 9999px; filter: blur(80px); opacity: .55; pointer-events: none; transition: background 1s ease; }
+.welcome-orb-a { width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax; background: var(--wa); animation: welcome-float 14s ease-in-out infinite alternate; }
+.welcome-orb-b { width: 38vmax; height: 38vmax; right: -10vmax; bottom: -12vmax; background: color-mix(in oklab, var(--wa) 45%, #6d28d9); animation: welcome-float 18s ease-in-out infinite alternate-reverse; }
+.welcome-orb-c { width: 24vmax; height: 24vmax; left: 45%; top: 55%; background: color-mix(in oklab, var(--wa) 30%, #0ea5e9); opacity: .3; animation: welcome-float 11s ease-in-out infinite alternate; }
+@keyframes welcome-float { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.15); } }
+.welcome-hello { background: linear-gradient(100deg, #fff 20%, color-mix(in oklab, var(--wa) 70%, #fff) 50%, #fff 80%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: welcome-hello 1.6s cubic-bezier(.22, 1, .36, 1) both, welcome-shine 3s linear infinite; }
+@keyframes welcome-hello { 0% { opacity: 0; transform: translateY(18px) scale(.96); filter: blur(10px); } 25%, 80% { opacity: 1; transform: none; filter: none; } 100% { opacity: 0; transform: translateY(-10px); filter: blur(8px); } }
+@keyframes welcome-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.welcome-card { background: linear-gradient(160deg, rgb(255 255 255 / .1), rgb(255 255 255 / .03)); border: 1px solid rgb(255 255 255 / .14); box-shadow: 0 30px 80px rgb(0 0 0 / .5), inset 0 1px 0 rgb(255 255 255 / .2); backdrop-filter: blur(30px) saturate(1.6); animation: welcome-card .5s cubic-bezier(.16, 1.1, .3, 1) both; }
+@keyframes welcome-card { from { opacity: 0; transform: translateY(26px) scale(.97); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+.welcome-cta { background: #fff; color: #000; box-shadow: 0 0 0 0 color-mix(in oklab, var(--wa) 60%, transparent); transition: transform .2s ease, box-shadow .3s ease; }
+.welcome-cta:hover { transform: translateY(-1px) scale(1.03); box-shadow: 0 0 28px 2px color-mix(in oklab, var(--wa) 55%, transparent); }
+.welcome-cta:active { transform: scale(.97); }
+.welcome-swatch:hover { transform: translateY(-2px); }
+.welcome-ring { background: conic-gradient(var(--wa), color-mix(in oklab, var(--wa) 30%, transparent), var(--wa)); box-shadow: 0 0 40px color-mix(in oklab, var(--wa) 50%, transparent); animation: optimize-spin 2.4s linear infinite; }
+.welcome-ring > * { animation: optimize-spin 2.4s linear infinite reverse; }
+@media (prefers-reduced-motion: reduce) { .welcome-orb, .welcome-hello, .welcome-ring, .welcome-ring > * { animation: none; } .welcome-hello { color: #fff; } }
+
+/* Chrome-style browser */
+.chrome-strip { background: color-mix(in oklab, var(--background) 82%, black); }
+.chrome-tab { position: relative; transition: background-color .15s ease, color .15s ease; animation: chrome-tab-in .22s cubic-bezier(.22, 1, .36, 1) both; }
+.chrome-tab[data-active] { background: color-mix(in oklab, var(--background) 92%, white 8%); border-radius: 10px 10px 0 0; }
+.chrome-tab[data-active]::before, .chrome-tab[data-active]::after { content: ""; position: absolute; bottom: 0; width: 10px; height: 10px; background: transparent; pointer-events: none; }
+.chrome-tab[data-active]::before { left: -10px; border-bottom-right-radius: 10px; box-shadow: 4px 4px 0 4px color-mix(in oklab, var(--background) 92%, white 8%); }
+.chrome-tab[data-active]::after { right: -10px; border-bottom-left-radius: 10px; box-shadow: -4px 4px 0 4px color-mix(in oklab, var(--background) 92%, white 8%); }
+.chrome-tab:not([data-active]) + .chrome-tab:not([data-active])::before { content: ""; position: absolute; left: 0; top: 25%; height: 50%; width: 1px; background: rgb(255 255 255 / .14); }
+@keyframes chrome-tab-in { from { opacity: 0; max-width: 0; } to { opacity: 1; max-width: 15rem; } }
+.chrome-toolbar { background: color-mix(in oklab, var(--background) 92%, white 8%); }
+.chrome-omnibox { background: color-mix(in oklab, var(--background) 70%, black); transition: background-color .15s ease, box-shadow .15s ease; }
+.chrome-omnibox:focus-within { background: color-mix(in oklab, var(--background) 60%, black); box-shadow: 0 0 0 2px var(--primary); }
+.chrome-tile { transition: background-color .15s ease, transform .2s cubic-bezier(.22, 1, .36, 1); }
+.chrome-tile:hover { transform: translateY(-2px); }
+.chrome-progress { animation: chrome-progress 1.4s cubic-bezier(.4, 0, .2, 1) infinite; }
+@keyframes chrome-progress { 0% { transform: translateX(-100%) scaleX(.3); } 50% { transform: translateX(20%) scaleX(.6); } 100% { transform: translateX(100%) scaleX(.3); } }
+
+/* Windows-style boot dots */
+.boot-spinner { position: relative; width: 34px; height: 34px; }
+.boot-spinner > span { position: absolute; inset: 0; animation: boot-orbit 2.2s cubic-bezier(.5, .15, .5, .85) infinite; }
+.boot-spinner > span::before { content: ""; position: absolute; left: 50%; top: 0; width: 4px; height: 4px; margin-left: -2px; border-radius: 9999px; background: var(--primary); }
+@keyframes boot-orbit { 0% { transform: rotate(0); opacity: 0; } 8% { opacity: 1; } 70% { transform: rotate(560deg); opacity: 1; } 85%, 100% { transform: rotate(720deg); opacity: 0; } }
+
+/* Windows 11 style taskbar: one bar, apps centred, tray on the right. --dock-alpha comes from the Transparency setting. */
+.taskbar { background: color-mix(in oklab, var(--background) var(--dock-alpha, 70%), transparent); border-color: rgb(255 255 255 / .1); backdrop-filter: blur(30px) saturate(1.6); -webkit-backdrop-filter: blur(30px) saturate(1.6); box-shadow: 0 -8px 24px rgb(0 0 0 / .18); }
+.dock-bar.dock-glass { background: var(--glass-sheen), color-mix(in oklab, var(--background) var(--dock-alpha, 62%), transparent); }
+.taskbar-btn { position: relative; display: inline-flex; height: 40px; min-width: 40px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 6px; transition: background-color .15s ease, transform .15s ease; }
+.taskbar-btn:hover, .taskbar-btn.is-on { background: rgb(255 255 255 / .1); }
+.taskbar-btn:active { transform: scale(.92); }
+.taskbar-btn > svg, .taskbar-btn > span:first-child:not(.taskbar-tip) { transition: transform .18s cubic-bezier(.22, 1, .36, 1); }
+.taskbar-btn:active > :first-child { transform: scale(.85); }
+.taskbar-dot { position: absolute; bottom: 2px; left: 50%; width: 6px; height: 3px; border-radius: 9999px; background: rgb(255 255 255 / .55); transform: translateX(-50%); transition: width .2s cubic-bezier(.22, 1, .36, 1), background-color .2s ease; }
+.taskbar-dot.is-focused { width: 16px; background: var(--primary); }
+.taskbar-tip { position: absolute; bottom: calc(100% + 10px); left: 50%; z-index: 50; display: none; transform: translateX(-50%); white-space: nowrap; border-radius: 6px; background: var(--popover); padding: 4px 8px; font-size: 11px; box-shadow: 0 6px 18px rgb(0 0 0 / .3); pointer-events: none; }
+.taskbar-btn:hover > .taskbar-tip { display: block; }
+.taskbar.top-0 .taskbar-tip { bottom: auto; top: calc(100% + 10px); }
+/* Liquid glass: brighter sheen, refraction rim and stronger blur. */
+.taskbar-liquid { background: linear-gradient(180deg, rgb(255 255 255 / .22), rgb(255 255 255 / .04) 45%, rgb(255 255 255 / .1)), color-mix(in oklab, var(--background) calc(var(--dock-alpha, 70%) * .6), transparent) !important; backdrop-filter: blur(22px) saturate(2.2) brightness(1.12) !important; -webkit-backdrop-filter: blur(22px) saturate(2.2) brightness(1.12) !important; box-shadow: inset 0 1px 0 rgb(255 255 255 / .55), inset 0 -1px 0 rgb(255 255 255 / .12), inset 0 0 18px rgb(255 255 255 / .08), 0 10px 30px rgb(0 0 0 / .25) !important; border-color: rgb(255 255 255 / .35) !important; }
+main[data-lite] .taskbar, main[data-lite] .taskbar-liquid { backdrop-filter: none !important; background: color-mix(in oklab, var(--background) 94%, transparent) !important; }
+main[data-taskbar="bottom"] section.os-window.rounded-none { bottom: 48px !important; }
+main[data-taskbar="top"] section.os-window.rounded-none { top: 48px !important; bottom: 0 !important; }

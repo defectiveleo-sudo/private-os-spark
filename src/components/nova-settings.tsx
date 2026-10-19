@@ -1,117 +1,160 @@
-import { useEffect, useMemo, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import {
-  ArrowDown,
-  ArrowUp,
-  Bell,
+  BellOff,
   Check,
-  Clock,
-  Cpu,
-  Globe2,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Gauge,
   Image as ImageIcon,
+  ImagePlus,
   Info,
   LayoutPanelLeft,
-  Lock,
   Moon,
+  MoonStar,
   Palette,
+  Play,
   Plus,
   RotateCw,
   Search,
   ShieldCheck,
   Sparkles,
   Sun,
+  SunDim,
   Trash2,
   UserRound,
+  Volume1,
   Volume2,
   X,
 } from "lucide-react";
-import { NOVA_PINS, NOVA_THEMES, NovaMark, NovaWallpaper, novaTheme, type NovaApp, type NovaSettings } from "@/components/nova-shell";
+import { NOVA_PINS, NOVA_THEMES, NovaMark, novaTheme, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
+import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 
-// NOVA OS Settings: one calm window with a searchable sidebar and grouped cards,
-// built only around what NOVA OS has (no desktop styles, taskbars or classic themes).
+// NOVA OS Settings. Not a list of pages: it opens on a home made of live tiles
+// (your desktop, theme orbit, quick toggles), and each space slides in with its
+// own mini dock to hop between spaces. Nothing here is shared with PRIVATE OS.
 
 type Icon = ComponentType<{ className?: string }>;
 export type NovaSettingsData = NovaSettings & { soundHover: boolean; soundClick: boolean; timeZone: string; autoLock: number };
+type Wall = { label: string; thumb: string; src?: string; video?: string };
 type Props = {
   settings: NovaSettingsData;
   patch: (patch: Partial<NovaSettingsData>) => void;
   apps: NovaApp[];
   version: string;
   changelog: { v: string; date: string; items: string[] }[];
-  photo?: string | undefined;
+  walls: Wall[];
+  customFrom: number;
+  customIds: number[];
+  addWall: (file: File) => Promise<number | null>;
+  removeWall: (id: number) => void | Promise<void>;
   switchToPrivate: () => void;
   restartSetup: () => void;
   wisp: { servers: string[]; probe: (url: string) => Promise<boolean> };
 };
 
-type Page = { id: string; label: string; icon: Icon; from: string; to: string; keys: string };
-const PAGES: Page[] = [
-  { id: "appearance", label: "Appearance", icon: Palette, from: "#a855f7", to: "#6366f1", keys: "theme color accent aurora nebula ember glacier verdant sakura solar graphite" },
-  { id: "wallpaper", label: "Wallpaper", icon: ImageIcon, from: "#22d3ee", to: "#0ea5e9", keys: "wallpaper photo live parallax depth background" },
-  { id: "dock", label: "Dock & Desktop", icon: LayoutPanelLeft, from: "#f472b6", to: "#e11d48", keys: "dock pin apps magnify magnification hot corner overview" },
-  { id: "display", label: "Display", icon: Sun, from: "#fbbf24", to: "#f97316", keys: "brightness night light warm screen" },
-  { id: "sound", label: "Sound", icon: Volume2, from: "#fb7185", to: "#ef4444", keys: "sound volume click hover effects" },
-  { id: "focus", label: "Focus & Notifications", icon: Bell, from: "#818cf8", to: "#4f46e5", keys: "focus notifications do not disturb quiet" },
-  { id: "time", label: "Date & Time", icon: Clock, from: "#94a3b8", to: "#475569", keys: "clock time zone 24 hour" },
-  { id: "privacy", label: "Privacy & Web", icon: ShieldCheck, from: "#34d399", to: "#059669", keys: "privacy proxy server wisp lock auto-lock reddit comet browser erase" },
-  { id: "performance", label: "Performance", icon: Cpu, from: "#fdba74", to: "#ea580c", keys: "performance lite fast slow animations motion" },
-  { id: "account", label: "Account", icon: UserRound, from: "#60a5fa", to: "#2563eb", keys: "name account user profile" },
-  { id: "system", label: "System", icon: Info, from: "#a1a1aa", to: "#52525b", keys: "about version changelog private os switch setup reset" },
+type Space = { id: string; label: string; blurb: string; icon: Icon; hue: [string, string] };
+const SPACES: Space[] = [
+  { id: "wallpaper", label: "Wallpaper", blurb: "Live scenes, photos and depth", icon: ImageIcon, hue: ["#22d3ee", "#6366f1"] },
+  { id: "themes", label: "Themes", blurb: "The colours of everything", icon: Palette, hue: ["#f472b6", "#a855f7"] },
+  { id: "dock", label: "Dock", blurb: "Your apps and the hot corner", icon: LayoutPanelLeft, hue: ["#38bdf8", "#2563eb"] },
+  { id: "display", label: "Display", blurb: "Brightness and night light", icon: Sun, hue: ["#fde047", "#f97316"] },
+  { id: "sound", label: "Sound", blurb: "Clicks, hovers and volume", icon: Volume2, hue: ["#fb7185", "#e11d48"] },
+  { id: "focus", label: "Focus", blurb: "Quiet notifications", icon: MoonStar, hue: ["#a5b4fc", "#4f46e5"] },
+  { id: "clock", label: "Clock", blurb: "Time zone and format", icon: Clock3, hue: ["#5eead4", "#0d9488"] },
+  { id: "privacy", label: "Privacy", blurb: "Lock, Comet and proxy", icon: ShieldCheck, hue: ["#86efac", "#16a34a"] },
+  { id: "speed", label: "Speed", blurb: "Lite mode and motion", icon: Gauge, hue: ["#fdba74", "#ea580c"] },
+  { id: "profile", label: "Profile", blurb: "Your name", icon: UserRound, hue: ["#c4b5fd", "#7c3aed"] },
+  { id: "about", label: "About", blurb: "Version, updates and reset", icon: Info, hue: ["#e4e4e7", "#52525b"] },
+];
+const spaceOf = (id: string) => SPACES.find((space) => space.id === id) ?? SPACES[0]!;
+
+// Every single setting, so search can jump straight to it.
+const INDEX: { key: string; label: string; space: string; words: string }[] = [
+  { key: "scene", label: "Live wallpaper", space: "wallpaper", words: "wallpaper background aurora fluid dunes planet tide bloom silk cosmos animated" },
+  { key: "photos", label: "Photo wallpaper", space: "wallpaper", words: "photo picture image upload video background" },
+  { key: "depth", label: "Depth effect", space: "wallpaper", words: "parallax mouse move 3d" },
+  { key: "dim", label: "Dim wallpaper", space: "wallpaper", words: "darken dark wallpaper" },
+  { key: "theme", label: "Theme", space: "themes", words: "colour color accent aurora nebula ember glacier verdant sakura solar graphite" },
+  { key: "pins", label: "Dock apps", space: "dock", words: "dock pin unpin apps taskbar" },
+  { key: "magnify", label: "Magnify dock", space: "dock", words: "magnification zoom dock hover" },
+  { key: "corner", label: "Hot corner", space: "dock", words: "overview corner windows" },
+  { key: "bright", label: "Brightness", space: "display", words: "screen dim light" },
+  { key: "night", label: "Night light", space: "display", words: "warm night blue light eyes" },
+  { key: "sounds", label: "Interface sounds", space: "sound", words: "sound audio click hover effects" },
+  { key: "volume", label: "Volume", space: "sound", words: "loud quiet sound" },
+  { key: "focus", label: "Focus", space: "focus", words: "do not disturb quiet notifications" },
+  { key: "clock24", label: "24-hour clock", space: "clock", words: "time format am pm" },
+  { key: "zone", label: "Time zone", space: "clock", words: "time zone city country" },
+  { key: "lock", label: "Lock automatically", space: "privacy", words: "auto lock screen idle" },
+  { key: "reddit", label: "Reddit in Comet", space: "privacy", words: "reddit comet browser" },
+  { key: "bookmarks", label: "Clear bookmarks", space: "privacy", words: "bookmarks comet browser" },
+  { key: "proxy", label: "Proxy server", space: "privacy", words: "proxy wisp server network comet" },
+  { key: "lite", label: "Lite mode", space: "speed", words: "fast slow performance lag" },
+  { key: "motion", label: "Reduce motion", space: "speed", words: "animations motion" },
+  { key: "name", label: "Your name", space: "profile", words: "name account user profile" },
+  { key: "switch", label: "Switch to PRIVATE OS", space: "about", words: "private os classic edition switch" },
+  { key: "setup", label: "Run setup again", space: "about", words: "welcome setup start" },
+  { key: "erase", label: "Erase everything", space: "about", words: "reset erase delete wipe" },
+  { key: "news", label: "What's new", space: "about", words: "changelog version update news" },
 ];
 
-function PageIcon({ page, size = 28 }: { page: Page; size?: number }) {
-  const PIcon = page.icon;
+function SpaceIcon({ space, size = 44, className = "" }: { space: Space; size?: number; className?: string }) {
+  const SIcon = space.icon;
   return (
-    <span className="grid shrink-0 place-items-center rounded-[30%] text-white shadow-[inset_0_1px_0_rgb(255_255_255/.35),0_2px_6px_rgb(0_0_0/.35)]" style={{ width: size, height: size, background: `linear-gradient(145deg, ${page.from}, ${page.to})` }}>
-      <PIcon className="size-[56%]" />
+    <span className={`nsx-glyph ${className}`} style={{ width: size, height: size, "--g1": space.hue[0], "--g2": space.hue[1] } as CSSProperties}>
+      <SIcon className="size-[48%]" />
     </span>
   );
 }
 
-function Switch({ on, flip, label }: { on: boolean; flip: () => void; label: string }) {
+function Toggle({ on, flip, label }: { on: boolean; flip: () => void; label: string }) {
   return (
-    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={flip} className={`ns-switch ${on ? "is-on" : ""}`}>
+    <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={flip} className={`nsx-toggle ${on ? "is-on" : ""}`}>
       <span />
     </button>
   );
 }
 
-function Card({ title, children }: { title?: string; children: ReactNode }) {
+// A thick Control Center style slider: the fill is the value.
+function Fader({ value, min = 0, max = 100, set, label, icon: FIcon, unit = "%" }: { value: number; min?: number; max?: number; set: (value: number) => void; label: string; icon: Icon; unit?: string }) {
+  const pct = ((value - min) / (max - min)) * 100;
   return (
-    <section className="ns-in">
-      {title && <h3 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[.12em] text-white/45">{title}</h3>}
-      <div className="ns-card divide-y divide-white/[.06] overflow-hidden rounded-[18px]">{children}</div>
+    <label className="nsx-fader" style={{ "--fill": `${pct}%` } as CSSProperties}>
+      <span className="nsx-fader-fill" />
+      <FIcon className="relative z-[1] ml-3.5 size-[18px] shrink-0 text-black/70" />
+      <span className="relative z-[1] ml-auto mr-4 text-[12px] font-semibold tabular-nums text-white/80">{Math.round(value)}{unit}</span>
+      <input type="range" aria-label={label} min={min} max={max} value={value} onChange={(event) => set(Number(event.target.value))} />
+    </label>
+  );
+}
+
+function Pane({ title, children, className = "" }: { title?: string; children: ReactNode; className?: string }) {
+  return (
+    <section className={`nsx-pane nsx-rise ${className}`}>
+      {title && <h3 className="nsx-pane-title">{title}</h3>}
+      {children}
     </section>
   );
 }
 
-function Row({ label, hint, children }: { label: string; hint?: string; children?: ReactNode }) {
+function Line({ id, label, hint, children }: { id?: string; label: string; hint?: string; children?: ReactNode }) {
   return (
-    <div className="flex min-h-[54px] items-center gap-4 px-4 py-2.5">
+    <div data-setting={id} className="nsx-line">
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] font-medium text-white/90">{label}</p>
-        {hint && <p className="mt-0.5 text-[11.5px] leading-snug text-white/50">{hint}</p>}
+        <p className="text-[13.5px] font-semibold text-white/95">{label}</p>
+        {hint && <p className="mt-0.5 text-[12px] leading-snug text-white/55">{hint}</p>}
       </div>
       {children}
     </div>
   );
 }
 
-function Slider({ value, min = 0, max = 100, set, label, icons }: { value: number; min?: number; max?: number; set: (value: number) => void; label: string; icons?: [Icon, Icon] }) {
-  const [Low, High] = icons ?? [];
+function Chips<T extends string | number>({ value, options, set, label }: { value: T; options: { id: T; label: string }[]; set: (value: T) => void; label: string }) {
   return (
-    <div className="flex w-56 items-center gap-2.5">
-      {Low && <Low className="size-3.5 shrink-0 text-white/50" />}
-      <input type="range" aria-label={label} min={min} max={max} value={value} onChange={(event) => set(Number(event.target.value))} className="ns-range min-w-0 flex-1" style={{ "--ns-fill": `${((value - min) / (max - min)) * 100}%` } as CSSProperties} />
-      {High && <High className="size-4 shrink-0 text-white/70" />}
-    </div>
-  );
-}
-
-function Segmented<T extends string>({ value, options, set, label }: { value: T; options: { id: T; label: string }[]; set: (value: T) => void; label: string }) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex rounded-full bg-black/30 p-0.5">
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1.5">
       {options.map((option) => (
-        <button key={option.id} type="button" role="radio" aria-checked={value === option.id} onClick={() => set(option.id)} className={`rounded-full px-3.5 py-1 text-[12px] font-semibold transition-colors ${value === option.id ? "bg-white/90 text-black shadow" : "text-white/65 hover:text-white"}`}>
+        <button key={String(option.id)} type="button" role="radio" aria-checked={value === option.id} onClick={() => set(option.id)} className={`nsx-chip ${value === option.id ? "is-on" : ""}`}>
           {option.label}
         </button>
       ))}
@@ -119,28 +162,51 @@ function Segmented<T extends string>({ value, options, set, label }: { value: T;
   );
 }
 
-function ThemeCard({ id, active, pick }: { id: string; active: boolean; pick: () => void }) {
-  const theme = novaTheme(id);
-  const [a, b, c] = theme.colors;
+// A small copy of the NOVA desktop: wallpaper, Dynamic Island and dock.
+function MiniDesktop({ theme, settings, walls, apps, still, className = "" }: { theme: NovaTheme; settings: NovaSettingsData; walls: Wall[]; apps: NovaApp[]; still: boolean; className?: string }) {
+  const photo = settings.novaWall.startsWith("photo:") ? walls[Number(settings.novaWall.slice(6))] : undefined;
+  const pins = settings.novaPins.map((id) => apps.find((app) => app.id === id)).filter((app): app is NovaApp => Boolean(app)).slice(0, 7);
   return (
-    <button type="button" aria-pressed={active} onClick={pick} className={`ns-theme group relative overflow-hidden rounded-2xl text-left ${active ? "is-active" : ""}`} style={{ "--ns-accent": theme.accent } as CSSProperties}>
-      <span className="relative block aspect-[16/10] w-full" style={{ background: `radial-gradient(60% 80% at 20% 30%, ${a}cc, transparent 70%), radial-gradient(55% 70% at 80% 25%, ${b}bb, transparent 70%), radial-gradient(70% 60% at 55% 95%, ${c}aa, transparent 70%), ${theme.base}` }}>
-        <span className="absolute inset-x-[22%] bottom-2 h-2.5 rounded-full bg-white/25 backdrop-blur" />
-        <span className="absolute left-1/2 top-2 h-2 w-10 -translate-x-1/2 rounded-full bg-black/70" />
+    <div className={`overflow-hidden ${className}`}>
+      <NovaWallpaper theme={theme} wall={settings.novaWall} photo={photo?.src ?? photo?.thumb} video={photo?.video} still={still} dim={settings.novaWallDim} />
+      <span className="absolute left-1/2 top-[5%] h-[7%] min-h-3 w-[18%] -translate-x-1/2 rounded-full bg-black/85 shadow-lg" />
+      <span className="absolute bottom-[5%] left-1/2 flex h-[11%] min-h-5 -translate-x-1/2 items-center justify-center gap-[3%] rounded-[30%/50%] border border-white/15 bg-white/10 px-[2%] backdrop-blur-md" style={{ width: `${Math.max(22, pins.length * 6.5)}%` }}>
+        {pins.map((app) => {
+          const AppIcon = app.icon;
+          return <span key={app.id} className="aspect-square h-[72%]"><AppIcon className="!size-full" /></span>;
+        })}
       </span>
-      <span className="flex items-center justify-between gap-2 px-3 py-2">
-        <span className="min-w-0">
-          <span className="block truncate text-[12.5px] font-semibold text-white">{theme.name}</span>
-          <span className="block truncate text-[11px] text-white/50">{theme.sub}</span>
-        </span>
-        <span className="size-3 shrink-0 rounded-full" style={{ background: theme.accent, boxShadow: `0 0 10px ${theme.accent}` }} />
-      </span>
-      {active && <span className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white text-black shadow-lg"><Check className="size-3.5" /></span>}
-    </button>
+    </div>
   );
 }
 
-function NetworkCard({ wisp }: { wisp: Props["wisp"] }) {
+function ThemeOrbit({ theme, pick }: { theme: NovaTheme; pick: (id: string) => void }) {
+  return (
+    <div className="relative mx-auto aspect-square h-full max-h-[190px]">
+      <span className="nsx-core absolute inset-[27%] grid place-items-center rounded-full text-center" style={{ background: `conic-gradient(from 210deg, ${theme.colors[0]}, ${theme.colors[1]}, ${theme.colors[2]}, ${theme.colors[0]})`, boxShadow: `0 0 40px ${theme.accent}66` }}>
+        <span className="rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-bold backdrop-blur">{theme.name}</span>
+      </span>
+      {NOVA_THEMES.map((item, index) => {
+        const angle = (index / NOVA_THEMES.length) * Math.PI * 2 - Math.PI / 2;
+        const active = item.id === theme.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            aria-label={`${item.name} theme`}
+            aria-pressed={active}
+            title={item.name}
+            onClick={() => pick(item.id)}
+            className={`nsx-moon absolute size-[17%] -translate-x-1/2 -translate-y-1/2 rounded-full ${active ? "is-on" : ""}`}
+            style={{ left: `${50 + Math.cos(angle) * 42}%`, top: `${50 + Math.sin(angle) * 42}%`, background: `radial-gradient(circle at 32% 30%, #fff8, transparent 40%), linear-gradient(140deg, ${item.colors[0]}, ${item.colors[1]})`, "--glow": item.accent } as CSSProperties}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function ProxyPane({ wisp }: { wisp: Props["wisp"] }) {
   const [choice, setChoice] = useState("auto");
   const [custom, setCustom] = useState("");
   const [status, setStatus] = useState<Record<string, boolean>>({});
@@ -173,51 +239,68 @@ function NetworkCard({ wisp }: { wisp: Props["wisp"] }) {
     setStatus(Object.fromEntries(wisp.servers.map((url, index) => [url, Boolean(results[index])])));
     setTesting(false);
   };
-  const options = [{ id: "auto", label: "Automatic", hint: "Picks the fastest working server" }, ...wisp.servers.map((url) => ({ id: url, label: url.replace(/^wss:\/\//, "").replace(/\/.*$/, ""), hint: url })), { id: "custom", label: "Custom server", hint: "Your own Wisp address" }];
+  const options = [{ id: "auto", label: "Automatic", hint: "Fastest working server" }, ...wisp.servers.map((url) => ({ id: url, label: url.replace(/^wss:\/\//, "").replace(/\/.*$/, ""), hint: "Public server" })), { id: "custom", label: "Custom", hint: "Your own Wisp address" }];
   return (
-    <Card title="Comet proxy server">
-      {options.map((option) => (
-        <button key={option.id} type="button" onClick={() => save(option.id)} className="flex w-full items-center gap-3 px-4 py-2.5 text-left hover:bg-white/[.04]">
-          <span className={`grid size-[18px] shrink-0 place-items-center rounded-full border ${choice === option.id ? "border-[var(--primary)] bg-[var(--primary)]" : "border-white/30"}`}>{choice === option.id && <span className="size-1.5 rounded-full bg-black" />}</span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[13px] font-medium text-white/90">{option.label}</span>
-            <span className="block truncate text-[11px] text-white/45">{option.hint}</span>
-          </span>
-          {option.id in status && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${status[option.id] ? "bg-emerald-400/15 text-emerald-300" : "bg-rose-400/15 text-rose-300"}`}>{status[option.id] ? "Online" : "Offline"}</span>}
-        </button>
-      ))}
-      {choice === "custom" && (
-        <div className="px-4 py-2.5">
-          <input aria-label="Custom Wisp server" value={custom} onChange={(event) => { setCustom(event.target.value); save("custom", event.target.value); }} placeholder="wss://your-server/wisp/" className="h-9 w-full rounded-xl bg-black/30 px-3 text-[13px] outline-none ring-1 ring-white/10 focus:ring-[var(--primary)]" />
-        </div>
-      )}
-      <Row label="Check servers" hint="Sees which proxy servers answer right now.">
-        <button type="button" onClick={test} disabled={testing} className="ns-btn">{testing ? "Checking…" : "Check now"}</button>
-      </Row>
-    </Card>
+    <Pane title="Comet proxy server">
+      <div data-setting="proxy" className="grid gap-2 @lg:grid-cols-2">
+        {options.map((option) => (
+          <button key={option.id} type="button" onClick={() => save(option.id)} className={`nsx-option ${choice === option.id ? "is-on" : ""}`}>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-[13px] font-semibold">{option.label}</span>
+              <span className="block truncate text-[11px] text-white/50">{option.hint}</span>
+            </span>
+            {option.id in status ? <span className={`size-2.5 shrink-0 rounded-full ${status[option.id] ? "bg-emerald-400 shadow-[0_0_10px_#34d399]" : "bg-rose-400"}`} title={status[option.id] ? "Online" : "Offline"} /> : choice === option.id && <Check className="size-4 shrink-0 text-[var(--primary)]" />}
+          </button>
+        ))}
+      </div>
+      {choice === "custom" && <input aria-label="Custom Wisp server" value={custom} onChange={(event) => { setCustom(event.target.value); save("custom", event.target.value); }} placeholder="wss://your-server/wisp/" className="nsx-input mt-3 w-full" />}
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-[12px] text-white/55">{Object.keys(status).length ? `${Object.values(status).filter(Boolean).length} of ${wisp.servers.length} servers online` : "See which servers answer right now."}</p>
+        <button type="button" onClick={test} disabled={testing} className="nsx-btn">{testing ? "Checking…" : "Check servers"}</button>
+      </div>
+    </Pane>
+  );
+}
+
+function LiveClock({ zone, h24 }: { zone: string; h24: boolean }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  let time = "";
+  let day = "";
+  try {
+    time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: !h24, ...(zone ? { timeZone: zone } : {}) });
+    day = now.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long", ...(zone ? { timeZone: zone } : {}) });
+  } catch {
+    time = now.toLocaleTimeString();
+  }
+  return (
+    <div className="nsx-pane nsx-rise flex flex-col items-center py-8 text-center">
+      <p className="nsx-gradient-text text-[clamp(2.4rem,6cqw,4.2rem)] font-extralight tabular-nums leading-none tracking-tight">{time}</p>
+      <p className="mt-3 text-[13px] text-white/60">{day} · {zone ? zone.replace(/_/g, " ") : "This computer's time zone"}</p>
+    </div>
   );
 }
 
 export function NovaSettingsApp(props: Props) {
-  const { settings, patch, apps } = props;
-  const [page, setPage] = useState("appearance");
+  const { settings, patch, apps, walls } = props;
+  const [space, setSpace] = useState<string>("home");
   const [query, setQuery] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [flash, setFlash] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
+  const [appQuery, setAppQuery] = useState("");
+  const scroller = useRef<HTMLDivElement>(null);
+  const upload = useRef<HTMLInputElement>(null);
   const theme = novaTheme(settings.novaTheme);
-  const current = PAGES.find((item) => item.id === page) ?? PAGES[0]!;
-  const shown = useMemo(() => {
-    const text = query.trim().toLowerCase();
-    if (!text) return PAGES;
-    return PAGES.filter((item) => `${item.label} ${item.keys}`.toLowerCase().includes(text));
-  }, [query]);
+  const motion = !settings.reduceMotion && !settings.lite;
+  const liveScene = settings.novaWall.startsWith("photo:") ? "aurora" : settings.novaWall;
+  const initial = (settings.userName.trim()[0] ?? "N").toUpperCase();
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? "Good night" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const byId = (id: string) => apps.find((app) => app.id === id);
   const pins = settings.novaPins.filter((id) => byId(id));
-  const movePin = (index: number, by: -1 | 1) => {
-    const next = [...pins];
-    const [item] = next.splice(index, 1);
-    next.splice(index + by, 0, item!);
-    patch({ novaPins: next });
-  };
   const zones = useMemo(() => {
     try {
       return (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.("timeZone") ?? [];
@@ -225,268 +308,491 @@ export function NovaSettingsApp(props: Props) {
       return [];
     }
   }, []);
-  const initial = (settings.userName.trim()[0] ?? "N").toUpperCase();
+  const results = useMemo(() => {
+    const text = query.trim().toLowerCase();
+    if (!text) return [];
+    return INDEX.filter((item) => `${item.label} ${item.words}`.toLowerCase().includes(text)).slice(0, 7);
+  }, [query]);
 
-  let content: ReactNode;
-  switch (page) {
-    case "appearance":
-      content = (
-        <>
-          <Card title="Theme">
-            <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 xl:grid-cols-4">
-              {NOVA_THEMES.map((item) => <ThemeCard key={item.id} id={item.id} active={item.id === theme.id} pick={() => patch({ novaTheme: item.id })} />)}
+  const go = (id: string, key = "") => {
+    setSpace(id);
+    setQuery("");
+    setFlash(key);
+    setPicked(null);
+    scroller.current?.scrollTo({ top: 0 });
+  };
+  useEffect(() => {
+    if (!flash) return;
+    const timer = window.setTimeout(() => {
+      const row = scroller.current?.querySelector(`[data-setting="${flash}"]`);
+      row?.scrollIntoView({ block: "center", behavior: "smooth" });
+      row?.classList.add("nsx-flash");
+      window.setTimeout(() => row?.classList.remove("nsx-flash"), 1600);
+      setFlash("");
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [flash, space]);
+
+  const movePin = (id: string, by: -1 | 1) => {
+    const index = pins.indexOf(id);
+    const target = index + by;
+    if (index < 0 || target < 0 || target >= pins.length) return;
+    const next = [...pins];
+    next.splice(index, 1);
+    next.splice(target, 0, id);
+    patch({ novaPins: next });
+  };
+  const addPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    const index = await props.addWall(file);
+    if (index !== null) patch({ novaWall: `photo:${index}` });
+  };
+  const removePhoto = async (index: number) => {
+    const id = props.customIds[index - props.customFrom];
+    if (id === undefined) return;
+    const current = settings.novaWall.startsWith("photo:") ? Number(settings.novaWall.slice(6)) : -1;
+    await props.removeWall(id);
+    if (current === index) patch({ novaWall: "aurora" });
+    else if (current > index) patch({ novaWall: `photo:${current - 1}` });
+  };
+
+  // ---- Home: live tiles ----
+  const home = (
+    <div className="nsx-home space-y-4">
+      <section className="nsx-hero nsx-rise">
+        <div className="flex min-w-0 items-center gap-4">
+          <button type="button" onClick={() => go("profile")} aria-label="Profile" className="nsx-avatar" style={{ "--a1": theme.colors[0], "--a2": theme.accent, "--a3": theme.colors[2] } as CSSProperties}>
+            <span>{initial}</span>
+          </button>
+          <div className="min-w-0">
+            <p className="text-[12px] font-medium uppercase tracking-[.22em] text-white/50">NOVA OS {props.version}</p>
+            <h2 className="truncate text-[clamp(1.5rem,3.4cqw,2.3rem)] font-light leading-tight tracking-tight">{greeting}, <span className="nsx-gradient-text font-semibold">{settings.userName || "friend"}</span></h2>
+          </div>
+        </div>
+        <div className="relative w-full @3xl:w-[340px]">
+          <label className="nsx-search">
+            <Search className="size-4 shrink-0 text-white/55" />
+            <input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && results[0]) go(results[0].space, results[0].key); if (event.key === "Escape") setQuery(""); }} placeholder="Search every setting" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-white/40" />
+            {query && <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="grid size-6 place-items-center rounded-full bg-white/10"><X className="size-3" /></button>}
+          </label>
+          {query && (
+            <div role="listbox" aria-label="Search results" className="nsx-results">
+              {results.map((item) => (
+                <button key={item.key} type="button" role="option" aria-selected={false} onClick={() => go(item.space, item.key)} className="flex w-full items-center gap-3 rounded-2xl px-2.5 py-2 text-left hover:bg-white/10">
+                  <SpaceIcon space={spaceOf(item.space)} size={30} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] font-semibold">{item.label}</span>
+                    <span className="block text-[11px] text-white/50">{spaceOf(item.space).label}</span>
+                  </span>
+                  <ChevronRight className="size-4 text-white/40" />
+                </button>
+              ))}
+              {results.length === 0 && <p className="px-3 py-3 text-[12.5px] text-white/50">Nothing matches “{query}”.</p>}
             </div>
-          </Card>
-          <Card>
-            <Row label="Accent colour" hint={`${theme.name} uses ${theme.accent.toUpperCase()} for highlights, the dock and the Dynamic Island.`}>
-              <span className="size-6 rounded-full ring-2 ring-white/20" style={{ background: theme.accent, boxShadow: `0 0 14px ${theme.accent}` }} />
-            </Row>
-          </Card>
-        </>
-      );
-      break;
+          )}
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3 @3xl:grid-cols-6 @3xl:[grid-auto-rows:116px]">
+        <button type="button" onClick={() => go("wallpaper")} className="nsx-tile nsx-rise group col-span-2 aspect-[16/10] p-0 text-left @3xl:col-span-4 @3xl:row-span-2 @3xl:aspect-auto">
+          <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="absolute inset-0" />
+          <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-4 pt-12">
+            <span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">Wallpaper</span>
+              <span className="block text-[18px] font-semibold">{settings.novaWall.startsWith("photo:") ? walls[Number(settings.novaWall.slice(6))]?.label ?? "Photo" : novaWallName(settings.novaWall)}</span>
+            </span>
+            <span className="nsx-btn pointer-events-none">Change</span>
+          </span>
+        </button>
+
+        <div className="nsx-tile nsx-rise col-span-2 flex flex-col p-4 @3xl:row-span-2">
+          <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">Theme<button type="button" onClick={() => go("themes")} className="normal-case tracking-normal text-[var(--primary)] hover:underline">All themes</button></p>
+          <div className="min-h-0 flex-1 py-2"><ThemeOrbit theme={theme} pick={(id) => patch({ novaTheme: id })} /></div>
+        </div>
+
+        <div className="nsx-tile nsx-rise col-span-2 grid grid-cols-4 items-center gap-2 px-3 py-3 @3xl:col-span-3">
+          {[
+            { label: "Night light", icon: Moon, on: settings.novaNight, flip: () => patch({ novaNight: !settings.novaNight }) },
+            { label: "Focus", icon: BellOff, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
+            { label: "Sounds", icon: Volume2, on: settings.uiSounds, flip: () => patch({ uiSounds: !settings.uiSounds }) },
+            { label: "Magnify", icon: Sparkles, on: settings.novaMagnify, flip: () => patch({ novaMagnify: !settings.novaMagnify }) },
+          ].map((item) => {
+            const QIcon = item.icon;
+            return (
+              <button key={item.label} type="button" role="switch" aria-checked={item.on} onClick={item.flip} className="flex flex-col items-center gap-1.5">
+                <span className={`nsx-round ${item.on ? "is-on" : ""}`}><QIcon className="size-5" /></span>
+                <span className="text-[11px] font-medium text-white/75">{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="nsx-tile nsx-rise col-span-2 flex flex-col justify-center gap-2.5 px-4 py-3 @3xl:col-span-3">
+          <Fader label="Brightness" icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
+          <Fader label="Volume" icon={Volume2} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
+        </div>
+      </div>
+
+      <section className="nsx-rise">
+        <h3 className="nsx-pane-title px-1">Everything</h3>
+        <nav aria-label="Settings spaces" className="grid grid-cols-3 gap-2 @xl:grid-cols-4 @3xl:grid-cols-6">
+          {SPACES.map((item) => (
+            <button key={item.id} type="button" onClick={() => go(item.id)} className="nsx-space">
+              <SpaceIcon space={item} size={48} />
+              <span className="text-[12.5px] font-semibold">{item.label}</span>
+              <span className="line-clamp-1 text-[10.5px] text-white/45">{item.blurb}</span>
+            </button>
+          ))}
+        </nav>
+      </section>
+    </div>
+  );
+
+  // ---- Spaces ----
+  let content: ReactNode = null;
+  switch (space) {
     case "wallpaper":
       content = (
         <>
-          <div className="ns-in relative aspect-[16/8] overflow-hidden rounded-[22px] ring-1 ring-white/10">
-            <NovaWallpaper theme={theme} photo={settings.novaPhoto ? props.photo : undefined} />
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/60 to-transparent p-4">
-              <div>
-                <p className="text-[15px] font-semibold">{settings.novaPhoto ? "Photo" : `${theme.name} live`}</p>
-                <p className="text-[11.5px] text-white/60">{settings.novaPhoto ? "Your PRIVATE OS wallpaper with Nova colours on top" : "Moves slowly and follows your mouse"}</p>
-              </div>
-            </div>
+          <div className="nsx-rise relative overflow-hidden rounded-[28px] ring-1 ring-white/15">
+            <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="relative aspect-[16/9] max-h-[360px] w-full" />
           </div>
-          <Card>
-            <Row label="Wallpaper" hint="A live animated scene, or the photo you chose in PRIVATE OS.">
-              <Segmented label="Wallpaper type" value={settings.novaPhoto ? "photo" : "live"} options={[{ id: "live", label: "Live" }, { id: "photo", label: "Photo" }]} set={(value) => patch({ novaPhoto: value === "photo" })} />
-            </Row>
-            <Row label="Depth effect" hint="The wallpaper shifts a little as you move the mouse.">
-              <Switch label="Depth effect" on={settings.novaParallax} flip={() => patch({ novaParallax: !settings.novaParallax })} />
-            </Row>
-          </Card>
+          <Pane title="Live scenes">
+            <div data-setting="scene" className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
+              {NOVA_WALLS.map((wall) => {
+                const active = settings.novaWall === wall.id;
+                return (
+                  <button key={wall.id} type="button" aria-pressed={active} aria-label={`${wall.name} wallpaper`} onClick={() => patch({ novaWall: wall.id })} className={`nsx-wall ${active ? "is-on" : ""}`}>
+                    <span className="relative block aspect-[16/10] overflow-hidden rounded-[16px]">
+                      <NovaWallpaper theme={theme} wall={wall.id} still />
+                      {active && <span className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white text-black shadow-lg"><Check className="size-3.5" /></span>}
+                    </span>
+                    <span className="block px-1 pt-2 text-[12.5px] font-semibold">{wall.name}</span>
+                    <span className="block truncate px-1 text-[11px] text-white/50">{wall.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-3 px-1 text-[11.5px] text-white/45">Every scene is painted in your theme's colours and keeps moving slowly. It holds still in Lite mode.</p>
+          </Pane>
+          <Pane title="Photos">
+            <div data-setting="photos" className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
+              {walls.map((wall, index) => {
+                const active = settings.novaWall === `photo:${index}`;
+                const custom = index >= props.customFrom;
+                return (
+                  <div key={`${wall.label}-${index}`} className={`nsx-wall relative ${active ? "is-on" : ""}`}>
+                    <button type="button" aria-pressed={active} aria-label={`${wall.label} wallpaper`} onClick={() => patch({ novaWall: `photo:${index}` })} className="block w-full text-left">
+                      <span className="relative block aspect-[16/10] overflow-hidden rounded-[16px] bg-black/40">
+                        <img src={wall.thumb} alt="" loading="lazy" className="size-full object-cover" />
+                        {wall.video && <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold backdrop-blur"><Play className="size-2.5 fill-current" />Video</span>}
+                        {active && <span className="absolute right-2 top-2 grid size-6 place-items-center rounded-full bg-white text-black shadow-lg"><Check className="size-3.5" /></span>}
+                      </span>
+                      <span className="block truncate px-1 pt-2 text-[12.5px] font-semibold">{wall.label}</span>
+                    </button>
+                    {custom && <button type="button" aria-label={`Delete ${wall.label}`} onClick={() => void removePhoto(index)} className="absolute bottom-0.5 right-1 grid size-6 place-items-center rounded-full text-white/50 hover:bg-rose-500/20 hover:text-rose-300"><Trash2 className="size-3.5" /></button>}
+                  </div>
+                );
+              })}
+              <button type="button" onClick={() => upload.current?.click()} className="nsx-add">
+                <ImagePlus className="size-6" />
+                <span className="text-[12px] font-semibold">Add a photo</span>
+              </button>
+              <input ref={upload} type="file" accept="image/*" hidden onChange={(event) => { void addPhoto(event.target.files?.[0]); event.target.value = ""; }} />
+            </div>
+          </Pane>
+          <Pane>
+            <Line id="depth" label="Depth effect" hint="The wallpaper drifts a little as your mouse moves.">
+              <Toggle label="Depth effect" on={settings.novaParallax} flip={() => patch({ novaParallax: !settings.novaParallax })} />
+            </Line>
+            <div data-setting="dim" className="nsx-line flex-col !items-stretch">
+              <div>
+                <p className="text-[13.5px] font-semibold">Dim wallpaper</p>
+                <p className="mt-0.5 text-[12px] text-white/55">Darkens the wallpaper so windows and text stand out.</p>
+              </div>
+              <Fader label="Dim wallpaper" icon={SunDim} max={70} value={settings.novaWallDim} set={(value) => patch({ novaWallDim: value })} />
+            </div>
+          </Pane>
         </>
       );
       break;
-    case "dock":
+    case "themes":
       content = (
         <>
-          <Card title="Dock">
-            <Row label="Magnify on hover" hint="Icons grow as your mouse passes over them.">
-              <Switch label="Magnify on hover" on={settings.novaMagnify} flip={() => patch({ novaMagnify: !settings.novaMagnify })} />
-            </Row>
-            {pins.map((id, index) => {
-              const app = byId(id)!;
-              const AppIcon = app.icon;
+          <div data-setting="theme" className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
+            {NOVA_THEMES.map((item) => {
+              const active = item.id === theme.id;
               return (
-                <div key={id} className="flex items-center gap-3 px-4 py-2">
-                  <span className="size-8 shrink-0"><AppIcon className="size-full" /></span>
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-white/90">{app.label}</span>
-                  <button type="button" aria-label={`Move ${app.label} up`} disabled={index === 0} onClick={() => movePin(index, -1)} className="ns-icon-btn"><ArrowUp className="size-3.5" /></button>
-                  <button type="button" aria-label={`Move ${app.label} down`} disabled={index === pins.length - 1} onClick={() => movePin(index, 1)} className="ns-icon-btn"><ArrowDown className="size-3.5" /></button>
-                  <button type="button" aria-label={`Remove ${app.label} from the dock`} onClick={() => patch({ novaPins: pins.filter((item) => item !== id) })} className="ns-icon-btn hover:!text-rose-300"><X className="size-3.5" /></button>
-                </div>
+                <button key={item.id} type="button" aria-pressed={active} aria-label={`${item.name} theme`} onClick={() => patch({ novaTheme: item.id })} className={`nsx-theme nsx-rise ${active ? "is-on" : ""}`} style={{ "--glow": item.accent } as CSSProperties}>
+                  <span className="relative block aspect-[4/5] overflow-hidden rounded-[20px]">
+                    <NovaWallpaper theme={item} wall={liveScene} still />
+                    <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent p-3 pt-10 text-left">
+                      <span className="block text-[15px] font-semibold">{item.name}</span>
+                      <span className="block text-[11.5px] text-white/65">{item.sub}</span>
+                    </span>
+                    <span className="absolute left-3 top-3 flex gap-1">{item.colors.map((color) => <span key={color} className="size-3 rounded-full ring-1 ring-white/30" style={{ background: color }} />)}</span>
+                    {active && <span className="absolute right-3 top-3 grid size-7 place-items-center rounded-full bg-white text-black shadow-lg"><Check className="size-4" /></span>}
+                  </span>
+                </button>
               );
             })}
-            <div className="flex items-center gap-2 px-4 py-2.5">
-              <button type="button" onClick={() => setAdding(!adding)} className="ns-btn flex items-center gap-1.5"><Plus className="size-3.5" />Add an app</button>
-              <button type="button" onClick={() => patch({ novaPins: NOVA_PINS })} className="ns-btn">Reset dock</button>
-            </div>
-            {adding && (
-              <div className="grid max-h-56 grid-cols-3 gap-1 overflow-y-auto p-3 sm:grid-cols-4">
-                {apps.filter((app) => !pins.includes(app.id)).map((app) => {
+          </div>
+          <Pane>
+            <Line label="Accent colour" hint={`${theme.name} lights up the dock, the Dynamic Island, switches and sliders in ${theme.accent.toUpperCase()}.`}>
+              <span className="size-8 rounded-full ring-2 ring-white/25" style={{ background: theme.accent, boxShadow: `0 0 18px ${theme.accent}` }} />
+            </Line>
+          </Pane>
+        </>
+      );
+      break;
+    case "dock": {
+      const shownApps = apps.filter((app) => !pins.includes(app.id) && app.label.toLowerCase().includes(appQuery.trim().toLowerCase()));
+      const pickedApp = picked ? byId(picked) : undefined;
+      content = (
+        <>
+          <Pane className="!pb-4">
+            <div data-setting="pins" className="flex flex-col items-center gap-3">
+              <div className="nsx-dock-preview" aria-label="Dock preview">
+                {pins.map((id) => {
+                  const app = byId(id)!;
                   const AppIcon = app.icon;
                   return (
-                    <button key={app.id} type="button" onClick={() => patch({ novaPins: [...pins, app.id] })} className="flex flex-col items-center gap-1.5 rounded-xl p-2 text-center hover:bg-white/[.06]">
-                      <span className="size-9"><AppIcon className="size-full" /></span>
-                      <span className="w-full truncate text-[10.5px] text-white/75">{app.label}</span>
+                    <button key={id} type="button" aria-label={app.label} aria-pressed={picked === id} title={app.label} onClick={() => setPicked(picked === id ? null : id)} className={`nsx-dock-icon ${picked === id ? "is-on" : ""}`}>
+                      <AppIcon className="!size-full" />
                     </button>
                   );
                 })}
+                {pins.length === 0 && <span className="px-4 text-[12px] text-white/50">The dock is empty</span>}
               </div>
-            )}
-          </Card>
-          <Card title="Desktop">
-            <Row label="Hot corner" hint="Move the mouse to the top-left corner to see every window.">
-              <Switch label="Hot corner" on={settings.novaHotCorner} flip={() => patch({ novaHotCorner: !settings.novaHotCorner })} />
-            </Row>
-          </Card>
+              {pickedApp ? (
+                <div className="nsx-rise flex flex-wrap items-center justify-center gap-2">
+                  <span className="text-[12.5px] font-semibold">{pickedApp.label}</span>
+                  <button type="button" onClick={() => movePin(pickedApp.id, -1)} className="nsx-btn flex items-center gap-1"><ChevronLeft className="size-3.5" />Move left</button>
+                  <button type="button" onClick={() => movePin(pickedApp.id, 1)} className="nsx-btn flex items-center gap-1">Move right<ChevronRight className="size-3.5" /></button>
+                  <button type="button" onClick={() => { patch({ novaPins: pins.filter((item) => item !== pickedApp.id) }); setPicked(null); }} className="nsx-btn !text-rose-300">Remove</button>
+                </div>
+              ) : (
+                <p className="text-[12px] text-white/50">Click an app in the dock to move or remove it.</p>
+              )}
+            </div>
+          </Pane>
+          <Pane title="Add to the dock">
+            <label className="nsx-search mb-3 !h-10">
+              <Search className="size-4 text-white/50" />
+              <input aria-label="Find an app" value={appQuery} onChange={(event) => setAppQuery(event.target.value)} placeholder="Find an app" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40" />
+            </label>
+            <div className="grid max-h-60 grid-cols-4 gap-1 overflow-y-auto @xl:grid-cols-6">
+              {shownApps.map((app) => {
+                const AppIcon = app.icon;
+                return (
+                  <button key={app.id} type="button" aria-label={`Add ${app.label}`} onClick={() => patch({ novaPins: [...pins, app.id] })} className="group relative flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center hover:bg-white/[.07]">
+                    <span className="size-10"><AppIcon className="!size-full" /></span>
+                    <span className="w-full truncate text-[10.5px] text-white/75">{app.label}</span>
+                    <span className="absolute right-2 top-1.5 grid size-4 place-items-center rounded-full bg-[var(--primary)] text-black opacity-0 transition-opacity group-hover:opacity-100"><Plus className="size-3" /></span>
+                  </button>
+                );
+              })}
+            </div>
+          </Pane>
+          <Pane>
+            <Line id="magnify" label="Magnify on hover" hint="Icons swell as your mouse glides over the dock.">
+              <Toggle label="Magnify on hover" on={settings.novaMagnify} flip={() => patch({ novaMagnify: !settings.novaMagnify })} />
+            </Line>
+            <Line id="corner" label="Hot corner" hint="Push the mouse into the top-left corner to see every window.">
+              <Toggle label="Hot corner" on={settings.novaHotCorner} flip={() => patch({ novaHotCorner: !settings.novaHotCorner })} />
+            </Line>
+            <Line label="Start over" hint="Put the five default apps back.">
+              <button type="button" onClick={() => { patch({ novaPins: NOVA_PINS }); setPicked(null); }} className="nsx-btn">Reset dock</button>
+            </Line>
+          </Pane>
         </>
       );
       break;
+    }
     case "display":
       content = (
-        <Card>
-          <Row label="Brightness" hint="Dims the whole screen.">
-            <Slider label="Brightness" min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} icons={[Sun, Sun]} />
-          </Row>
-          <Row label="Night light" hint="Warmer colours that are easier on the eyes at night.">
-            <Switch label="Night light" on={settings.novaNight} flip={() => patch({ novaNight: !settings.novaNight })} />
-          </Row>
-        </Card>
+        <Pane>
+          <div data-setting="bright" className="nsx-line flex-col !items-stretch">
+            <p className="text-[13.5px] font-semibold">Brightness</p>
+            <Fader label="Brightness" icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
+          </div>
+          <Line id="night" label="Night light" hint="Warmer colours that are easier on your eyes after dark.">
+            <Toggle label="Night light" on={settings.novaNight} flip={() => patch({ novaNight: !settings.novaNight })} />
+          </Line>
+        </Pane>
       );
       break;
     case "sound":
       content = (
-        <Card>
-          <Row label="Interface sounds" hint="Soft sounds when you click and hover.">
-            <Switch label="Interface sounds" on={settings.uiSounds} flip={() => patch({ uiSounds: !settings.uiSounds })} />
-          </Row>
-          <Row label="Volume">
-            <Slider label="Interface sound volume" value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} icons={[Volume2, Volume2]} />
-          </Row>
-          <Row label="Click sound">
-            <Switch label="Click sound" on={settings.soundClick} flip={() => patch({ soundClick: !settings.soundClick })} />
-          </Row>
-          <Row label="Hover sound">
-            <Switch label="Hover sound" on={settings.soundHover} flip={() => patch({ soundHover: !settings.soundHover })} />
-          </Row>
-        </Card>
+        <Pane>
+          <Line id="sounds" label="Interface sounds" hint="Soft sounds as you click and hover.">
+            <Toggle label="Interface sounds" on={settings.uiSounds} flip={() => patch({ uiSounds: !settings.uiSounds })} />
+          </Line>
+          <div data-setting="volume" className="nsx-line flex-col !items-stretch">
+            <p className="text-[13.5px] font-semibold">Volume</p>
+            <Fader label="Volume" icon={Volume1} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
+          </div>
+          <Line label="Click sound">
+            <Toggle label="Click sound" on={settings.soundClick} flip={() => patch({ soundClick: !settings.soundClick })} />
+          </Line>
+          <Line label="Hover sound">
+            <Toggle label="Hover sound" on={settings.soundHover} flip={() => patch({ soundHover: !settings.soundHover })} />
+          </Line>
+        </Pane>
       );
       break;
     case "focus":
       content = (
-        <Card>
-          <Row label="Focus" hint="Silences notifications and shows a moon in the Dynamic Island.">
-            <Switch label="Focus" on={settings.novaFocus} flip={() => patch({ novaFocus: !settings.novaFocus })} />
-          </Row>
-          <Row label="Focus timer" hint="Start one from the Control Center or type “focus 25” in Search." />
-        </Card>
+        <>
+          <button type="button" data-setting="focus" role="switch" aria-checked={settings.novaFocus} onClick={() => patch({ novaFocus: !settings.novaFocus })} className={`nsx-focus nsx-rise ${settings.novaFocus ? "is-on" : ""}`}>
+            <MoonStar className="size-10" />
+            <span className="text-[20px] font-semibold">{settings.novaFocus ? "Focus is on" : "Focus is off"}</span>
+            <span className="text-[12.5px] text-white/60">{settings.novaFocus ? "Notifications stay quiet and a moon sits in the Dynamic Island." : "Tap to silence notifications."}</span>
+          </button>
+          <Pane>
+            <Line label="Focus timer" hint="Start one from the Control Center, or type “focus 25” in Search (Ctrl+K)." />
+          </Pane>
+        </>
       );
       break;
-    case "time":
+    case "clock":
       content = (
-        <Card>
-          <Row label="24-hour clock">
-            <Switch label="24-hour clock" on={settings.clock24} flip={() => patch({ clock24: !settings.clock24 })} />
-          </Row>
-          <Row label="Time zone" hint="Automatic uses this computer's time zone.">
-            <select aria-label="Time zone" value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="ns-select max-w-[13rem]">
-              <option value="">Automatic</option>
-              {zones.map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
-            </select>
-          </Row>
-        </Card>
+        <>
+          <LiveClock zone={settings.timeZone} h24={settings.clock24} />
+          <Pane>
+            <Line id="clock24" label="24-hour clock">
+              <Toggle label="24-hour clock" on={settings.clock24} flip={() => patch({ clock24: !settings.clock24 })} />
+            </Line>
+            <Line id="zone" label="Time zone" hint="Automatic follows this computer.">
+              <select aria-label="Time zone" value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="nsx-input max-w-[14rem]">
+                <option value="">Automatic</option>
+                {zones.map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
+              </select>
+            </Line>
+          </Pane>
+        </>
       );
       break;
     case "privacy":
       content = (
         <>
-          <Card title="Lock">
-            <Row label="Lock automatically" hint="Locks NOVA OS when you leave it alone.">
-              <select aria-label="Lock automatically" value={settings.autoLock} onChange={(event) => patch({ autoLock: Number(event.target.value) })} className="ns-select">
-                {[[0, "Never"], [1, "After 1 minute"], [5, "After 5 minutes"], [15, "After 15 minutes"], [30, "After 30 minutes"]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Row>
-          </Card>
-          <Card title="Comet browser">
-            <Row label="Reddit" hint="Reddit blocks proxy servers, so Comet shows Reddit with its own reader that loads straight from your connection." >
-              <Globe2 className="size-4 text-white/50" />
-            </Row>
-            <Row label="Bookmarks" hint="Remove every bookmark saved in Comet.">
-              <button type="button" onClick={() => { try { localStorage.removeItem("pos-bookmarks"); } catch { /* storage unavailable */ } }} className="ns-btn">Clear</button>
-            </Row>
-          </Card>
-          <NetworkCard wisp={props.wisp} />
-        </>
-      );
-      break;
-    case "performance":
-      content = (
-        <Card>
-          <Row label="Lite mode" hint="Turns off heavy effects so NOVA OS runs well on slower computers.">
-            <Switch label="Lite mode" on={settings.lite} flip={() => patch({ lite: !settings.lite })} />
-          </Row>
-          <Row label="Reduce motion" hint="Fewer animations and no moving wallpaper.">
-            <Switch label="Reduce motion" on={settings.reduceMotion} flip={() => patch({ reduceMotion: !settings.reduceMotion })} />
-          </Row>
-        </Card>
-      );
-      break;
-    case "account":
-      content = (
-        <>
-          <div className="ns-in ns-card flex items-center gap-4 rounded-[22px] p-5">
-            <span className="grid size-16 shrink-0 place-items-center rounded-full text-2xl font-bold text-black" style={{ background: `linear-gradient(140deg, ${theme.colors[0]}, ${theme.accent})` }}>{initial}</span>
-            <div className="min-w-0">
-              <p className="truncate text-lg font-semibold">{settings.userName || "Nova user"}</p>
-              <p className="text-[12px] text-white/50">Local account on this browser</p>
-            </div>
-          </div>
-          <Card>
-            <Row label="Name" hint="Shown on the lock screen and in your greeting.">
-              <input aria-label="Your name" value={settings.userName} maxLength={24} onChange={(event) => patch({ userName: event.target.value })} className="h-9 w-48 rounded-xl bg-black/30 px-3 text-[13px] outline-none ring-1 ring-white/10 focus:ring-[var(--primary)]" />
-            </Row>
-          </Card>
-        </>
-      );
-      break;
-    default:
-      content = (
-        <>
-          <div className="ns-in ns-card flex flex-col items-center gap-2 rounded-[22px] px-6 py-8 text-center">
-            <NovaMark className="size-14" />
-            <p className="mt-1 text-xl font-bold tracking-tight">NOVA OS</p>
-            <p className="text-[12px] text-white/50">Version {props.version} · runs in your browser</p>
-          </div>
-          <Card>
-            <Row label="Switch to PRIVATE OS" hint="The classic desktop. Your open windows stay open.">
-              <button type="button" onClick={props.switchToPrivate} className="ns-btn flex items-center gap-1.5"><RotateCw className="size-3.5" />Switch</button>
-            </Row>
-            <Row label="Run setup again" hint="Go through the welcome setup on the next start.">
-              <button type="button" onClick={props.restartSetup} className="ns-btn">Run setup</button>
-            </Row>
-            <Row label="Erase everything" hint="Deletes all settings, files and bookmarks in this browser.">
-              <button type="button" onClick={() => { if (!window.confirm("Erase all data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable */ } window.setTimeout(() => window.location.reload(), 200); }} className="ns-btn flex items-center gap-1.5 !text-rose-300"><Trash2 className="size-3.5" />Erase</button>
-            </Row>
-          </Card>
-          <Card title="What's new">
-            {props.changelog.slice(0, 3).map((entry) => (
-              <div key={entry.v} className="px-4 py-3">
-                <p className="flex items-baseline justify-between text-[12px] font-bold" style={{ color: theme.accent }}><span>Version {entry.v}</span><span className="font-medium text-white/40">{entry.date}</span></p>
-                <ul className="mt-1.5 space-y-1 text-[12px] text-white/75">
-                  {entry.items.map((item) => <li key={item} className="flex gap-2"><Sparkles className="mt-0.5 size-3 shrink-0 text-white/35" />{item}</li>)}
-                </ul>
+          <Pane title="Lock">
+            <div data-setting="lock" className="nsx-line flex-col !items-stretch">
+              <div>
+                <p className="text-[13.5px] font-semibold">Lock automatically</p>
+                <p className="mt-0.5 text-[12px] text-white/55">Locks NOVA OS when you leave it alone.</p>
               </div>
-            ))}
-          </Card>
+              <Chips label="Lock automatically" value={settings.autoLock} set={(value) => patch({ autoLock: value })} options={[{ id: 0, label: "Never" }, { id: 1, label: "1 min" }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }]} />
+            </div>
+          </Pane>
+          <Pane title="Comet">
+            <Line id="reddit" label="Reddit" hint="Reddit blocks proxy servers, so Comet opens Reddit in its own reader that loads straight from your connection." />
+            <Line id="bookmarks" label="Bookmarks" hint="Remove every bookmark saved in Comet.">
+              <button type="button" onClick={() => { try { localStorage.removeItem("pos-bookmarks"); } catch { /* storage unavailable */ } }} className="nsx-btn">Clear</button>
+            </Line>
+          </Pane>
+          <ProxyPane wisp={props.wisp} />
         </>
       );
+      break;
+    case "speed":
+      content = (
+        <Pane>
+          <Line id="lite" label="Lite mode" hint="Stills the wallpaper and turns off heavy effects for slower computers.">
+            <Toggle label="Lite mode" on={settings.lite} flip={() => patch({ lite: !settings.lite })} />
+          </Line>
+          <Line id="motion" label="Reduce motion" hint="Fewer animations everywhere.">
+            <Toggle label="Reduce motion" on={settings.reduceMotion} flip={() => patch({ reduceMotion: !settings.reduceMotion })} />
+          </Line>
+        </Pane>
+      );
+      break;
+    case "profile":
+      content = (
+        <>
+          <div className="nsx-pane nsx-rise flex flex-col items-center gap-3 py-8 text-center">
+            <span className="nsx-avatar !size-24 !text-4xl" style={{ "--a1": theme.colors[0], "--a2": theme.accent, "--a3": theme.colors[2] } as CSSProperties}><span>{initial}</span></span>
+            <p className="text-[22px] font-semibold">{settings.userName || "Nova user"}</p>
+            <p className="text-[12px] text-white/50">Local account · saved in this browser only</p>
+          </div>
+          <Pane>
+            <Line id="name" label="Name" hint="Shown on the lock screen and in your greeting.">
+              <input aria-label="Your name" value={settings.userName} maxLength={24} onChange={(event) => patch({ userName: event.target.value })} className="nsx-input w-52" />
+            </Line>
+          </Pane>
+        </>
+      );
+      break;
+    case "about":
+      content = (
+        <>
+          <div className="nsx-pane nsx-rise relative flex flex-col items-center overflow-hidden py-10 text-center">
+            <div className="absolute inset-0 opacity-60"><NovaWallpaper theme={theme} wall="cosmos" still={!motion} /></div>
+            <NovaMark className="relative size-20 drop-shadow-[0_0_24px_var(--primary)]" />
+            <p className="nsx-word relative mt-4">NOVA</p>
+            <p className="relative mt-1 text-[12px] uppercase tracking-[.3em] text-white/60">Version {props.version}</p>
+          </div>
+          <Pane>
+            <Line id="switch" label="Switch to PRIVATE OS" hint="The classic desktop. Your open windows stay open.">
+              <button type="button" onClick={props.switchToPrivate} className="nsx-btn flex items-center gap-1.5"><RotateCw className="size-3.5" />Switch</button>
+            </Line>
+            <Line id="setup" label="Run setup again" hint="Go through the welcome setup on the next start.">
+              <button type="button" onClick={props.restartSetup} className="nsx-btn">Run setup</button>
+            </Line>
+            <Line id="erase" label="Erase everything" hint="Deletes all settings, files and bookmarks in this browser.">
+              <button type="button" onClick={() => { if (!window.confirm("Erase all data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable */ } window.setTimeout(() => window.location.reload(), 200); }} className="nsx-btn flex items-center gap-1.5 !text-rose-300"><Trash2 className="size-3.5" />Erase</button>
+            </Line>
+          </Pane>
+          <Pane title="What's new">
+            <ol data-setting="news" className="nsx-timeline">
+              {props.changelog.slice(0, 4).map((entry) => (
+                <li key={entry.v}>
+                  <p className="flex items-baseline justify-between gap-2 text-[13px] font-bold"><span className="text-[var(--primary)]">Version {entry.v}</span><span className="text-[11px] font-medium text-white/40">{entry.date}</span></p>
+                  <ul className="mt-1.5 space-y-1 text-[12px] text-white/70">
+                    {entry.items.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          </Pane>
+        </>
+      );
+      break;
   }
 
+  const current = spaceOf(space);
   return (
-    <div className="ns-root flex min-h-0 flex-1 text-white">
-      <aside className="ns-side flex w-60 shrink-0 flex-col gap-3 overflow-y-auto p-3">
-        <button type="button" onClick={() => setPage("account")} className={`flex items-center gap-3 rounded-2xl p-2.5 text-left transition-colors ${page === "account" ? "bg-white/[.1]" : "hover:bg-white/[.06]"}`}>
-          <span className="grid size-10 shrink-0 place-items-center rounded-full text-base font-bold text-black" style={{ background: `linear-gradient(140deg, ${theme.colors[0]}, ${theme.accent})` }}>{initial}</span>
-          <span className="min-w-0">
-            <span className="block truncate text-[13px] font-semibold">{settings.userName || "Nova user"}</span>
-            <span className="block text-[11px] text-white/50">NOVA OS {props.version}</span>
-          </span>
-        </button>
-        <label className="flex h-8 items-center gap-2 rounded-xl bg-black/25 px-2.5 ring-1 ring-white/[.06] focus-within:ring-[var(--primary)]">
-          <Search className="size-3.5 shrink-0 text-white/45" />
-          <input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" className="min-w-0 flex-1 bg-transparent text-[12.5px] outline-none placeholder:text-white/40" />
-        </label>
-        <nav aria-label="Settings sections" className="flex flex-col gap-0.5">
-          {shown.map((item) => (
-            <button key={item.id} type="button" onClick={() => setPage(item.id)} aria-current={page === item.id ? "page" : undefined} className={`flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-left text-[13px] transition-colors ${page === item.id ? "bg-[var(--primary)]/20 text-white" : "text-white/80 hover:bg-white/[.06]"}`}>
-              <PageIcon page={item} size={24} />
-              {item.label}
+    <div className="nsx-root @container relative flex min-h-0 flex-1 flex-col text-white">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <NovaWallpaper theme={theme} wall={liveScene} still className="absolute inset-0 scale-110 opacity-70 blur-2xl" />
+        <div className="nsx-veil absolute inset-0" />
+      </div>
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-y-auto">
+        {space === "home" ? (
+          <div key="home" className="nsx-page mx-auto max-w-[1100px] px-5 pb-8 pt-14 @3xl:px-8">{home}</div>
+        ) : (
+          <div key={space} className="nsx-page nsx-slide mx-auto max-w-[860px] px-5 pb-28 pt-14 @3xl:px-8">
+            <header className="mb-5 flex items-center gap-4">
+              <button type="button" onClick={() => go("home")} aria-label="Back to all settings" className="nsx-back"><ChevronLeft className="size-5" /></button>
+              <SpaceIcon space={current} size={52} />
+              <div className="min-w-0">
+                <h2 className="truncate text-[26px] font-semibold tracking-tight">{current.label}</h2>
+                <p className="truncate text-[12.5px] text-white/55">{current.blurb}</p>
+              </div>
+            </header>
+            <div className="space-y-4">{content}</div>
+          </div>
+        )}
+      </div>
+      {space !== "home" && (
+        <nav aria-label="Jump to" className="nsx-jump">
+          {SPACES.map((item) => (
+            <button key={item.id} type="button" aria-label={item.label} title={item.label} aria-current={item.id === space ? "page" : undefined} onClick={() => go(item.id)} className={item.id === space ? "is-on" : ""}>
+              <SpaceIcon space={item} size={34} />
             </button>
           ))}
-          {shown.length === 0 && <p className="px-2 py-3 text-[12px] text-white/45">No settings match.</p>}
         </nav>
-        <div className="mt-auto flex items-center gap-2 rounded-xl px-2 py-2 text-[11px] text-white/40"><Lock className="size-3" />Saved on this browser only</div>
-      </aside>
-      <main key={page} className="min-w-0 flex-1 overflow-y-auto px-6 pb-8 pt-6">
-        <header className="ns-in mb-5 flex items-center gap-3">
-          <PageIcon page={current} size={40} />
-          <h2 className="text-[22px] font-bold tracking-tight">{current.label}</h2>
-          {page === "display" && settings.novaNight && <Moon className="ml-auto size-4 text-amber-300" />}
-        </header>
-        <div className="ns-stack max-w-3xl space-y-5">{content}</div>
-      </main>
+      )}
     </div>
   );
 }

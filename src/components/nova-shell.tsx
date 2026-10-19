@@ -1,3 +1,4 @@
+import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import {
   BatteryFull,
@@ -47,6 +48,8 @@ export type NovaTheme = { id: string; name: string; sub: string; accent: string;
 export type NovaSettings = {
   novaTheme: string;
   novaPhoto: boolean;
+  novaWall: string;
+  novaWallDim: number;
   novaParallax: boolean;
   novaMagnify: boolean;
   novaHotCorner: boolean;
@@ -121,22 +124,7 @@ export function NovaMark({ className = "size-5" }: { className?: string }) {
   );
 }
 
-export function NovaWallpaper({ theme, photo, className = "absolute inset-0" }: { theme: NovaTheme; photo?: string | undefined; className?: string }) {
-  return (
-    <div aria-hidden className={`nova-wall overflow-hidden ${photo ? "nova-wall-photo" : ""} ${className}`} style={{ background: theme.base, ...novaVars(theme) }}>
-      {photo && <img src={photo} alt="" className="nova-par-1 absolute -inset-[4%] size-[108%] max-w-none object-cover" />}
-      <div className="nova-par-1 absolute -inset-[12%]">
-        <span className="nova-blob nova-blob-a" style={{ "--c": theme.colors[0] } as CSSProperties} />
-        <span className="nova-blob nova-blob-b" style={{ "--c": theme.colors[1] } as CSSProperties} />
-        <span className="nova-blob nova-blob-c" style={{ "--c": theme.colors[2] } as CSSProperties} />
-      </div>
-      {!photo && <div className="nova-stars nova-par-2 absolute -inset-[8%]" />}
-      <div className="nova-horizon" />
-      <div className="nova-sweep" />
-      <div className="nova-grain" />
-    </div>
-  );
-}
+export { NovaWallpaper };
 
 function greetingFor(hour: number) {
   if (hour < 5) return "Good night";
@@ -209,6 +197,7 @@ export type NovaShellProps = {
   shutdown: () => void;
   battery: number;
   photo?: string | undefined;
+  video?: string | undefined;
   renderWidget: (id: string) => ReactNode;
   searchFiles: (query: string) => { key: string; label: string; run: () => void }[];
   webSearch: (query: string) => void;
@@ -503,7 +492,7 @@ export function NovaShell(p: NovaShellProps) {
       }}
       className="nova-root relative h-dvh w-full overflow-hidden font-sans text-white"
     >
-      <NovaWallpaper theme={theme} photo={settings.novaPhoto ? p.photo : undefined} />
+      <NovaWallpaper theme={theme} wall={settings.novaWall} photo={p.photo} video={p.video} still={!motion} dim={settings.novaWallDim} />
 
       {/* Greeting on the desktop */}
       <div className="nova-greet pointer-events-none absolute left-[6vw] top-[17dvh] z-[2] max-w-[80vw] select-none">
@@ -948,10 +937,10 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
             </button>
           ))}
         </div>
-        <button type="button" role="switch" aria-checked={settings.novaPhoto} onClick={() => patch({ novaPhoto: !settings.novaPhoto })} className="mt-3 flex w-full items-center justify-between rounded-xl px-1 py-1 text-[12px]">
-          <span className="flex items-center gap-2"><ImageIcon className="size-4 text-white/70" />Use my photo wallpaper</span>
-          <span className={`relative h-5 w-9 rounded-full transition-colors ${settings.novaPhoto ? "bg-[var(--primary)]" : "bg-white/15"}`}><span className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] ${settings.novaPhoto ? "left-[18px]" : "left-0.5"}`} /></span>
-        </button>
+        <div className="mt-3 flex items-center justify-between gap-2 px-1 text-[12px]">
+          <span className="flex min-w-0 items-center gap-2"><ImageIcon className="size-4 shrink-0 text-white/70" /><span className="truncate">{settings.novaWall.startsWith("photo:") ? "Photo wallpaper" : `${novaWallName(settings.novaWall)} wallpaper`}</span></span>
+          <button type="button" onClick={() => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); }} className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-semibold hover:bg-[var(--primary)] hover:text-black">Next</button>
+        </div>
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button type="button" onClick={openSettings} className="flex items-center justify-center gap-2 rounded-2xl bg-white/[.06] py-2.5 text-[12px] font-semibold hover:bg-white/10"><Settings className="size-4" />Settings</button>

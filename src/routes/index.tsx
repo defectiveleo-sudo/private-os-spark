@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { installUiSounds, playClick, playHover } from "@/lib/ui-sound";
 import { MINI_GAMES, MiniGame, type MiniGameId } from "@/components/mini-games";
-import { WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
+import { OsPreview, WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
+import { NOVA_PINS, NOVA_THEMES, NovaBoot, NovaShell, NovaStart, novaTheme } from "@/components/nova-shell";
+import { PulseIcon, PulseMonitor, Soundscapes, SoundscapesIcon } from "@/components/nova-apps";
 import { Component } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
 import {
@@ -226,8 +228,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "2.1";
+const OS_VERSION = "2.2";
 const CHANGELOG = [
+  { v: "2.2", date: "19 Oct 2026", items: ["Two operating systems: choose PRIVATE OS or the new NOVA OS when you set up, and switch any time in Settings", "NOVA OS: live animated wallpapers with depth, a Dynamic Island with notifications and a focus timer, a magnifying dock, the Orbit app launcher, Nova Search with a calculator, Control Center, and a notification and widget panel", "NOVA OS Overview: every open window flies into a live grid (Alt+Tab, F3 or the top-left hot corner)", "NOVA OS themes: Aurora, Nebula, Ember, Glacier, Verdant, Sakura, Solar and Graphite", "New NOVA apps: Soundscapes, a live ambient sound mixer, and Pulse, a system monitor", "NOVA OS has its own start, boot and lock screens and new window animations", "Setup now asks for your name and a theme before you can continue"] },
   { v: "2.1", date: "18 Oct 2026", items: ["New Clay theme: warm terracotta on soft charcoal with its own slow-moving wallpaper, softer windows and a warm glow", "Removed the macOS-style Liquid Glass desktop; if you used it you now get Clay", "Private Files rebuilt like Windows 11 File Explorer: tabs, address bar, command bar, navigation pane, Home and This PC, details and icon views, right-click menu, cut, copy, paste, rename and drag and drop", "Private Word, Excel, PowerPoint and OneNote now look like Microsoft 365: coloured title bar with AutoSave, ribbon tabs, a File page with recent files, and a status bar with zoom"] },
   { v: "2.0", date: "18 Oct 2026", items: ["Welcome setup on first start: say hello, enter your name, pick a theme and your preferences", "Your name on the lock screen", "Chrome-style browser: real tabs with site icons and titles, rounded address bar, bookmarks bar, menu and a new tab page with shortcuts", "Six built-in games that work offline: Snake, 2048, Breakout, Minesweeper, Memory and Tic-Tac-Toe", "Seven new themes: Tokyo Night, Dracula, Nord, Sunset, Mono, Ocean Glass and Forest Glass", "Smoother motion: windows spring open, shrink to the dock and fade when closed, and the start menu glides in", "New boot spinner", "Windows 11 style taskbar: apps in the middle, tray and clock on the right, all in one bar", "Right-click the taskbar to change its transparency, turn on liquid glass, switch to the floating dock or add apps", "Private Word, Private Excel, Private PowerPoint, Private Outlook and Private OneNote with new icons", "Cleaner app icons with no white edges"] },
   { v: "1.9", date: "16 Oct 2026", items: ["Liquid Glass theme: macOS-style menu bar, widgets, Spotlight and a magnifying glass dock", "New apps: Messages, Mail, Contacts and Maps", "Desktop style switch in Settings: Standard or Liquid Glass", "Classic and Modern interface styles, now applied to every app", "Themes now tint every app window, and glass themes make windows see-through", "Optimize button: a lite mode that makes every theme faster on slow PCs", "Satisfying hover and click sounds", "Picture icons for the built-in apps", "IN BETA tag on the start screen"] },
@@ -308,6 +311,9 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
 launcherApps.push(...linkLauncher, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+
+// NOVA OS gets every app plus its own Soundscapes and Pulse.
+const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps, { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -572,6 +578,15 @@ function PrivateOS() {
     setClosingWins((list) => (list.includes(id) ? list : [...list, id]));
     window.setTimeout(() => removeWindow(id), 190);
   };
+  const nova = settings.edition === "nova";
+  const switchEdition = (edition: "private" | "nova") => {
+    setLauncher(false);
+    setStartMenu(false);
+    setQuickMenu(false);
+    setTaskView(false);
+    setRunOpen(false);
+    patchSettings({ edition });
+  };
   const finishSetup = (result: WelcomeResult) => {
     patchSettings({ ...result, onboarded: true });
     setLocked(false);
@@ -659,6 +674,7 @@ function PrivateOS() {
     { label: "Optimize for speed", run: requestOptimize },
     { label: "Toggle dock auto-hide", run: () => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide })) },
     { label: "Reload PRIVATE OS", run: () => window.location.reload() },
+    { label: "Switch to NOVA OS", run: () => switchEdition("nova") },
   ];
   const spotQuery = runText.trim().toLowerCase();
   const spotlight: { key: string; label: string; hint: string; run: () => void }[] = !runOpen
@@ -689,6 +705,7 @@ function PrivateOS() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (nova) return; // NOVA OS has its own shortcuts.
       if ((event.altKey && event.code === "KeyR") || ((event.ctrlKey || event.metaKey) && event.code === "KeyK")) {
         event.preventDefault();
         setRunOpen((value) => !value);
@@ -761,12 +778,59 @@ function PrivateOS() {
       case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
+      case "soundscapes": return <WindowFrame title="Soundscapes" icon={SoundscapesIcon} close={close}><Soundscapes /></WindowFrame>;
+      case "pulse": return <WindowFrame title="Pulse" icon={PulseIcon} close={close}><PulseMonitor windows={openWins.length} /></WindowFrame>;
       default: return null;
     }
   };
 
-  if (phase === "start") return <StartScreen onStart={() => setPhase("boot")} />;
-  if (phase === "boot") return <BootScreen />;
+  // Wait for saved settings so the right OS shows its own start screen (no flash of the other one).
+  if (phase === "start" && !settingsReady) return <main className="h-dvh bg-black" />;
+  if (phase === "start") return nova ? <NovaStart theme={novaTheme(settings.novaTheme)} onStart={() => setPhase("boot")} /> : <StartScreen onStart={() => setPhase("boot")} />;
+  if (phase === "boot") return nova ? <NovaBoot theme={novaTheme(settings.novaTheme)} /> : <BootScreen />;
+
+  const welcome = settingsReady && !settings.onboarded
+    ? <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} novaThemes={NOVA_THEMES} lowPower={isLowPowerDevice()} onDone={finishSetup} />
+    : null;
+  const renderSlot = (id: string) => (
+    <WindowContext.Provider value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id, closing: closingWins.includes(id) }}>
+      <AppBoundary close={() => closeWindow(id)}>{renderWindow(id)}</AppBoundary>
+    </WindowContext.Provider>
+  );
+
+  if (nova) {
+    const shutDown = () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); };
+    return (
+      <NovaShell
+        settings={settings}
+        patch={patchSettings}
+        time={time}
+        zone={zone}
+        apps={NOVA_APPS}
+        openWins={openWins}
+        minWins={minWins}
+        zOrder={zOrder}
+        openApp={openApp}
+        closeWindow={closeWindow}
+        minimize={(id) => setMinWins((list) => (list.includes(id) ? list : [...list, id]))}
+        minimizeAll={() => setMinWins(openWins)}
+        raise={raise}
+        renderSlot={renderSlot}
+        locked={locked}
+        setLocked={setLocked}
+        power={power}
+        setPower={(value) => { if (value === "off") shutDown(); else setPower(value); }}
+        shutdown={shutDown}
+        battery={battery}
+        photo={allWalls[wallpaper]?.src ?? allWalls[wallpaper]?.thumb}
+        renderWidget={(id) => (id === "music" ? <MusicWidget /> : id === "notes" ? <NotesWidget /> : id === "calendar" ? <CalendarWidget weekStart={settings.weekStart} /> : <StopwatchWidget />)}
+        searchFiles={(text) => Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(text)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, run: () => openPathInApp(path, openApp) }))}
+        webSearch={webSearch}
+        switchToPrivate={() => switchEdition("private")}
+        extra={<>{optimizing && <OptimizeOverlay onApply={() => patchSettings(() => ({ lite: true }))} onDone={() => setOptimizing(false)} />}{welcome}</>}
+      />
+    );
+  }
 
   return (
     <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-clay={clay ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
@@ -972,6 +1036,11 @@ function PrivateOS() {
               })}
             </div>
           </div>
+          <button type="button" onClick={() => switchEdition("nova")} className="nova-try flex items-center gap-3 rounded-2xl border border-white/10 p-3 text-left">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-black/40"><Sparkles className="size-5 text-teal-300" /></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-bold tracking-wide">Try NOVA OS</span><span className="block text-[10px] text-white/60">The reimagined desktop. Switch back any time.</span></span>
+            <ChevronRight className="size-4 text-white/60" />
+          </button>
           <div className="grid grid-cols-5 gap-1 border-t border-border pt-3 text-center text-[11px]">
             {startItems.map(([label, action]) => (
               <button key={label} type="button" onClick={() => { setStartMenu(false); action(); }} className="rounded-md px-1 py-2 hover:bg-secondary">{label}</button>
@@ -1127,7 +1196,7 @@ function PrivateOS() {
 
 
       <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} name={settings.userName} />
-      {settingsReady && !settings.onboarded && <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} lowPower={isLowPowerDevice()} onDone={finishSetup} />}
+      {welcome}
     </main>
   );
 }
@@ -3470,8 +3539,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[] };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "aurora", novaPhoto: false, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -4540,6 +4609,21 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                       <button type="button" onClick={() => { log("Optimizing for speed"); requestOptimize(); }} className={`${btn} bg-primary text-primary-foreground`}>Optimize</button>
                     )}
                   </CfgRow>
+                </CfgCard>
+                <CfgCard title="Operating system">
+                  <p className="text-[10px] text-muted-foreground">Both have every app and keep your files. Switching keeps your windows open.</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([["private", "PRIVATE OS", "The classic desktop with a Windows-style taskbar."], ["nova", "NOVA OS", "Reimagined: live wallpapers, Dynamic Island, Overview, new apps."]] as const).map(([id, label, sub]) => {
+                      const on = settings.edition === id;
+                      return (
+                        <button key={id} type="button" aria-pressed={on} onClick={() => { if (!on) { log(`Switching to ${label}`); patch({ edition: id }); } }} className={`fx-card rounded-2xl border p-2.5 text-left ${on ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
+                          <OsPreview kind={id} />
+                          <p className="mt-2 text-xs font-bold">{label}{on ? " ✓" : ""}</p>
+                          <p className="text-[10px] leading-snug text-muted-foreground">{sub}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </CfgCard>
                 <CfgCard title="Desktop style">
                   <p className="text-[10px] text-muted-foreground">Clay is a warm theme with its own moving wallpaper and softer windows. You can still pick any theme below.</p>

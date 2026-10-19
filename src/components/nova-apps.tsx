@@ -8,6 +8,23 @@ type Icon = ComponentType<{ className?: string }>;
 
 export const SoundscapesIcon: Icon = ({ className }) => <NovaTile className={className} from="#14b8a6" to="#4338ca"><AudioWaveform /></NovaTile>;
 export const PulseIcon: Icon = ({ className }) => <NovaTile className={className} from="#fb7185" to="#f97316"><Activity /></NovaTile>;
+// Comet is NOVA OS's web browser (the same engine as PRIVATE Browser, with its own look).
+export const CometIcon: Icon = ({ className }) => (
+  <NovaTile className={className} from="#22d3ee" to="#6d28d9">
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="!size-[70%]">
+      <defs>
+        <linearGradient id="comet-tail" x1=".85" y1=".1" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity=".95" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d="M13.4 4.4 19.6 10.6 2.6 21.4Z" fill="url(#comet-tail)" />
+      <circle cx="16.5" cy="7.5" r="4.4" fill="#fff" />
+      <circle cx="15.2" cy="6.2" r="1.5" fill="#22d3ee" fillOpacity=".45" />
+      <path d="M6 5.5v2M5 6.5h2" stroke="#fff" strokeWidth="1" strokeLinecap="round" strokeOpacity=".8" />
+    </svg>
+  </NovaTile>
+);
 
 // ---------------- Soundscapes ----------------
 

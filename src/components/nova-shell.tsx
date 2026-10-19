@@ -73,7 +73,9 @@ export const NOVA_THEMES: NovaTheme[] = [
   { id: "graphite", name: "Graphite", sub: "Pure monochrome", accent: "#e4e4e7", base: "#050505", colors: ["#3f3f46", "#71717a", "#27272a"] },
 ];
 export const novaTheme = (id: string) => NOVA_THEMES.find((theme) => theme.id === id) ?? NOVA_THEMES[0]!;
-export const NOVA_PINS = ["files", "browser", "writer", "sheets", "slides", "mail", "soundscapes", "pulse", "settings"];
+export const NOVA_PINS = ["files", "browser", "writer", "soundscapes", "settings"];
+// The longer dock NOVA OS 2.2 shipped with; saved docks that still match it are shortened.
+export const OLD_NOVA_PINS = ["files", "browser", "writer", "sheets", "slides", "mail", "soundscapes", "pulse", "settings"];
 
 export function novaVars(theme: NovaTheme): CSSProperties {
   return {
@@ -441,10 +443,9 @@ export function NovaShell(p: NovaShellProps) {
         },
       }];
     }),
-    { key: "overview", label: "Overview (Alt+Tab)", icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => { setPanel(null); setOverview((value) => !value); }, tool: true },
   ];
   const magnify = settings.novaMagnify && motion;
-  const STEP = 58;
+  const STEP = 50;
   const scaleFor = (index: number) => {
     if (!magnify || hover === null) return 1;
     const d = hover - index;
@@ -624,23 +625,23 @@ export function NovaShell(p: NovaShellProps) {
         <nav
           aria-label="Nova dock"
           onPointerEnter={(event) => { dockEdge.current = event.currentTarget.getBoundingClientRect().left + 12; }}
-          onPointerMove={(event) => { if (magnify) setHover((event.clientX - dockEdge.current - 25) / STEP); }}
+          onPointerMove={(event) => { if (magnify) setHover((event.clientX - dockEdge.current - 22) / STEP); }}
           onPointerLeave={() => setHover(null)}
-          className="nova-dock nova-glass flex max-w-full items-end gap-2 overflow-x-auto overflow-y-visible rounded-[26px] px-3 pb-2.5 pt-2.5"
+          className="nova-dock nova-glass flex max-w-full items-end gap-1.5 overflow-x-auto overflow-y-visible rounded-[22px] px-2 pb-2 pt-2"
         >
           {dockEntries.map((entry, index) => {
             const s = scaleFor(index);
-            const separator = entry.key === "overview" || index === 1;
+            const separator = index === 1;
             return (
               <div key={entry.key} className="contents">
-                {separator && <span aria-hidden className="mb-2 h-9 w-px shrink-0 self-end bg-white/15" />}
+                {separator && <span aria-hidden className="mx-0.5 mb-2 h-7 w-px shrink-0 self-end bg-white/15" />}
                 <button
                   type="button"
                   aria-label={entry.label}
                   onClick={entry.onClick}
                   onContextMenu={entry.onContext}
                   className={`nova-dock-item group relative shrink-0 ${bounce === entry.key ? "is-bouncing" : ""}`}
-                  style={{ width: 50 * s, height: 50 * s }}
+                  style={{ width: 44 * s, height: 44 * s }}
                 >
                   {entry.icon}
                   <span className="nova-tip">{entry.label}</span>
@@ -826,7 +827,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
     if (actionHits.length) groups.push({ title: "Actions", hits: actionHits.map((action) => ({ key: `act-${action.label}`, label: action.label, hint: action.hint, icon: action.icon, run: action.run })) });
     const fileHits = query.length >= 2 ? files(query).slice(0, 5) : [];
     if (fileHits.length) groups.push({ title: "Files", hits: fileHits.map((file) => ({ ...file, hint: "File", icon: ImageIcon })) });
-    groups.push({ title: "Web", hits: [{ key: "web", label: `Search the web for “${text.trim()}”`, hint: "Private Browser", icon: Globe2, run: () => web(text.trim()) }] });
+    groups.push({ title: "Web", hits: [{ key: "web", label: `Search the web for “${text.trim()}”`, hint: "Comet", icon: Globe2, run: () => web(text.trim()) }] });
   }
   const flat = groups.flatMap((group) => group.hits);
   const run = (hit: Hit | undefined) => {

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiProxyRouteImport } from './routes/api.proxy'
+import { Route as ApiRedditRouteImport } from './routes/api.reddit'
 import { Route as ApiSearchRouteImport } from './routes/api.search'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +24,11 @@ const ApiProxyRoute = ApiProxyRouteImport.update({
   path: '/api/proxy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRedditRoute = ApiRedditRouteImport.update({
+  id: '/api/reddit',
+  path: '/api/reddit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSearchRoute = ApiSearchRouteImport.update({
   id: '/api/search',
   path: '/api/search',
@@ -32,30 +38,34 @@ const ApiSearchRoute = ApiSearchRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/proxy': typeof ApiProxyRoute
+  '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/proxy': typeof ApiProxyRoute
+  '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/proxy': typeof ApiProxyRoute
+  '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/proxy' | '/api/search'
+  fullPaths: '/' | '/api/proxy' | '/api/reddit' | '/api/search'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/proxy' | '/api/search'
-  id: '__root__' | '/' | '/api/proxy' | '/api/search'
+  to: '/' | '/api/proxy' | '/api/reddit' | '/api/search'
+  id: '__root__' | '/' | '/api/proxy' | '/api/reddit' | '/api/search'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiProxyRoute: typeof ApiProxyRoute
+  ApiRedditRoute: typeof ApiRedditRoute
   ApiSearchRoute: typeof ApiSearchRoute
 }
 
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProxyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/reddit': {
+      id: '/api/reddit'
+      path: '/api/reddit'
+      fullPath: '/api/reddit'
+      preLoaderRoute: typeof ApiRedditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/search': {
       id: '/api/search'
       path: '/api/search'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiProxyRoute: ApiProxyRoute,
+  ApiRedditRoute: ApiRedditRoute,
   ApiSearchRoute: ApiSearchRoute,
 }
 export const routeTree = rootRouteImport

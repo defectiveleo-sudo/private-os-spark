@@ -9,10 +9,12 @@ import {
   Calculator,
   Check,
   Command,
+  Gauge,
   Gamepad2,
   Globe2,
   Image as ImageIcon,
   LayoutGrid,
+  LayoutDashboard,
   Lock,
   Magnet,
   Moon,
@@ -57,6 +59,15 @@ export type NovaSettings = {
   novaFocus: boolean;
   novaBright: number;
   novaPins: string[];
+  novaGreet: "hello" | "clock" | "off";
+  novaGreetPos: "left" | "center";
+  novaIcons: string[];
+  novaWidgets: string[];
+  novaDockSize: number;
+  novaDockHide: boolean;
+  novaIsland: boolean;
+  novaGlass: "clear" | "frosted" | "solid";
+  novaShuffle: number;
   userName: string;
   clock24: boolean;
   reduceMotion: boolean;
@@ -78,6 +89,26 @@ export const NOVA_THEMES: NovaTheme[] = [
 export const novaTheme = (id: string) => NOVA_THEMES.find((theme) => theme.id === id) ?? NOVA_THEMES[0]!;
 export const NOVA_PINS = ["files", "browser", "writer", "soundscapes", "settings"];
 // The longer dock NOVA OS 2.2 shipped with; saved docks that still match it are shortened.
+export const NOVA_WIDGETS = [
+  { id: "calendar", label: "Calendar" },
+  { id: "music", label: "Music" },
+  { id: "notes", label: "Notes" },
+  { id: "stopwatch", label: "Stopwatch" },
+];
+
+// Lets anything in NOVA open Settings on a given space (for example "desktop").
+export const NOVA_SETTINGS_EVENT = "nova-settings-space";
+let settingsSpace = "";
+export const takeSettingsSpace = () => {
+  const space = settingsSpace;
+  settingsSpace = "";
+  return space;
+};
+const askSettingsSpace = (space: string) => {
+  settingsSpace = space;
+  window.dispatchEvent(new CustomEvent(NOVA_SETTINGS_EVENT, { detail: space }));
+};
+
 export const OLD_NOVA_PINS = ["files", "browser", "writer", "sheets", "slides", "mail", "soundscapes", "pulse", "settings"];
 
 export function novaVars(theme: NovaTheme): CSSProperties {
@@ -202,6 +233,7 @@ export type NovaShellProps = {
   searchFiles: (query: string) => { key: string; label: string; run: () => void }[];
   webSearch: (query: string) => void;
   switchToPrivate: () => void;
+  optimize: () => void;
   extra?: ReactNode;
 };
 
@@ -219,7 +251,10 @@ export function NovaShell(p: NovaShellProps) {
   const [now, setNow] = useState(() => Date.now());
   const [bounce, setBounce] = useState<string | null>(null);
   const [hover, setHover] = useState<number | null>(null);
+  const [dockPeek, setDockPeek] = useState(false);
   const dockEdge = useRef(0);
+  const wallNow = useRef(settings.novaWall);
+  wallNow.current = settings.novaWall;
   const focusOn = useRef(settings.novaFocus);
   focusOn.current = settings.novaFocus;
   const seq = useRef(1);
@@ -267,6 +302,17 @@ export function NovaShell(p: NovaShellProps) {
     setNow(Date.now());
     notify(`Focus for ${minutes} minutes`, "The island counts down. Notifications stay quiet if Focus is on.");
   };
+
+  // Wallpaper shuffle: moves to the next live scene every few minutes.
+  useEffect(() => {
+    if (!settings.novaShuffle) return;
+    const interval = window.setInterval(() => {
+      const index = NOVA_WALLS.findIndex((item) => item.id === wallNow.current);
+      patch({ novaWall: NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!.id });
+    }, settings.novaShuffle * 60000);
+    return () => window.clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.novaShuffle]);
 
   // Wallpaper parallax follows the pointer.
   useEffect(() => {
@@ -334,6 +380,16 @@ export function NovaShell(p: NovaShellProps) {
     p.openApp(id);
   };
   const pin = (id: string) => patch({ novaPins: settings.novaPins.includes(id) ? settings.novaPins.filter((item) => item !== id) : [...settings.novaPins, id] });
+  const onDesktop = (id: string) => patch({ novaIcons: settings.novaIcons.includes(id) ? settings.novaIcons.filter((item) => item !== id) : [...settings.novaIcons, id] });
+  const customize = (space = "desktop") => {
+    askSettingsSpace(space);
+    launch("settings");
+  };
+  const optimize = () => {
+    setPanel(null);
+    setCtx(null);
+    p.optimize();
+  };
 
   // ---- Overview: every open window flies into a grid, live. ----
   const slotRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -427,6 +483,7 @@ export function NovaShell(p: NovaShellProps) {
               { label: running ? "Show" : "Open", icon: AppWindowIcon, run: () => launch(id) },
               ...(running ? [{ label: "Minimize", icon: SquareStack, run: () => p.minimize(id) }, { label: "Quit", icon: X, run: () => p.closeWindow(id), danger: true }] : []),
               { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
+              { label: settings.novaIcons.includes(id) ? "Remove from desktop" : "Add to desktop", icon: LayoutDashboard, run: () => onDesktop(id) },
             ],
           });
         },
@@ -434,7 +491,9 @@ export function NovaShell(p: NovaShellProps) {
     }),
   ];
   const magnify = settings.novaMagnify && motion;
-  const STEP = 50;
+  const SIZE = settings.novaDockSize;
+  const STEP = SIZE + 6;
+  const dockHidden = settings.novaDockHide && !dockPeek && panel === null && !overview;
   const scaleFor = (index: number) => {
     if (!magnify || hover === null) return 1;
     const d = hover - index;
@@ -451,11 +510,15 @@ export function NovaShell(p: NovaShellProps) {
     { label: "Notifications and widgets", hint: "Alt+N", icon: Bell, keys: "notifications widgets center", run: () => setPanel("center") },
     { label: "Show desktop", hint: "Minimize everything", icon: SquareStack, keys: "desktop minimize hide", run: p.minimizeAll },
     { label: "Switch to PRIVATE OS", hint: "The classic desktop", icon: RotateCw, keys: "private os classic switch windows taskbar", run: p.switchToPrivate },
+    { label: "Optimize Nova", hint: "Make everything faster", icon: Gauge, keys: "optimize optimise speed fast slow lag performance lite", run: optimize },
+    { label: "Customize desktop", hint: "Greeting, icons, widgets, dock", icon: LayoutDashboard, keys: "customize customise desktop widgets icons greeting clock dock", run: () => customize() },
+    { label: settings.novaDockHide ? "Always show the dock" : "Auto-hide the dock", hint: "Dock", icon: LayoutGrid, keys: "dock hide auto show", run: () => patch({ novaDockHide: !settings.novaDockHide }) },
+    { label: "Next wallpaper", hint: "Live scenes", icon: ImageIcon, keys: "wallpaper background next change scene", run: () => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); } },
     { label: "Sleep", hint: "Press any key to wake", icon: Moon, keys: "sleep", run: () => p.setPower("sleep") },
     { label: "Restart", hint: "Reload Nova", icon: RotateCw, keys: "restart reload reboot", run: () => window.location.reload() },
     ...NOVA_THEMES.map((item) => ({ label: `Theme: ${item.name}`, hint: item.sub, icon: Palette, keys: `theme wallpaper color ${item.name.toLowerCase()}`, run: () => { patch({ novaTheme: item.id }); notify(`${item.name} theme`, item.sub); } })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [settings.novaFocus, settings.novaNight]);
+  ], [settings.novaFocus, settings.novaNight, settings.novaDockHide, settings.novaWall]);
 
   const overlayOpen = panel !== null || ctx !== null;
   const greeting = greetingFor(hourNow);
@@ -468,7 +531,8 @@ export function NovaShell(p: NovaShellProps) {
       data-lite={settings.lite ? "" : undefined}
       data-reduce={settings.reduceMotion ? "" : undefined}
       data-overview={overview ? "" : undefined}
-      style={{ ...novaVars(theme), "--dock-h": "86px" } as CSSProperties}
+      data-glass={settings.novaGlass}
+      style={novaVars(theme)}
       onContextMenu={(event) => {
         if ((event.target as HTMLElement).closest("section, nav, aside, [data-nova-ui]")) return;
         event.preventDefault();
@@ -481,6 +545,9 @@ export function NovaShell(p: NovaShellProps) {
             { label: "All apps", icon: LayoutGrid, run: () => setPanel("launcher") },
             { label: "Overview", icon: SquareStack, run: () => setOverview(true) },
             { label: "Change theme", icon: Palette, run: () => setPanel("control") },
+            { label: "Customize desktop", icon: LayoutDashboard, run: () => customize() },
+            { label: "Change wallpaper", icon: ImageIcon, run: () => customize("wallpaper") },
+            { label: "Optimize", icon: Gauge, run: optimize },
             { label: "Settings", icon: Settings, run: () => launch("settings") },
             { label: "Switch to PRIVATE OS", icon: RotateCw, run: p.switchToPrivate },
           ],
@@ -494,14 +561,71 @@ export function NovaShell(p: NovaShellProps) {
     >
       <NovaWallpaper theme={theme} wall={settings.novaWall} photo={p.photo} video={p.video} still={!motion} dim={settings.novaWallDim} />
 
-      {/* Greeting on the desktop */}
-      <div className="nova-greet pointer-events-none absolute left-[6vw] top-[17dvh] z-[2] max-w-[80vw] select-none">
-        <p className="text-[clamp(2.1rem,5.2vw,4.2rem)] font-extralight leading-[1.05] tracking-tight text-white/90">
-          {greeting},<br />
-          <span className="nova-gradient-text font-normal">{settings.userName || "friend"}</span>
-        </p>
-        <p className="mt-4 text-sm text-white/55">{longDate} · {p.openWins.length ? `${p.openWins.length} ${p.openWins.length === 1 ? "window" : "windows"} open` : "Press Ctrl+K to search everything"}</p>
-      </div>
+      {/* Greeting, clock and widgets on the desktop */}
+      {(settings.novaGreet !== "off" || settings.novaWidgets.length > 0) && (
+        <div className={`nova-greet pointer-events-none absolute z-[2] select-none ${settings.novaGreetPos === "center" ? "inset-x-0 top-[16dvh] flex flex-col items-center px-4 text-center" : "left-[6vw] top-[15dvh] max-w-[80vw]"}`}>
+          {settings.novaGreet === "hello" && (
+            <>
+              <p className="text-[clamp(2.1rem,5.2vw,4.2rem)] font-extralight leading-[1.05] tracking-tight text-white/90">
+                {greeting},<br />
+                <span className="nova-gradient-text font-normal">{settings.userName || "friend"}</span>
+              </p>
+              <p className="mt-4 text-sm text-white/55">{longDate} · {p.openWins.length ? `${p.openWins.length} ${p.openWins.length === 1 ? "window" : "windows"} open` : "Press Ctrl+K to search everything"}</p>
+            </>
+          )}
+          {settings.novaGreet === "clock" && (
+            <>
+              <p className="nova-gradient-text text-[clamp(4rem,11vw,8.5rem)] font-extralight leading-none tracking-tight tabular-nums">{clock}</p>
+              <p className="mt-3 text-[15px] text-white/70">{longDate}{settings.userName ? ` · Hi, ${settings.userName}` : ""}</p>
+            </>
+          )}
+          {settings.novaWidgets.length > 0 && (
+            <div className={`pointer-events-auto mt-8 flex max-w-[min(56rem,88vw)] select-text flex-wrap gap-3 ${settings.novaGreetPos === "center" ? "justify-center" : ""}`}>
+              {settings.novaWidgets.map((id) => (
+                <div
+                  key={id}
+                  data-nova-ui
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    setPanel(null);
+                    setCtx({ x: event.clientX, y: event.clientY, items: [{ label: "Remove widget", icon: X, run: () => patch({ novaWidgets: settings.novaWidgets.filter((item) => item !== id) }) }, { label: "Customize desktop", icon: LayoutDashboard, run: () => customize() }] });
+                  }}
+                  className="nova-glass nova-widget nova-desk-widget w-64 rounded-[22px] p-3.5 text-left"
+                >
+                  {p.renderWidget(id)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* App shortcuts on the desktop */}
+      {settings.novaIcons.length > 0 && (
+        <div data-nova-ui aria-label="Desktop shortcuts" className="nova-greet absolute right-3 top-16 z-[3] flex max-h-[calc(100dvh-190px)] flex-col flex-wrap-reverse content-start gap-1">
+          {settings.novaIcons.map((id) => {
+            const app = byId(id);
+            if (!app) return null;
+            const AppIcon = app.icon;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => launch(id)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  setPanel(null);
+                  setCtx({ x: event.clientX, y: event.clientY, items: [{ label: "Open", icon: AppWindowIcon, run: () => launch(id) }, { label: "Remove from desktop", icon: X, run: () => onDesktop(id) }, { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) }] });
+                }}
+                className="nova-desk-icon flex w-[84px] flex-col items-center gap-1.5 rounded-2xl p-2 text-center"
+              >
+                <span className="size-12"><AppIcon className="!size-full" /></span>
+                <span className="line-clamp-2 text-[11.5px] font-medium leading-tight text-white [text-shadow:0_1px_6px_rgb(0_0_0/.8)]">{app.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Overview backdrop and labels */}
       {overview && (
@@ -567,8 +691,8 @@ export function NovaShell(p: NovaShellProps) {
         </button>
       </div>
 
-      {/* The Dynamic Island */}
-      <div data-nova-ui className="absolute left-1/2 top-2 z-[57] -translate-x-1/2">
+      {/* The Dynamic Island (can be set to only appear for alerts and timers) */}
+      {(settings.novaIsland || toast || timer) && <div data-nova-ui className="absolute left-1/2 top-2 z-[57] -translate-x-1/2">
         <button
           type="button"
           aria-label="Open Control Center"
@@ -596,7 +720,7 @@ export function NovaShell(p: NovaShellProps) {
             </span>
           )}
         </button>
-      </div>
+      </div>}
 
       {/* Top-right: status and notifications */}
       <div data-nova-ui className="absolute right-3 top-2.5 z-[56] flex items-center gap-2">
@@ -610,11 +734,12 @@ export function NovaShell(p: NovaShellProps) {
       </div>
 
       {/* The dock */}
-      <div data-nova-ui className="absolute inset-x-0 bottom-3 z-[54] flex justify-center px-2">
+      {settings.novaDockHide && dockHidden && <div aria-hidden onPointerEnter={() => setDockPeek(true)} className="absolute inset-x-0 bottom-0 z-[55] h-2" />}
+      <div data-nova-ui data-hidden={dockHidden ? "" : undefined} onPointerEnter={() => setDockPeek(true)} onPointerLeave={() => setDockPeek(false)} className="nova-dock-wrap absolute inset-x-0 bottom-3 z-[54] flex justify-center px-2">
         <nav
           aria-label="Nova dock"
           onPointerEnter={(event) => { dockEdge.current = event.currentTarget.getBoundingClientRect().left + 12; }}
-          onPointerMove={(event) => { if (magnify) setHover((event.clientX - dockEdge.current - 22) / STEP); }}
+          onPointerMove={(event) => { if (magnify) setHover((event.clientX - dockEdge.current - SIZE / 2) / STEP); }}
           onPointerLeave={() => setHover(null)}
           className="nova-dock nova-glass flex max-w-full items-end gap-1.5 overflow-x-auto overflow-y-visible rounded-[22px] px-2 pb-2 pt-2"
         >
@@ -630,7 +755,7 @@ export function NovaShell(p: NovaShellProps) {
                   onClick={entry.onClick}
                   onContextMenu={entry.onContext}
                   className={`nova-dock-item group relative shrink-0 ${bounce === entry.key ? "is-bouncing" : ""}`}
-                  style={{ width: 44 * s, height: 44 * s }}
+                  style={{ width: SIZE * s, height: SIZE * s }}
                 >
                   {entry.icon}
                   <span className="nova-tip">{entry.label}</span>
@@ -646,7 +771,7 @@ export function NovaShell(p: NovaShellProps) {
       {panel === "launcher" && <OrbitLauncher apps={p.apps} launch={launch} pins={settings.novaPins} pin={pin} close={() => setPanel(null)} />}
       {panel === "search" && <NovaSearch apps={p.apps} actions={actions} launch={launch} files={p.searchFiles} web={(text) => { setPanel(null); p.webSearch(text); }} startTimer={startTimer} close={() => setPanel(null)} />}
       {panel === "control" && (
-        <ControlCenter settings={settings} patch={patch} battery={p.battery} timer={timer ? mmss : null} startTimer={startTimer} stopTimer={() => setTimer(null)} openSettings={() => launch("settings")} switchOS={p.switchToPrivate} notify={notify} />
+        <ControlCenter settings={settings} patch={patch} battery={p.battery} timer={timer ? mmss : null} startTimer={startTimer} stopTimer={() => setTimer(null)} openSettings={() => launch("settings")} customize={() => customize()} optimize={optimize} switchOS={p.switchToPrivate} notify={notify} />
       )}
       {panel === "center" && (
         <aside data-nova-panel className="nova-glass nova-panel-right absolute bottom-[100px] right-3 top-14 z-[62] flex w-[min(23rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-[28px]">
@@ -684,6 +809,8 @@ export function NovaShell(p: NovaShellProps) {
           {([
             ["About Nova", Sparkles, () => launch("about")],
             ["Settings", Settings, () => launch("settings")],
+            ["Customize desktop", LayoutDashboard, () => customize()],
+            ["Optimize", Gauge, optimize],
             ["Overview", SquareStack, () => { setPanel(null); setOverview(true); }],
             ["Lock", Lock, () => { setPanel(null); p.setLocked(true); }],
             ["Sleep", Moon, () => { setPanel(null); p.setPower("sleep"); }],
@@ -886,7 +1013,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   );
 }
 
-function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer, openSettings, switchOS, notify }: { settings: NovaSettings; patch: (patch: Partial<NovaSettings>) => void; battery: number; timer: string | null; startTimer: (minutes: number) => void; stopTimer: () => void; openSettings: () => void; switchOS: () => void; notify: (title: string, body?: string) => void }) {
+function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer, openSettings, customize, optimize, switchOS, notify }: { settings: NovaSettings; patch: (patch: Partial<NovaSettings>) => void; battery: number; timer: string | null; startTimer: (minutes: number) => void; stopTimer: () => void; openSettings: () => void; customize: () => void; optimize: () => void; switchOS: () => void; notify: (title: string, body?: string) => void }) {
   const theme = novaTheme(settings.novaTheme);
   const tiles: { label: string; sub: string; icon: Icon; on: boolean; flip: () => void }[] = [
     { label: "Focus", sub: settings.novaFocus ? "On" : "Off", icon: MoonStar, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
@@ -942,9 +1069,14 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
           <button type="button" onClick={() => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); }} className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-semibold hover:bg-[var(--primary)] hover:text-black">Next</button>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={openSettings} className="flex items-center justify-center gap-2 rounded-2xl bg-white/[.06] py-2.5 text-[12px] font-semibold hover:bg-white/10"><Settings className="size-4" />Settings</button>
-        <button type="button" onClick={switchOS} className="flex items-center justify-center gap-2 rounded-2xl bg-white/[.06] py-2.5 text-[12px] font-semibold hover:bg-white/10"><RotateCw className="size-4" />PRIVATE OS</button>
+      <button type="button" onClick={optimize} className="nova-optimize-btn mt-3 flex w-full items-center gap-3 rounded-2xl p-3 text-left">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-black/25"><Gauge className="size-5" /></span>
+        <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">Optimize</span><span className="block truncate text-[11px] opacity-70">{settings.lite ? "Already optimized · run again" : "Make Nova faster on this device"}</span></span>
+      </button>
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <button type="button" onClick={openSettings} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><Settings className="size-4" />Settings</button>
+        <button type="button" onClick={customize} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><LayoutDashboard className="size-4" />Desktop</button>
+        <button type="button" onClick={switchOS} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><RotateCw className="size-4" />PRIVATE OS</button>
       </div>
     </aside>
   );
@@ -981,6 +1113,42 @@ export function NovaBoot({ theme }: { theme: NovaTheme }) {
         <p key={line} className="mt-4 text-[12px] text-white/55 [animation:nova-fade_.4s_both]">{BOOT_LINES[line]}…</p>
       </div>
     </main>
+  );
+}
+
+// NOVA's own optimize screen: a ring fills while each step runs, then lite mode turns on.
+const OPTIMIZE_STEPS = ["Measuring this device", "Pausing heavy wallpaper motion", "Thinning glass and blur", "Calming animations", "Freeing memory"];
+export function NovaOptimize({ theme, onApply, onDone }: { theme: NovaTheme; onApply: () => void; onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const finished = step >= OPTIMIZE_STEPS.length;
+  useEffect(() => {
+    if (finished) {
+      onApply();
+      const timeout = window.setTimeout(onDone, 1500);
+      return () => window.clearTimeout(timeout);
+    }
+    const timeout = window.setTimeout(() => setStep((value) => value + 1), 480);
+    return () => window.clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  const pct = Math.min(1, step / OPTIMIZE_STEPS.length);
+  const cores = typeof navigator !== "undefined" ? navigator.hardwareConcurrency : undefined;
+  return (
+    <div role="alertdialog" aria-live="polite" aria-label="Optimizing NOVA OS" className="nova-optimize fixed inset-0 z-[95] grid place-items-center p-6 text-white" style={novaVars(theme)}>
+      <div className="flex w-full max-w-sm flex-col items-center text-center">
+        <div className="relative grid size-40 place-items-center">
+          <svg viewBox="0 0 120 120" className="absolute inset-0 -rotate-90">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgb(255 255 255 / .1)" strokeWidth="6" />
+            <circle cx="60" cy="60" r="52" fill="none" stroke="url(#nova-opt)" strokeWidth="6" strokeLinecap="round" strokeDasharray={`${pct * 326.7} 326.7`} className="transition-[stroke-dasharray] duration-500 ease-out" />
+            <defs><linearGradient id="nova-opt" x1="0" x2="1"><stop offset="0" stopColor={theme.colors[0]} /><stop offset="1" stopColor={theme.accent} /></linearGradient></defs>
+          </svg>
+          {finished ? <Check className="size-14 text-[var(--primary)] [animation:nova-pop_.4s_both]" /> : <span className="text-[34px] font-extralight tabular-nums">{Math.round(pct * 100)}<span className="text-lg text-white/50">%</span></span>}
+        </div>
+        <p className="mt-7 text-[22px] font-semibold">{finished ? "Nova is optimized" : "Optimizing Nova"}</p>
+        <p key={step} className="mt-1.5 h-5 text-[13px] text-white/60 [animation:nova-fade_.35s_both]">{finished ? "Lite mode is on. Turn it off any time in Settings › Speed." : `${OPTIMIZE_STEPS[step]}…`}</p>
+        <p className="mt-6 text-[11px] uppercase tracking-[.25em] text-white/35">{cores ? `${cores} cores` : "This device"}</p>
+      </div>
+    </div>
   );
 }
 

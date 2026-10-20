@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   ImagePlus,
   Info,
+  LayoutDashboard,
   LayoutPanelLeft,
   Moon,
   MoonStar,
@@ -27,7 +28,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { NOVA_PINS, NOVA_THEMES, NovaMark, novaTheme, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
+import { NOVA_PINS, NOVA_SETTINGS_EVENT, NOVA_THEMES, NOVA_WIDGETS, NovaMark, novaTheme, takeSettingsSpace, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 
 // NOVA OS Settings. Not a list of pages: it opens on a home made of live tiles
@@ -49,6 +50,7 @@ type Props = {
   addWall: (file: File) => Promise<number | null>;
   removeWall: (id: number) => void | Promise<void>;
   switchToPrivate: () => void;
+  optimize: () => void;
   restartSetup: () => void;
   wisp: { servers: string[]; probe: (url: string) => Promise<boolean> };
 };
@@ -56,6 +58,7 @@ type Props = {
 type Space = { id: string; label: string; blurb: string; icon: Icon; hue: [string, string] };
 const SPACES: Space[] = [
   { id: "wallpaper", label: "Wallpaper", blurb: "Live scenes, photos and depth", icon: ImageIcon, hue: ["#22d3ee", "#6366f1"] },
+  { id: "desktop", label: "Desktop", blurb: "Greeting, shortcuts and widgets", icon: LayoutDashboard, hue: ["#34d399", "#0891b2"] },
   { id: "themes", label: "Themes", blurb: "The colours of everything", icon: Palette, hue: ["#f472b6", "#a855f7"] },
   { id: "dock", label: "Dock", blurb: "Your apps and the hot corner", icon: LayoutPanelLeft, hue: ["#38bdf8", "#2563eb"] },
   { id: "display", label: "Display", blurb: "Brightness and night light", icon: Sun, hue: ["#fde047", "#f97316"] },
@@ -63,7 +66,7 @@ const SPACES: Space[] = [
   { id: "focus", label: "Focus", blurb: "Quiet notifications", icon: MoonStar, hue: ["#a5b4fc", "#4f46e5"] },
   { id: "clock", label: "Clock", blurb: "Time zone and format", icon: Clock3, hue: ["#5eead4", "#0d9488"] },
   { id: "privacy", label: "Privacy", blurb: "Lock, Comet and proxy", icon: ShieldCheck, hue: ["#86efac", "#16a34a"] },
-  { id: "speed", label: "Speed", blurb: "Lite mode and motion", icon: Gauge, hue: ["#fdba74", "#ea580c"] },
+  { id: "speed", label: "Speed", blurb: "Optimize, lite mode, motion", icon: Gauge, hue: ["#fdba74", "#ea580c"] },
   { id: "profile", label: "Profile", blurb: "Your name", icon: UserRound, hue: ["#c4b5fd", "#7c3aed"] },
   { id: "about", label: "About", blurb: "Version, updates and reset", icon: Info, hue: ["#e4e4e7", "#52525b"] },
 ];
@@ -75,10 +78,19 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "photos", label: "Photo wallpaper", space: "wallpaper", words: "photo picture image upload video background" },
   { key: "depth", label: "Depth effect", space: "wallpaper", words: "parallax mouse move 3d" },
   { key: "dim", label: "Dim wallpaper", space: "wallpaper", words: "darken dark wallpaper" },
+  { key: "shuffle", label: "Wallpaper shuffle", space: "wallpaper", words: "shuffle rotate change wallpaper every minutes slideshow" },
+  { key: "greet", label: "Desktop greeting", space: "desktop", words: "greeting hello clock big time desktop name" },
+  { key: "greetpos", label: "Greeting position", space: "desktop", words: "left centre center position" },
+  { key: "widgets", label: "Desktop widgets", space: "desktop", words: "widgets calendar music notes stopwatch desktop" },
+  { key: "icons", label: "Desktop shortcuts", space: "desktop", words: "icons shortcuts apps desktop" },
+  { key: "island", label: "Dynamic Island", space: "desktop", words: "island notch top clock pill" },
+  { key: "glass", label: "Glass style", space: "desktop", words: "glass blur transparent clear frosted solid panels" },
   { key: "theme", label: "Theme", space: "themes", words: "colour color accent aurora nebula ember glacier verdant sakura solar graphite" },
   { key: "pins", label: "Dock apps", space: "dock", words: "dock pin unpin apps taskbar" },
   { key: "magnify", label: "Magnify dock", space: "dock", words: "magnification zoom dock hover" },
   { key: "corner", label: "Hot corner", space: "dock", words: "overview corner windows" },
+  { key: "docksize", label: "Dock size", space: "dock", words: "dock icon size big small" },
+  { key: "dockhide", label: "Auto-hide the dock", space: "dock", words: "dock hide auto hidden" },
   { key: "bright", label: "Brightness", space: "display", words: "screen dim light" },
   { key: "night", label: "Night light", space: "display", words: "warm night blue light eyes" },
   { key: "sounds", label: "Interface sounds", space: "sound", words: "sound audio click hover effects" },
@@ -90,6 +102,7 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "reddit", label: "Reddit in Comet", space: "privacy", words: "reddit comet browser" },
   { key: "bookmarks", label: "Clear bookmarks", space: "privacy", words: "bookmarks comet browser" },
   { key: "proxy", label: "Proxy server", space: "privacy", words: "proxy wisp server network comet" },
+  { key: "optimize", label: "Optimize", space: "speed", words: "optimize optimise fast slow performance lag speed" },
   { key: "lite", label: "Lite mode", space: "speed", words: "fast slow performance lag" },
   { key: "motion", label: "Reduce motion", space: "speed", words: "animations motion" },
   { key: "name", label: "Your name", space: "profile", words: "name account user profile" },
@@ -167,9 +180,26 @@ function MiniDesktop({ theme, settings, walls, apps, still, className = "" }: { 
   const photo = settings.novaWall.startsWith("photo:") ? walls[Number(settings.novaWall.slice(6))] : undefined;
   const pins = settings.novaPins.map((id) => apps.find((app) => app.id === id)).filter((app): app is NovaApp => Boolean(app)).slice(0, 7);
   return (
-    <div className={`overflow-hidden ${className}`}>
+    <div className={`overflow-hidden [container-type:inline-size] ${className}`}>
       <NovaWallpaper theme={theme} wall={settings.novaWall} photo={photo?.src ?? photo?.thumb} video={photo?.video} still={still} dim={settings.novaWallDim} />
-      <span className="absolute left-1/2 top-[5%] h-[7%] min-h-3 w-[18%] -translate-x-1/2 rounded-full bg-black/85 shadow-lg" />
+      {settings.novaIsland && <span className="absolute left-1/2 top-[5%] h-[7%] min-h-3 w-[18%] -translate-x-1/2 rounded-full bg-black/85 shadow-lg" />}
+      {(settings.novaGreet !== "off" || settings.novaWidgets.length > 0) && (
+        <span className={`absolute top-[20%] flex flex-col gap-[4%] ${settings.novaGreetPos === "center" ? "inset-x-0 items-center" : "left-[6%] items-start"}`}>
+          {settings.novaGreet === "hello" && <><span className="h-[.55em] w-[30cqw] max-w-[9rem] rounded-full bg-white/75" /><span className="h-[.55em] w-[20cqw] max-w-[6rem] rounded-full bg-[var(--primary)]" /></>}
+          {settings.novaGreet === "clock" && <span className="text-[clamp(1rem,6cqw,2.6rem)] font-extralight leading-none text-white/90">12:30</span>}
+          {settings.novaWidgets.length > 0 && <span className="mt-[3%] flex gap-1">{settings.novaWidgets.map((id) => <span key={id} className="h-[2.4em] w-[3.4em] rounded-md border border-white/15 bg-white/15 backdrop-blur" />)}</span>}
+        </span>
+      )}
+      {settings.novaIcons.length > 0 && (
+        <span className="absolute right-[2%] top-[13%] flex flex-col gap-[1.2em]">
+          {settings.novaIcons.slice(0, 5).map((id) => {
+            const app = apps.find((item) => item.id === id);
+            if (!app) return null;
+            const AppIcon = app.icon;
+            return <span key={id} className="size-[1.6em]"><AppIcon className="!size-full" /></span>;
+          })}
+        </span>
+      )}
       <span className="absolute bottom-[5%] left-1/2 flex h-[11%] min-h-5 -translate-x-1/2 items-center justify-center gap-[3%] rounded-[30%/50%] border border-white/15 bg-white/10 px-[2%] backdrop-blur-md" style={{ width: `${Math.max(22, pins.length * 6.5)}%` }}>
         {pins.map((app) => {
           const AppIcon = app.icon;
@@ -286,7 +316,7 @@ function LiveClock({ zone, h24 }: { zone: string; h24: boolean }) {
 
 export function NovaSettingsApp(props: Props) {
   const { settings, patch, apps, walls } = props;
-  const [space, setSpace] = useState<string>("home");
+  const [space, setSpace] = useState<string>(() => takeSettingsSpace() || "home");
   const [query, setQuery] = useState("");
   const [flash, setFlash] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
@@ -321,6 +351,16 @@ export function NovaSettingsApp(props: Props) {
     setPicked(null);
     scroller.current?.scrollTo({ top: 0 });
   };
+  // Other parts of NOVA can open Settings on a space (for example "Customize desktop").
+  useEffect(() => {
+    const open = (event: Event) => {
+      const target = (event as CustomEvent<string>).detail;
+      takeSettingsSpace();
+      if (SPACES.some((item) => item.id === target)) go(target);
+    };
+    window.addEventListener(NOVA_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(NOVA_SETTINGS_EVENT, open);
+  }, []);
   useEffect(() => {
     if (!flash) return;
     const timer = window.setTimeout(() => {
@@ -512,10 +552,98 @@ export function NovaSettingsApp(props: Props) {
               </div>
               <Fader label="Dim wallpaper" icon={SunDim} max={70} value={settings.novaWallDim} set={(value) => patch({ novaWallDim: value })} />
             </div>
+            <div data-setting="shuffle" className="nsx-line flex-col !items-stretch">
+              <div>
+                <p className="text-[13.5px] font-semibold">Wallpaper shuffle</p>
+                <p className="mt-0.5 text-[12px] text-white/55">Moves to the next live scene on its own.</p>
+              </div>
+              <Chips label="Wallpaper shuffle" value={settings.novaShuffle} set={(value) => patch({ novaShuffle: value })} options={[{ id: 0, label: "Off" }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }, { id: 60, label: "1 hour" }]} />
+            </div>
           </Pane>
         </>
       );
       break;
+    case "desktop": {
+      const iconApps = apps.filter((app) => !settings.novaIcons.includes(app.id) && app.label.toLowerCase().includes(appQuery.trim().toLowerCase()));
+      content = (
+        <>
+          <div className="nsx-rise relative overflow-hidden rounded-[28px] ring-1 ring-white/15">
+            <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="relative aspect-[16/9] max-h-[360px] w-full" />
+          </div>
+          <Pane title="Greeting">
+            <div data-setting="greet" className="grid grid-cols-3 gap-2">
+              {([["hello", "Hello", "Good morning and your name"], ["clock", "Big clock", "The time, large"], ["off", "Nothing", "Just the wallpaper"]] as const).map(([id, label, hint]) => (
+                <button key={id} type="button" aria-pressed={settings.novaGreet === id} onClick={() => patch({ novaGreet: id })} className={`nsx-pick ${settings.novaGreet === id ? "is-on" : ""}`}>
+                  <span className="text-[13px] font-semibold">{label}</span>
+                  <span className="text-[11px] text-white/55">{hint}</span>
+                </button>
+              ))}
+            </div>
+            <Line id="greetpos" label="Position">
+              <Chips label="Greeting position" value={settings.novaGreetPos} set={(value) => patch({ novaGreetPos: value })} options={[{ id: "left", label: "Left" }, { id: "center", label: "Centre" }]} />
+            </Line>
+          </Pane>
+          <Pane title="Widgets">
+            <div data-setting="widgets" className="grid grid-cols-2 gap-2 @xl:grid-cols-4">
+              {NOVA_WIDGETS.map((widget) => {
+                const on = settings.novaWidgets.includes(widget.id);
+                return (
+                  <button key={widget.id} type="button" role="switch" aria-checked={on} onClick={() => patch({ novaWidgets: on ? settings.novaWidgets.filter((item) => item !== widget.id) : [...settings.novaWidgets, widget.id] })} className={`nsx-pick !flex-row items-center justify-between ${on ? "is-on" : ""}`}>
+                    <span className="text-[13px] font-semibold">{widget.label}</span>
+                    <span className={`grid size-5 place-items-center rounded-full ${on ? "bg-[var(--primary)] text-black" : "bg-white/10"}`}>{on ? <Check className="size-3" /> : <Plus className="size-3" />}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 px-1 text-[11.5px] text-white/45">Widgets sit under the greeting. Right-click one to remove it.</p>
+          </Pane>
+          <Pane title="App shortcuts">
+            <div data-setting="icons" className="mb-3 flex min-h-12 flex-wrap gap-2">
+              {settings.novaIcons.map((id) => {
+                const app = byId(id);
+                if (!app) return null;
+                const AppIcon = app.icon;
+                return (
+                  <span key={id} className="flex items-center gap-2 rounded-full bg-white/[.08] py-1 pl-1.5 pr-1 text-[12px]">
+                    <span className="size-6"><AppIcon className="!size-full" /></span>{app.label}
+                    <button type="button" aria-label={`Remove ${app.label} from the desktop`} onClick={() => patch({ novaIcons: settings.novaIcons.filter((item) => item !== id) })} className="grid size-5 place-items-center rounded-full hover:bg-white/15"><X className="size-3" /></button>
+                  </span>
+                );
+              })}
+              {settings.novaIcons.length === 0 && <p className="px-1 text-[12px] text-white/50">No shortcuts yet. Add apps below and they appear on the right of the desktop.</p>}
+            </div>
+            <label className="nsx-search mb-3 !h-10">
+              <Search className="size-4 text-white/50" />
+              <input aria-label="Find an app for the desktop" value={appQuery} onChange={(event) => setAppQuery(event.target.value)} placeholder="Find an app" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40" />
+            </label>
+            <div className="grid max-h-52 grid-cols-4 gap-1 overflow-y-auto @xl:grid-cols-6">
+              {iconApps.map((app) => {
+                const AppIcon = app.icon;
+                return (
+                  <button key={app.id} type="button" aria-label={`Put ${app.label} on the desktop`} onClick={() => patch({ novaIcons: [...settings.novaIcons, app.id] })} className="group relative flex flex-col items-center gap-1.5 rounded-2xl p-2 text-center hover:bg-white/[.07]">
+                    <span className="size-10"><AppIcon className="!size-full" /></span>
+                    <span className="w-full truncate text-[10.5px] text-white/75">{app.label}</span>
+                    <span className="absolute right-2 top-1.5 grid size-4 place-items-center rounded-full bg-[var(--primary)] text-black opacity-0 transition-opacity group-hover:opacity-100"><Plus className="size-3" /></span>
+                  </button>
+                );
+              })}
+            </div>
+          </Pane>
+          <Pane title="Look">
+            <Line id="island" label="Dynamic Island" hint="The black pill at the top with the clock.">
+              <Chips label="Dynamic Island" value={settings.novaIsland ? "on" : "off"} set={(value) => patch({ novaIsland: value === "on" })} options={[{ id: "on", label: "Always" }, { id: "off", label: "Only for alerts" }]} />
+            </Line>
+            <Line id="glass" label="Glass" hint="How see-through the dock, menus and panels are.">
+              <Chips label="Glass" value={settings.novaGlass} set={(value) => patch({ novaGlass: value })} options={[{ id: "clear", label: "Clear" }, { id: "frosted", label: "Frosted" }, { id: "solid", label: "Solid" }]} />
+            </Line>
+            <Line label="Start over" hint="Greeting on the left, no shortcuts or widgets, frosted glass.">
+              <button type="button" onClick={() => patch({ novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaIsland: true, novaGlass: "frosted" })} className="nsx-btn">Reset desktop</button>
+            </Line>
+          </Pane>
+        </>
+      );
+      break;
+    }
     case "themes":
       content = (
         <>
@@ -600,6 +728,13 @@ export function NovaSettingsApp(props: Props) {
             </Line>
             <Line id="corner" label="Hot corner" hint="Push the mouse into the top-left corner to see every window.">
               <Toggle label="Hot corner" on={settings.novaHotCorner} flip={() => patch({ novaHotCorner: !settings.novaHotCorner })} />
+            </Line>
+            <div data-setting="docksize" className="nsx-line flex-col !items-stretch">
+              <p className="text-[13.5px] font-semibold">Dock size</p>
+              <Fader label="Dock size" icon={LayoutPanelLeft} min={32} max={64} unit="px" value={settings.novaDockSize} set={(value) => patch({ novaDockSize: value })} />
+            </div>
+            <Line id="dockhide" label="Auto-hide the dock" hint="The dock slides away and comes back when you move the mouse to the bottom of the screen.">
+              <Toggle label="Auto-hide the dock" on={settings.novaDockHide} flip={() => patch({ novaDockHide: !settings.novaDockHide })} />
             </Line>
             <Line label="Start over" hint="Put the five default apps back.">
               <button type="button" onClick={() => { patch({ novaPins: NOVA_PINS }); setPicked(null); }} className="nsx-btn">Reset dock</button>
@@ -697,6 +832,15 @@ export function NovaSettingsApp(props: Props) {
       break;
     case "speed":
       content = (
+        <>
+        <button type="button" data-setting="optimize" onClick={props.optimize} className="nsx-optimize nsx-rise">
+          <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-black/25"><Gauge className="size-7" /></span>
+          <span className="min-w-0 flex-1 text-left">
+            <span className="block text-[19px] font-semibold">Optimize</span>
+            <span className="block text-[12.5px] opacity-75">{settings.lite ? "Nova is optimized. Run it again any time." : "One tap to make Nova faster on this device: lite mode, calmer wallpaper and lighter glass."}</span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 opacity-70" />
+        </button>
         <Pane>
           <Line id="lite" label="Lite mode" hint="Stills the wallpaper and turns off heavy effects for slower computers.">
             <Toggle label="Lite mode" on={settings.lite} flip={() => patch({ lite: !settings.lite })} />
@@ -705,6 +849,7 @@ export function NovaSettingsApp(props: Props) {
             <Toggle label="Reduce motion" on={settings.reduceMotion} flip={() => patch({ reduceMotion: !settings.reduceMotion })} />
           </Line>
         </Pane>
+        </>
       );
       break;
     case "profile":

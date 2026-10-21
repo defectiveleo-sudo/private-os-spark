@@ -28,7 +28,8 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { NOVA_PINS, NOVA_SETTINGS_EVENT, NOVA_THEMES, NOVA_WIDGETS, NovaMark, novaTheme, takeSettingsSpace, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
+import { RELEASE_LABEL } from "@/components/release";
+import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_SETTINGS_EVENT, NOVA_THEMES, NOVA_WIDGETS, NovaMark, novaTheme, takeSettingsSpace, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 
 // NOVA OS Settings. Not a list of pages: it opens on a home made of live tiles
@@ -85,6 +86,9 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "icons", label: "Desktop shortcuts", space: "desktop", words: "icons shortcuts apps desktop" },
   { key: "island", label: "Dynamic Island", space: "desktop", words: "island notch top clock pill" },
   { key: "glass", label: "Glass style", space: "desktop", words: "glass blur transparent clear frosted solid panels" },
+  { key: "custom", label: "Make your own theme", space: "themes", words: "custom colour color picker own theme create builder" },
+  { key: "saver", label: "Screensaver", space: "display", words: "screensaver saver idle clock ambient" },
+  { key: "spaces", label: "Spaces", space: "desktop", words: "spaces virtual desktops multiple workspaces" },
   { key: "theme", label: "Theme", space: "themes", words: "colour color accent aurora nebula ember glacier verdant sakura solar graphite" },
   { key: "pins", label: "Dock apps", space: "dock", words: "dock pin unpin apps taskbar" },
   { key: "magnify", label: "Magnify dock", space: "dock", words: "magnification zoom dock hover" },
@@ -636,6 +640,7 @@ export function NovaSettingsApp(props: Props) {
             <Line id="glass" label="Glass" hint="How see-through the dock, menus and panels are.">
               <Chips label="Glass" value={settings.novaGlass} set={(value) => patch({ novaGlass: value })} options={[{ id: "clear", label: "Clear" }, { id: "frosted", label: "Frosted" }, { id: "solid", label: "Solid" }]} />
             </Line>
+            <Line id="spaces" label="Spaces" hint="Several desktops with their own windows. Ctrl+Alt+← / → switches, Ctrl+Alt+Shift+arrows moves a window, and Overview (F3) adds or removes Spaces." />
             <Line label="Start over" hint="Greeting on the left, no shortcuts or widgets, frosted glass.">
               <button type="button" onClick={() => patch({ novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaIsland: true, novaGlass: "frosted" })} className="nsx-btn">Reset desktop</button>
             </Line>
@@ -665,6 +670,31 @@ export function NovaSettingsApp(props: Props) {
               );
             })}
           </div>
+          <Pane title="Make your own">
+            <div data-setting="custom" className="flex flex-col gap-4 @xl:flex-row @xl:items-center">
+              <span className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden rounded-[18px] ring-1 ring-white/15 @xl:w-56">
+                <NovaWallpaper theme={NOVA_THEMES.find((item) => item.id === "custom")!} wall={liveScene} still />
+              </span>
+              <div className="min-w-0 flex-1 space-y-3">
+                <p className="text-[12.5px] text-white/60">Pick three colours. NOVA builds the accent, glow and every live wallpaper from them.</p>
+                <div className="flex flex-wrap gap-3">
+                  {[0, 1, 2].map((at) => {
+                    const colors = settings.novaCustom.length === 3 ? settings.novaCustom : NOVA_CUSTOM_DEFAULT;
+                    return (
+                      <label key={at} className="nsx-color">
+                        <input type="color" aria-label={`Custom colour ${at + 1}`} value={colors[at]} onChange={(event) => { const next = [...colors]; next[at] = event.target.value; patch({ novaCustom: next, novaTheme: "custom" }); }} />
+                        <span className="text-[11.5px] font-semibold">{["Main", "Second", "Third"][at]}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => patch({ novaTheme: "custom" })} className={`nsx-btn ${theme.id === "custom" ? "!bg-[var(--primary)] !text-black" : ""}`}>{theme.id === "custom" ? "Using your theme" : "Use my theme"}</button>
+                  <button type="button" onClick={() => { const shuffle = () => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`; patch({ novaCustom: [shuffle(), shuffle(), shuffle()], novaTheme: "custom" }); }} className="nsx-btn">Surprise me</button>
+                </div>
+              </div>
+            </div>
+          </Pane>
           <Pane>
             <Line label="Accent colour" hint={`${theme.name} lights up the dock, the Dynamic Island, switches and sliders in ${theme.accent.toUpperCase()}.`}>
               <span className="size-8 rounded-full ring-2 ring-white/25" style={{ background: theme.accent, boxShadow: `0 0 18px ${theme.accent}` }} />
@@ -754,6 +784,13 @@ export function NovaSettingsApp(props: Props) {
           <Line id="night" label="Night light" hint="Warmer colours that are easier on your eyes after dark.">
             <Toggle label="Night light" on={settings.novaNight} flip={() => patch({ novaNight: !settings.novaNight })} />
           </Line>
+          <div data-setting="saver" className="nsx-line flex-col !items-stretch">
+            <div>
+              <p className="text-[13.5px] font-semibold">Screensaver</p>
+              <p className="mt-0.5 text-[12px] text-white/55">A floating clock over your live wallpaper when you leave NOVA alone. Any key brings you back.</p>
+            </div>
+            <Chips label="Screensaver" value={settings.novaSaver} set={(value) => patch({ novaSaver: value })} options={[{ id: 0, label: "Off" }, { id: 1, label: "1 min" }, { id: 3, label: "3 min" }, { id: 5, label: "5 min" }, { id: 10, label: "10 min" }]} />
+          </div>
         </Pane>
       );
       break;
@@ -876,6 +913,7 @@ export function NovaSettingsApp(props: Props) {
             <NovaMark className="relative size-20 drop-shadow-[0_0_24px_var(--primary)]" />
             <p className="nsx-word relative mt-4">NOVA</p>
             <p className="relative mt-1 text-[12px] uppercase tracking-[.3em] text-white/60">Version {props.version}</p>
+            <p className="relative mt-3 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-bold tracking-[.2em] text-amber-200">{RELEASE_LABEL}</p>
           </div>
           <Pane>
             <Line id="switch" label="Switch to PRIVATE OS" hint="The classic desktop. Your open windows stay open.">

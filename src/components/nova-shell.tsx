@@ -1,4 +1,5 @@
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
+import { AlphaBadge, AlphaWatermark } from "@/components/release";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import {
   BatteryFull,
@@ -10,6 +11,10 @@ import {
   Check,
   Command,
   Gauge,
+  Keyboard,
+  Layers,
+  Plus,
+  ArrowRightLeft,
   Gamepad2,
   Globe2,
   Image as ImageIcon,
@@ -68,6 +73,8 @@ export type NovaSettings = {
   novaIsland: boolean;
   novaGlass: "clear" | "frosted" | "solid";
   novaShuffle: number;
+  novaCustom: string[];
+  novaSaver: number;
   userName: string;
   clock24: boolean;
   reduceMotion: boolean;
@@ -85,7 +92,26 @@ export const NOVA_THEMES: NovaTheme[] = [
   { id: "sakura", name: "Sakura", sub: "Blossom haze", accent: "#f9a8d4", base: "#0e050b", colors: ["#ec4899", "#f43f5e", "#8b5cf6"] },
   { id: "solar", name: "Solar", sub: "Golden flare", accent: "#fde047", base: "#0c0902", colors: ["#eab308", "#f97316", "#dc2626"] },
   { id: "graphite", name: "Graphite", sub: "Pure monochrome", accent: "#e4e4e7", base: "#050505", colors: ["#3f3f46", "#71717a", "#27272a"] },
+  { id: "custom", name: "Custom", sub: "Your own colours", accent: "#fda4af", base: "#0a0610", colors: ["#f43f5e", "#8b5cf6", "#06b6d4"] },
 ];
+export const NOVA_CUSTOM_DEFAULT = ["#f43f5e", "#8b5cf6", "#06b6d4"];
+
+const hexRgb = (hex: string) => {
+  const value = /^#?([0-9a-f]{6})$/i.exec(hex.trim())?.[1] ?? "888888";
+  return [0, 2, 4].map((at) => parseInt(value.slice(at, at + 2), 16)) as [number, number, number];
+};
+const rgbHex = (rgb: number[]) => `#${rgb.map((part) => Math.round(Math.max(0, Math.min(255, part))).toString(16).padStart(2, "0")).join("")}`;
+
+/** Fills the Custom theme from three colours: the accent is a light tint of the first, the base a deep shade of it. */
+export function applyCustomNovaTheme(colors: string[] | undefined) {
+  const custom = NOVA_THEMES.find((theme) => theme.id === "custom");
+  if (!custom) return;
+  const [a = NOVA_CUSTOM_DEFAULT[0]!, b = NOVA_CUSTOM_DEFAULT[1]!, c = NOVA_CUSTOM_DEFAULT[2]!] = colors ?? [];
+  const first = hexRgb(a);
+  custom.colors = [a, b, c];
+  custom.accent = rgbHex(first.map((part) => part + (255 - part) * 0.45));
+  custom.base = rgbHex(first.map((part) => part * 0.06 + 4));
+}
 export const novaTheme = (id: string) => NOVA_THEMES.find((theme) => theme.id === id) ?? NOVA_THEMES[0]!;
 export const NOVA_PINS = ["files", "browser", "writer", "soundscapes", "settings"];
 // The longer dock NOVA OS 2.2 shipped with; saved docks that still match it are shortened.
@@ -129,7 +155,7 @@ export function novaVars(theme: NovaTheme): CSSProperties {
 }
 
 const CATEGORIES: { id: string; label: string; icon: Icon; ids: string[] }[] = [
-  { id: "work", label: "Work", icon: Briefcase, ids: ["writer", "sheets", "slides", "pdfreader", "notes", "mail", "todo", "calendar", "files", "contacts", "sticky", "messages"] },
+  { id: "work", label: "Work", icon: Briefcase, ids: ["writer", "sheets", "slides", "pdfreader", "notes", "mail", "todo", "calendar", "files", "contacts", "sticky", "messages", "chat"] },
   { id: "create", label: "Create", icon: Brush, ids: ["paint", "recorder", "camera", "photos", "media", "soundscapes"] },
   { id: "web", label: "Web", icon: Globe2, ids: ["browser", "figure", "beez", "youtube", "cherrion", "maps", "weather"] },
   { id: "play", label: "Play", icon: Gamepad2, ids: ["games", "minecraft"] },
@@ -187,6 +213,37 @@ function chime() {
   }
 }
 
+// Unit conversions for Nova Search: "10 km in miles", "72 f to c", "5 kg to lb".
+const UNITS: Record<string, { kind: string; factor: number; name: string }> = {
+  mm: { kind: "len", factor: 0.001, name: "mm" }, cm: { kind: "len", factor: 0.01, name: "cm" }, m: { kind: "len", factor: 1, name: "m" }, km: { kind: "len", factor: 1000, name: "km" },
+  in: { kind: "len", factor: 0.0254, name: "in" }, inch: { kind: "len", factor: 0.0254, name: "in" }, inches: { kind: "len", factor: 0.0254, name: "in" }, ft: { kind: "len", factor: 0.3048, name: "ft" }, feet: { kind: "len", factor: 0.3048, name: "ft" }, yd: { kind: "len", factor: 0.9144, name: "yd" }, mi: { kind: "len", factor: 1609.344, name: "mi" }, mile: { kind: "len", factor: 1609.344, name: "mi" }, miles: { kind: "len", factor: 1609.344, name: "mi" },
+  g: { kind: "mass", factor: 1, name: "g" }, kg: { kind: "mass", factor: 1000, name: "kg" }, lb: { kind: "mass", factor: 453.592, name: "lb" }, lbs: { kind: "mass", factor: 453.592, name: "lb" }, oz: { kind: "mass", factor: 28.3495, name: "oz" },
+  ml: { kind: "vol", factor: 1, name: "ml" }, l: { kind: "vol", factor: 1000, name: "l" }, gal: { kind: "vol", factor: 3785.41, name: "gal" }, cup: { kind: "vol", factor: 240, name: "cup" }, cups: { kind: "vol", factor: 240, name: "cup" },
+  s: { kind: "time", factor: 1, name: "s" }, sec: { kind: "time", factor: 1, name: "s" }, min: { kind: "time", factor: 60, name: "min" }, h: { kind: "time", factor: 3600, name: "h" }, hours: { kind: "time", factor: 3600, name: "h" }, days: { kind: "time", factor: 86400, name: "days" },
+  kb: { kind: "data", factor: 1e3, name: "KB" }, mb: { kind: "data", factor: 1e6, name: "MB" }, gb: { kind: "data", factor: 1e9, name: "GB" }, tb: { kind: "data", factor: 1e12, name: "TB" },
+  kmh: { kind: "speed", factor: 1 / 3.6, name: "km/h" }, mph: { kind: "speed", factor: 0.44704, name: "mph" },
+};
+export function convert(text: string): string | null {
+  const match = /^(-?\d+(?:[.,]\d+)?)\s*([a-z°/]+)\s+(?:in|to|en|=)\s+([a-z°/]+)$/i.exec(text.trim().toLowerCase());
+  if (!match) return null;
+  const amount = Number(match[1]!.replace(",", "."));
+  const from = match[2]!.replace("°", "").replace("km/h", "kmh");
+  const to = match[3]!.replace("°", "").replace("km/h", "kmh");
+  const temp = (unit: string) => (unit.startsWith("c") ? "c" : unit.startsWith("f") ? "f" : unit === "k" || unit.startsWith("kel") ? "k" : null);
+  const round = (value: number) => String(Math.round(value * 1000) / 1000);
+  const tFrom = temp(from);
+  const tTo = temp(to);
+  if (tFrom && tTo && !UNITS[from] && !UNITS[to]) {
+    const celsius = tFrom === "c" ? amount : tFrom === "f" ? ((amount - 32) * 5) / 9 : amount - 273.15;
+    const out = tTo === "c" ? celsius : tTo === "f" ? (celsius * 9) / 5 + 32 : celsius + 273.15;
+    return `${round(out)} °${tTo.toUpperCase()}`;
+  }
+  const a = UNITS[from];
+  const b = UNITS[to];
+  if (!a || !b || a.kind !== b.kind) return null;
+  return `${round((amount * a.factor) / b.factor)} ${b.name}`;
+}
+
 // Small, safe calculator for Nova Search: digits, operators and brackets only.
 function calc(text: string): string | null {
   const expr = text.replace(/\s+/g, "").replace(/×/g, "*").replace(/÷/g, "/").replace(/,/g, ".");
@@ -204,7 +261,7 @@ type MenuItem = { label: string; icon?: Icon; run: () => void; danger?: boolean 
 type Ctx = { x: number; y: number; items: MenuItem[] } | null;
 type Notice = { id: number; title: string; body: string; at: number };
 type Slot = { tx: number; ty: number; s: number; box: { l: number; t: number; w: number; h: number } };
-type Panel = null | "launcher" | "search" | "control" | "center" | "menu";
+type Panel = null | "launcher" | "search" | "control" | "center" | "menu" | "keys";
 
 export type NovaShellProps = {
   settings: NovaSettings;
@@ -252,6 +309,12 @@ export function NovaShell(p: NovaShellProps) {
   const [bounce, setBounce] = useState<string | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [dockPeek, setDockPeek] = useState(false);
+  // Spaces: several desktops, each with its own windows.
+  const [space, setSpace] = useState(0);
+  const [spaceCount, setSpaceCount] = useState(2);
+  const [spaceOf, setSpaceOf] = useState<Record<string, number>>({});
+  const [spaceHud, setSpaceHud] = useState<{ at: number; dir: number } | null>(null);
+  const [saver, setSaver] = useState(false);
   const dockEdge = useRef(0);
   const wallNow = useRef(settings.novaWall);
   wallNow.current = settings.novaWall;
@@ -353,6 +416,14 @@ export function NovaShell(p: NovaShellProps) {
       if (event.altKey && event.code === "KeyL") { event.preventDefault(); p.setLocked(true); return; }
       if (event.altKey && event.code === "KeyC") { event.preventDefault(); toggle("control"); return; }
       if (event.altKey && event.code === "KeyN") { event.preventDefault(); toggle("center"); return; }
+      if (mod && (event.key === "/" || event.code === "Slash")) { event.preventDefault(); toggle("keys"); return; }
+      if (event.ctrlKey && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        const by = event.key === "ArrowLeft" ? -1 : 1;
+        if (event.shiftKey && topId) moveToSpace(topId, space + by, true);
+        else goSpace(space + by);
+        return;
+      }
       if (event.altKey && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
         event.preventDefault();
         window.dispatchEvent(new CustomEvent("pos-snap", { detail: event.key.replace("Arrow", "").toLowerCase() }));
@@ -365,11 +436,76 @@ export function NovaShell(p: NovaShellProps) {
   });
 
   const byId = (id: string) => p.apps.find((app) => app.id === id);
-  const visible = p.openWins.filter((id) => !p.minWins.includes(id));
+  const inSpace = (id: string) => (spaceOf[id] ?? space) === space;
+  const visible = p.openWins.filter((id) => !p.minWins.includes(id) && inSpace(id));
   const topId = [...p.zOrder].reverse().find((id) => visible.includes(id)) ?? null;
   const topApp = topId ? byId(topId) : undefined;
 
+  const goSpace = (target: number, quiet = false) => {
+    const next = Math.max(0, Math.min(spaceCount - 1, target));
+    if (next === space) return;
+    if (!quiet) setSpaceHud({ at: Date.now(), dir: next > space ? 1 : -1 });
+    setSpace(next);
+  };
+  const moveToSpace = (id: string, target: number, follow = false) => {
+    const next = Math.max(0, Math.min(5, target));
+    if (next >= spaceCount) setSpaceCount(next + 1);
+    setSpaceOf((map) => ({ ...map, [id]: next }));
+    if (follow) {
+      setSpaceHud({ at: Date.now(), dir: next > space ? 1 : -1 });
+      setSpace(next);
+    }
+  };
+  const addSpace = () => setSpaceCount((count) => Math.min(6, count + 1));
+  const removeSpace = (index: number) => {
+    if (spaceCount <= 1) return;
+    setSpaceOf((map) => Object.fromEntries(Object.entries(map).map(([id, at]) => [id, at === index ? Math.max(0, index - 1) : at > index ? at - 1 : at])));
+    setSpaceCount((count) => count - 1);
+    setSpace((current) => (current >= index && current > 0 ? current - 1 : current));
+  };
+  // New windows open in the space you are looking at.
+  useEffect(() => {
+    setSpaceOf((map) => {
+      let changed = false;
+      const next: Record<string, number> = {};
+      for (const id of p.openWins) {
+        next[id] = map[id] ?? space;
+        if (map[id] === undefined) changed = true;
+      }
+      if (Object.keys(map).length !== p.openWins.length) changed = true;
+      return changed ? next : map;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.openWins.join()]);
+  useEffect(() => {
+    if (!spaceHud) return;
+    const timeout = window.setTimeout(() => setSpaceHud(null), 900);
+    return () => window.clearTimeout(timeout);
+  }, [spaceHud]);
+
+  // Screensaver: a floating clock over the wallpaper after a few idle minutes.
+  useEffect(() => {
+    if (!settings.novaSaver || p.locked || p.power !== "on") return;
+    let timeout = 0;
+    const arm = () => {
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setSaver(true), settings.novaSaver * 60000);
+    };
+    const wake = () => {
+      setSaver(false);
+      arm();
+    };
+    const events = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"] as const;
+    events.forEach((name) => window.addEventListener(name, wake, { passive: true }));
+    arm();
+    return () => {
+      window.clearTimeout(timeout);
+      events.forEach((name) => window.removeEventListener(name, wake));
+    };
+  }, [settings.novaSaver, p.locked, p.power]);
+
   const launch = (id: string) => {
+    if (p.openWins.includes(id) && spaceOf[id] !== undefined && spaceOf[id] !== space) goSpace(spaceOf[id]!);
     if (!p.openWins.includes(id)) {
       setBounce(id);
       window.setTimeout(() => setBounce((value) => (value === id ? null : value)), 1000);
@@ -401,7 +537,7 @@ export function NovaShell(p: NovaShellProps) {
       setLayout({});
       return;
     }
-    const ids = p.openWins.filter((id) => !p.minWins.includes(id));
+    const ids = p.openWins.filter((id) => !p.minWins.includes(id) && (spaceOf[id] ?? space) === space);
     const n = ids.length;
     if (!n) {
       setLayout({});
@@ -409,7 +545,7 @@ export function NovaShell(p: NovaShellProps) {
     }
     const W = window.innerWidth;
     const H = window.innerHeight;
-    const area = { x: 40, y: 84, w: W - 80, h: H - 84 - 170 };
+    const area = { x: 40, y: 150, w: W - 80, h: H - 150 - 150 };
     const cols = n === 1 ? 1 : n <= 4 ? 2 : n <= 9 ? 3 : 4;
     const rows = Math.ceil(n / cols);
     const cw = area.w / cols;
@@ -435,7 +571,7 @@ export function NovaShell(p: NovaShellProps) {
     });
     setLayout(next);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overview, p.openWins.join(), p.minWins.join()]);
+  }, [overview, p.openWins.join(), p.minWins.join(), space, JSON.stringify(spaceOf)]);
 
   useEffect(() => {
     if (overview && p.openWins.length === 0) {
@@ -484,6 +620,7 @@ export function NovaShell(p: NovaShellProps) {
               ...(running ? [{ label: "Minimize", icon: SquareStack, run: () => p.minimize(id) }, { label: "Quit", icon: X, run: () => p.closeWindow(id), danger: true }] : []),
               { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
               { label: settings.novaIcons.includes(id) ? "Remove from desktop" : "Add to desktop", icon: LayoutDashboard, run: () => onDesktop(id) },
+              ...(running ? [{ label: (spaceOf[id] ?? 0) + 1 < spaceCount ? `Move to Space ${(spaceOf[id] ?? 0) + 2}` : "Move to a new Space", icon: Layers, run: () => moveToSpace(id, (spaceOf[id] ?? 0) + 1) }] : []),
             ],
           });
         },
@@ -510,6 +647,9 @@ export function NovaShell(p: NovaShellProps) {
     { label: "Notifications and widgets", hint: "Alt+N", icon: Bell, keys: "notifications widgets center", run: () => setPanel("center") },
     { label: "Show desktop", hint: "Minimize everything", icon: SquareStack, keys: "desktop minimize hide", run: p.minimizeAll },
     { label: "Switch to PRIVATE OS", hint: "The classic desktop", icon: RotateCw, keys: "private os classic switch windows taskbar", run: p.switchToPrivate },
+    { label: "Keyboard shortcuts", hint: "Ctrl+/", icon: Keyboard, keys: "keyboard shortcuts keys help hotkeys", run: () => setPanel("keys") },
+    { label: "New Space", hint: "Another desktop", icon: Layers, keys: "space spaces desktop virtual new add", run: () => { addSpace(); setOverview(true); } },
+    { label: "Start screensaver", hint: "Floating clock", icon: Sparkles, keys: "screensaver saver clock ambient idle", run: () => window.setTimeout(() => setSaver(true), 300) },
     { label: "Optimize Nova", hint: "Make everything faster", icon: Gauge, keys: "optimize optimise speed fast slow lag performance lite", run: optimize },
     { label: "Customize desktop", hint: "Greeting, icons, widgets, dock", icon: LayoutDashboard, keys: "customize customise desktop widgets icons greeting clock dock", run: () => customize() },
     { label: settings.novaDockHide ? "Always show the dock" : "Auto-hide the dock", hint: "Dock", icon: LayoutGrid, keys: "dock hide auto show", run: () => patch({ novaDockHide: !settings.novaDockHide }) },
@@ -630,7 +770,24 @@ export function NovaShell(p: NovaShellProps) {
       {/* Overview backdrop and labels */}
       {overview && (
         <div className="nova-overview absolute inset-0 z-[5]" onClick={() => setOverview(false)}>
-          <p className="absolute inset-x-0 top-[54px] text-center text-[11px] font-semibold uppercase tracking-[.3em] text-white/50">{p.openWins.length ? "Overview · click a window · Esc to go back" : "No open windows"}</p>
+          <div onClick={(event) => event.stopPropagation()} className="absolute inset-x-0 top-[52px] flex flex-col items-center gap-2 px-4">
+            <div className="flex max-w-full items-center gap-2 overflow-x-auto pb-1">
+              {Array.from({ length: spaceCount }, (_, index) => {
+                const count = p.openWins.filter((id) => (spaceOf[id] ?? 0) === index).length;
+                return (
+                  <div key={index} className="relative shrink-0">
+                    <button type="button" aria-pressed={index === space} onClick={() => goSpace(index, true)} className={`nova-space-chip ${index === space ? "is-on" : ""}`}>
+                      <span className="text-[12px] font-semibold">Space {index + 1}</span>
+                      <span className="text-[10.5px] opacity-60">{count} {count === 1 ? "window" : "windows"}</span>
+                    </button>
+                    {spaceCount > 1 && <button type="button" aria-label={`Remove Space ${index + 1}`} onClick={() => removeSpace(index)} className="nova-ov-close absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-black/80 ring-1 ring-white/20"><X className="size-3" /></button>}
+                  </div>
+                );
+              })}
+              {spaceCount < 6 && <button type="button" aria-label="Add a Space" onClick={addSpace} className="nova-space-chip !w-12 shrink-0 items-center"><Plus className="size-4" /></button>}
+            </div>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[.28em] text-white/45">{visible.length ? "Click a window · the layers button moves it to the next Space" : "No windows in this space"}</p>
+          </div>
         </div>
       )}
 
@@ -641,7 +798,7 @@ export function NovaShell(p: NovaShellProps) {
           <div
             key={id}
             ref={(el) => { slotRefs.current[id] = el; }}
-            className={`nova-slot ${overview ? "is-overview" : ""}`}
+            className={`nova-slot ${overview ? "is-overview" : ""} ${inSpace(id) ? "" : "is-away"} ${spaceHud && inSpace(id) ? (spaceHud.dir > 0 ? "is-from-right" : "is-from-left") : ""}`}
             style={{ zIndex: 10 + Math.max(0, p.zOrder.indexOf(id)), transform: slot ? `translate(${slot.tx}px, ${slot.ty}px) scale(${slot.s})` : undefined }}
           >
             {p.renderSlot(id)}
@@ -658,13 +815,14 @@ export function NovaShell(p: NovaShellProps) {
               <div key={id} className="nova-ov-tile pointer-events-auto absolute" style={{ left: slot.box.l, top: slot.box.t, width: slot.box.w, height: slot.box.h }}>
                 <button type="button" aria-label={`Show ${app?.label ?? id}`} onClick={() => { setOverview(false); p.raise(id); }} className="absolute inset-0 rounded-[18px]" />
                 <button type="button" aria-label={`Close ${app?.label ?? id}`} onClick={() => p.closeWindow(id)} className="nova-ov-close absolute -right-2.5 -top-2.5 grid size-7 place-items-center rounded-full bg-black/80 text-white ring-1 ring-white/20"><X className="size-3.5" /></button>
+                <button type="button" aria-label={`Move ${app?.label ?? id} to the next Space`} title="Move to the next Space" onClick={() => moveToSpace(id, space + 1)} className="nova-ov-close absolute -left-2.5 -top-2.5 grid size-7 place-items-center rounded-full bg-black/80 text-white ring-1 ring-white/20"><Layers className="size-3.5" /></button>
                 <p className="absolute inset-x-0 -bottom-8 flex items-center justify-center gap-2 truncate text-xs font-medium text-white/90">{AppIcon && <AppIcon className="size-4" />}{app?.label ?? id}</p>
               </div>
             );
           })}
-          {p.minWins.length > 0 && (
+          {p.minWins.filter(inSpace).length > 0 && (
             <div className="pointer-events-auto absolute inset-x-0 bottom-[104px] flex flex-wrap justify-center gap-2 px-4">
-              {p.minWins.map((id) => {
+              {p.minWins.filter(inSpace).map((id) => {
                 const app = byId(id);
                 const AppIcon = app?.icon;
                 return (
@@ -811,6 +969,7 @@ export function NovaShell(p: NovaShellProps) {
             ["Settings", Settings, () => launch("settings")],
             ["Customize desktop", LayoutDashboard, () => customize()],
             ["Optimize", Gauge, optimize],
+            ["Keyboard shortcuts", Keyboard, () => setPanel("keys")],
             ["Overview", SquareStack, () => { setPanel(null); setOverview(true); }],
             ["Lock", Lock, () => { setPanel(null); p.setLocked(true); }],
             ["Sleep", Moon, () => { setPanel(null); p.setPower("sleep"); }],
@@ -834,6 +993,32 @@ export function NovaShell(p: NovaShellProps) {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {spaceHud && (
+        <div key={spaceHud.at} aria-live="polite" className="nova-space-hud pointer-events-none fixed left-1/2 top-[38%] z-[66] -translate-x-1/2">
+          <div className="nova-glass flex items-center gap-3 rounded-[22px] px-5 py-3.5">
+            {Array.from({ length: spaceCount }, (_, index) => <span key={index} className={`h-2 rounded-full transition-all ${index === space ? "w-7 bg-[var(--primary)]" : "w-2 bg-white/30"}`} />)}
+            <span className="ml-1 text-[14px] font-semibold">Space {space + 1}</span>
+          </div>
+        </div>
+      )}
+      {space > 0 && !overview && (
+        <button data-nova-ui type="button" onClick={() => setOverview(true)} className="nova-glass absolute left-3 top-14 z-[56] flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white/80"><Layers className="size-3.5" />Space {space + 1}</button>
+      )}
+
+      {panel === "keys" && <ShortcutSheet close={() => setPanel(null)} />}
+
+      <AlphaWatermark name="NOVA OS" version="3.0" className="absolute bottom-[100px] right-4 z-[1] text-white/35" />
+
+      {saver && (
+        <div role="button" tabIndex={0} aria-label="Screensaver, press any key" onClick={() => setSaver(false)} className="nova-saver fixed inset-0 z-[84] cursor-none overflow-hidden">
+          <NovaWallpaper theme={theme} wall={settings.novaWall.startsWith("photo:") ? "cosmos" : settings.novaWall} still={!motion} />
+          <div className="nova-saver-clock absolute text-center">
+            <p className="nova-gradient-text text-[clamp(4rem,12vw,10rem)] font-extralight leading-none tracking-tight tabular-nums">{clock}</p>
+            <p className="mt-3 text-[15px] text-white/70">{longDate}</p>
+          </div>
         </div>
       )}
 
@@ -929,9 +1114,11 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   const [index, setIndex] = useState(0);
   const query = text.trim().toLowerCase();
   const math = calc(text);
+  const unit = convert(text);
   const focusMatch = /^(?:focus|timer)\s*(\d{1,3})/.exec(query);
   const groups: { title: string; hits: Hit[] }[] = [];
   if (math !== null) groups.push({ title: "Calculator", hits: [{ key: "math", label: `${text.trim()} = ${math}`, hint: "Copy", icon: Calculator, run: () => { void navigator.clipboard?.writeText(math).catch(() => {}); } }] });
+  if (unit !== null) groups.push({ title: "Convert", hits: [{ key: "unit", label: `${text.trim()} = ${unit}`, hint: "Copy", icon: ArrowRightLeft, run: () => { void navigator.clipboard?.writeText(unit).catch(() => {}); } }] });
   if (focusMatch) {
     const minutes = Math.max(1, Math.min(180, Number(focusMatch[1])));
     groups.push({ title: "Focus", hits: [{ key: "focus", label: `Start a ${minutes}-minute focus session`, hint: "Island timer", icon: Timer, run: () => startTimer(minutes) }] });
@@ -961,7 +1148,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
             autoFocus
             value={text}
             aria-label="Nova Search"
-            placeholder="Search apps, files, actions, or type 12*8, focus 25…"
+            placeholder="Search apps, files, actions, or type 12*8, 10 km in miles, focus 25…"
             onChange={(event) => { setText(event.target.value); setIndex(0); }}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") { event.preventDefault(); setIndex((value) => Math.min(value + 1, flat.length - 1)); }
@@ -1008,6 +1195,37 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+const SHORTCUTS: [string, string][] = [
+  ["Ctrl+K", "Nova Search"],
+  ["Ctrl+Space", "Orbit, all apps"],
+  ["F3 or Alt+Tab", "Overview"],
+  ["Ctrl+Alt+← / →", "Switch Space"],
+  ["Ctrl+Alt+Shift+← / →", "Move window to another Space"],
+  ["Alt+C", "Control Center"],
+  ["Alt+N", "Notifications and widgets"],
+  ["Alt+L", "Lock"],
+  ["Alt+arrows", "Snap the window"],
+  ["Ctrl+/", "This list"],
+  ["Esc", "Close panels"],
+];
+function ShortcutSheet({ close }: { close: () => void }) {
+  return (
+    <div data-nova-panel onClick={close} className="fixed inset-0 z-[64] grid place-items-center bg-black/35 p-4 backdrop-blur-[6px]">
+      <div onClick={(event) => event.stopPropagation()} className="nova-glass nova-pop w-[min(34rem,100%)] rounded-[28px] p-6">
+        <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[var(--primary)]"><Keyboard className="size-4" />Keyboard shortcuts</p>
+        <div className="mt-4 grid gap-1.5">
+          {SHORTCUTS.map(([keys, label]) => (
+            <div key={keys} className="flex items-center justify-between gap-4 rounded-xl bg-white/[.04] px-3.5 py-2.5 text-[13px]">
+              <span className="text-white/80">{label}</span>
+              <span className="flex flex-wrap justify-end gap-1">{keys.split(" or ").map((part) => <kbd key={part} className="rounded-md border border-white/15 bg-white/[.06] px-2 py-0.5 text-[11px] font-semibold">{part}</kbd>)}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1091,6 +1309,7 @@ export function NovaStart({ theme, onStart }: { theme: NovaTheme; onStart: () =>
         <NovaOrb />
         <h1 className="nova-word mt-10">NOVA</h1>
         <p className="mt-3 text-[11px] uppercase tracking-[.42em] text-white/50 [animation:nova-fade_1s_.9s_both]">Private OS, reimagined</p>
+        <AlphaBadge className="mt-6 [animation:nova-fade_1s_1.1s_both]" />
         <span className="nova-start-btn mt-12 [animation:nova-fade_1s_1.3s_both]">Click to start</span>
       </div>
       <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">Press ENTER twice to skip</p>
@@ -1111,6 +1330,7 @@ export function NovaBoot({ theme }: { theme: NovaTheme }) {
         <NovaOrb fast />
         <div className="mt-14 h-[3px] w-48 overflow-hidden rounded-full bg-white/10"><div className="nova-boot-bar h-full rounded-full" /></div>
         <p key={line} className="mt-4 text-[12px] text-white/55 [animation:nova-fade_.4s_both]">{BOOT_LINES[line]}…</p>
+        <p className="mt-10 text-[9.5px] font-bold tracking-[.28em] text-white/35">NOVA OS 3.0 · ALPHA RELEASE (STILL IN DEVELOPMENT)</p>
       </div>
     </main>
   );

@@ -1,12 +1,13 @@
 import { useEffect, useId, useRef, type CSSProperties } from "react";
 import type { NovaTheme } from "@/components/nova-shell";
 
-// NOVA OS wallpapers: eight live scenes painted in the current theme's colours,
+// NOVA OS wallpapers: nine live scenes painted in the current theme's colours,
 // plus photo and video wallpapers. Canvas scenes pause when the tab is hidden and
 // draw a single frame when motion is off.
 
 export type NovaWall = { id: string; name: string; sub: string };
 export const NOVA_WALLS: NovaWall[] = [
+  { id: "prestige", name: "Prestige", sub: "Indigo glow on midnight" },
   { id: "aurora", name: "Aurora", sub: "Northern lights over the ridge" },
   { id: "fluid", name: "Fluid", sub: "Slow liquid colour" },
   { id: "dunes", name: "Dunes", sub: "Desert at sunset" },
@@ -501,6 +502,19 @@ function Bloom({ pal }: { pal: Pal }) {
   );
 }
 
+// Midnight navy with two slow, breathing indigo glows, a fine grid and a passing glint. Pure CSS, so it is light.
+function Prestige({ pal }: { pal: Pal }) {
+  return (
+    <div className="nw-prestige absolute inset-0" style={{ "--pa": pal.a, "--pb": pal.b, "--pc": pal.c, background: `radial-gradient(120% 90% at 50% 0%, ${mix(pal.base, pal.a, 0.12)}, ${pal.base} 62%)` } as CSSProperties}>
+      <span className="nw-pg nw-pg-a" />
+      <span className="nw-pg nw-pg-b" />
+      <span className="nw-pg nw-pg-c" />
+      <span className="nw-grid" />
+      <span className="nw-glint" />
+    </div>
+  );
+}
+
 export function NovaWallpaper({ theme, wall = "aurora", photo, video, still = false, dim = 0, className = "absolute inset-0" }: { theme: NovaTheme; wall?: string; photo?: string | undefined; video?: string | undefined; still?: boolean; dim?: number; className?: string }) {
   const pal: Pal = { a: theme.colors[0], b: theme.colors[1], c: theme.colors[2], base: theme.base, accent: theme.accent };
   const isPhoto = wall.startsWith("photo:") && Boolean(photo || video);
@@ -515,6 +529,8 @@ export function NovaWallpaper({ theme, wall = "aurora", photo, video, still = fa
             <SceneCanvas id={scene} pal={pal} still={still} />
             {scene === "aurora" && <Ridges pal={pal} />}
           </>
+        ) : scene === "prestige" ? (
+          <Prestige pal={pal} />
         ) : scene === "dunes" ? (
           <Dunes pal={pal} />
         ) : scene === "planet" ? (

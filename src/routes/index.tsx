@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { installUiSounds, playClick, playHover } from "@/lib/ui-sound";
+import { installUiSounds, playClick, playHover, type SoundPack, type SoundPrefs, SOUND_PACKS } from "@/lib/ui-sound";
 import { MINI_GAMES, MiniGame, type MiniGameId } from "@/components/mini-games";
 import { OsPreview, WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
 import { NovaSettingsApp } from "@/components/nova-settings";
@@ -235,8 +235,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "3.0";
+const OS_VERSION = "4.0";
 const CHANGELOG = [
+  { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Prestige\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Prestige theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Prestige (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
   { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
   { v: "2.4", date: "20 Oct 2026", items: ["Switching from NOVA OS to PRIVATE OS now shows a 5 second loading screen first, and you can cancel it", "Optimize button in NOVA OS, with its own optimize screen: find it in the Control Center, Settings › Speed, the Nova menu, a right-click on the desktop, or by typing “optimize” in Search", "New Desktop space in NOVA Settings: choose a greeting, a big clock or nothing, put it on the left or in the centre, add app shortcuts and widgets (calendar, music, notes, stopwatch) to the desktop", "NOVA dock: pick the icon size and let it hide until you move the mouse to the bottom of the screen", "Show the Dynamic Island all the time or only for notifications and timers", "Clear, frosted or solid glass for NOVA panels and menus", "Wallpaper shuffle: NOVA can move to the next live scene every few minutes", "Right-click an app in the dock to add it to the desktop", "Faster proxy: the browser now picks the first proxy server that answers instead of waiting for all of them, loads its engine files at the same time, and starts quietly in the background so the first page opens sooner"] },
   { v: "2.3", date: "19 Oct 2026", items: ["Brand new NOVA OS Settings, designed only for NOVA: a home of live tiles (your desktop, a theme orbit, quick toggles, brightness and volume), spaces that slide in with their own mini dock, and search that jumps straight to any setting", "New NOVA OS wallpapers: eight live scenes painted in your theme colours (Aurora, Fluid, Dunes, Planet, Tide, Bloom, Silk and Cosmos), plus photo and video wallpapers and your own photos, chosen right inside NOVA", "Dim wallpaper slider, and NOVA windows get round glass buttons", "NOVA OS no longer offers desktop styles; it has one desktop of its own", "Shorter NOVA OS dock: five apps by default, smaller icons and no extra buttons", "The browser in NOVA OS is now called Comet, with its own icon", "Reddit works in the browser: it opens in a built-in Reddit reader that loads posts, pictures, galleries, videos and comments straight from your own connection, because Reddit blocks proxy servers"] },
@@ -527,6 +528,12 @@ function PrivateOS() {
         if (saved.novaPins && saved.novaPins.join() === OLD_NOVA_PINS.join()) saved.novaPins = NOVA_PINS;
         // NOVA OS 2.4 has its own wallpaper choice; the old "use my photo" switch becomes that photo.
         if (saved.novaPhoto && !saved.novaWall) saved.novaWall = `photo:${Number(localStorage.getItem("pos-wallpaper")) || 0}`;
+        // NOVA OS 4.0 brings the Prestige look; people still on the old default theme move to it once.
+        if (!saved.nova4) {
+          saved.nova4 = true;
+          if (!saved.novaTheme || saved.novaTheme === "aurora") saved.novaTheme = "prestige";
+          if (!saved.novaWall || saved.novaWall === "aurora") saved.novaWall = "prestige";
+        }
         setSettings({ ...DEFAULT_SETTINGS, ...saved });
       }
     } catch {
@@ -597,9 +604,9 @@ function PrivateOS() {
     if (settings.skipStart) setPhase((value) => (value === "start" ? "boot" : value));
   }, [settings.skipStart]);
 
-  const soundPrefs = useRef({ enabled: true, hover: true, click: true, volume: 40 });
+  const soundPrefs = useRef<SoundPrefs>({ enabled: true, hover: true, click: true, volume: 40, pack: "prestige" });
   useEffect(() => {
-    soundPrefs.current = { enabled: settings.uiSounds, hover: settings.soundHover, click: settings.soundClick, volume: settings.soundVolume };
+    soundPrefs.current = { enabled: settings.uiSounds, hover: settings.soundHover, click: settings.soundClick, volume: settings.soundVolume, pack: settings.soundPack };
   });
   useEffect(() => installUiSounds(() => soundPrefs.current), []);
 
@@ -1609,9 +1616,12 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   );
 }
 
-// ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through a Wisp server) ----
-// Change this address to use a different Wisp server.
-const WISP_SERVERS = ["wss://wisp.mercurywork.shop/", "wss://anura.pro/", "wss://wisp.rhw.one/wisp/"];
+// ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through Wisp servers) ----
+// Public Wisp servers. Each one blocks some sites, so the relay transport (/relay.mjs) sends a request
+// that fails on one server through the next, and remembers which server works for each site.
+const WISP_SERVERS = ["wss://anura.pro/", "wss://wisp.mercurywork.shop/"];
+// The servers the relay uses, starting with the given one. A server the person typed in is used alone.
+const relayServers = (first: string) => (WISP_SERVERS.includes(first) ? [first, ...WISP_SERVERS.filter((url) => url !== first)] : [first]);
 
 function probeWisp(url: string, ms = 4000) {
   return new Promise<boolean>((resolve) => {
@@ -1648,6 +1658,7 @@ async function pickWisp() {
   try {
     choice = localStorage.getItem("pos-wisp-choice") || "auto";
     last = localStorage.getItem("pos-wisp-last") || "";
+    if (!WISP_SERVERS.includes(last)) last = "";
   } catch {
     // storage unavailable
   }
@@ -1711,7 +1722,7 @@ function rotateWisp() {
     for (const url of WISP_SERVERS.filter((item) => item !== link.wisp)) {
       if (!(await probeWisp(url, 3000))) continue;
       try {
-        await withTimeout(link.connection.setTransport("/epoxy.mjs", [{ wisp: url }]), 8000, "switch timed out");
+        await withTimeout(link.connection.setTransport("/relay.mjs", [{ servers: relayServers(url) }]), 8000, "switch timed out");
       } catch {
         continue;
       }
@@ -1830,7 +1841,7 @@ function startProxyEngine() {
       await withTimeout(controller.init(), 10000, "The proxy engine did not initialise");
       const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
       const server = await wisp;
-      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: server }]), 12000, "Could not reach a proxy server");
+      await withTimeout(connection.setTransport("/relay.mjs", [{ servers: relayServers(server) }]), 12000, "Could not reach a proxy server");
       engineLink = { connection, wisp: server };
       return controller;
     })(), 30000, "The proxy engine took too long to start").catch((error) => {
@@ -2553,6 +2564,8 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const [menuOpen, setMenuOpen] = useState(false);
   const omnibox = useRef<HTMLInputElement>(null);
   const [focused, setFocused] = useState(false);
+  // Clicking into the address selects all of it, so typing replaces the address instead of adding to it.
+  const selectAll = useRef(false);
   const pretty = !focused && address && /^https?:\/\//i.test(address) ? address.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "") : address;
   const iconBtn = "grid size-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent";
 
@@ -2565,7 +2578,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
         <OsButton label="Home" onClick={goHome} className={`${iconBtn} hidden sm:grid`}><House className="size-4" /></OsButton>
         <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); omnibox.current?.blur(); }} className="chrome-omnibox mx-1.5 flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full px-3">
           {page && !results ? <LockKeyhole className="size-3.5 shrink-0 text-foreground/60" /> : <Search className="size-3.5 shrink-0 text-foreground/60" />}
-          <input ref={omnibox} aria-label="Search or enter address" value={pretty} onFocus={(event) => { setFocused(true); window.setTimeout(() => event.target.select(), 0); }} onBlur={() => setFocused(false)} onChange={(event) => setAddress(event.target.value)} placeholder="Search DuckDuckGo or type a URL" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-foreground/45" />
+          <input ref={omnibox} aria-label="Search or enter address" value={pretty} onFocus={(event) => { setFocused(true); selectAll.current = true; const box = event.target; window.setTimeout(() => box.select(), 0); }} onMouseUp={(event) => { if (!selectAll.current) return; selectAll.current = false; event.preventDefault(); event.currentTarget.select(); }} onBlur={() => { setFocused(false); selectAll.current = false; }} onChange={(event) => { selectAll.current = false; setAddress(event.target.value); }} placeholder="Search DuckDuckGo or type a URL" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-foreground/45" />
           {page && <button type="button" aria-label={marked ? "Remove bookmark" : "Bookmark this page"} aria-pressed={marked} onClick={() => toggleBookmark({ title: docTitle || hostOf(page) || page, url: page })} className="grid size-6 shrink-0 place-items-center rounded-full hover:bg-white/10"><Star className={`size-3.5 ${marked ? "fill-primary text-primary" : "text-foreground/60"}`} /></button>}
         </form>
         <div className="relative">
@@ -3916,8 +3929,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "aurora", novaPhoto: false, novaWall: "aurora", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5 };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "prestige", novaPhoto: false, novaWall: "prestige", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "prestige" };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -5024,7 +5037,8 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <CfgRow title="Hover sound" sub="Plays when the pointer moves onto a button"><Switch on={settings.soundHover} label="Hover sound" onChange={(value) => patch({ soundHover: value })} /></CfgRow>
                   <CfgRow title="Click sound" sub="Plays when you press a button or switch"><Switch on={settings.soundClick} label="Click sound" onChange={(value) => patch({ soundClick: value })} /></CfgRow>
                   <CfgSlider label="Volume" value={settings.soundVolume} max={100} unit="%" onChange={(value) => patch({ soundVolume: value })} />
-                  <button type="button" onClick={() => { playHover(settings.soundVolume / 100); window.setTimeout(() => playClick(settings.soundVolume / 100), 260); }} className={`${btn} bg-white/10`}>Play a test sound</button>
+                  <CfgRow title="Sound pack" sub={SOUND_PACKS.find((item) => item.id === settings.soundPack)?.sub ?? ""}><select aria-label="Sound pack" value={settings.soundPack} onChange={(event) => { const pack = event.target.value as SoundPack; patch({ soundPack: pack }); playClick(settings.soundVolume / 100, pack); }} className="rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-[12px]">{SOUND_PACKS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></CfgRow>
+                  <button type="button" onClick={() => { playHover(settings.soundVolume / 100, settings.soundPack); window.setTimeout(() => playClick(settings.soundVolume / 100, settings.soundPack), 260); }} className={`${btn} bg-white/10`}>Play a test sound</button>
                   <p className="text-[10px] text-muted-foreground">Sounds are made on your device. Hover sounds only play with a mouse. Your browser may stay silent until you click once.</p>
                 </CfgCard>
                 <CfgCard title="General">

@@ -74,8 +74,7 @@ async function saveCookies() {
 async function isEngineError(response) {
   if (response.status !== 500) return false;
   try {
-    const text = await response.clone().text();
-    return text.includes("Destination: ") && text.includes("Message: ");
+    return (await response.clone().text()).includes("errorTrace.value");
   } catch {
     return false;
   }
@@ -86,7 +85,9 @@ const escapeHtml = (value) => String(value).replace(/[&<>"]/g, (char) => ({ "&":
 async function errorPage(response, target) {
   let details = "";
   try {
-    details = (await response.clone().text()).replace(/<[^>]+>/g, " ").replace(/\s+\n/g, "\n").trim().slice(0, 1500);
+    // The engine's page carries the error inside an encoded script: errorTrace.value = "...";
+    const script = decodeURIComponent((await response.clone().text()).match(/data:application\/javascript,([^"]+)/)?.[1] ?? "");
+    details = JSON.parse(script.match(/errorTrace\.value = ("(?:[^"\\]|\\.)*");/)?.[1] ?? '""').slice(0, 1500);
   } catch {
     // no details
   }
@@ -165,6 +166,10 @@ self.addEventListener("message", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin || !url.pathname.startsWith("/scramjet/")) return;
+  if (url.origin !== self.location.origin) return;
+  // Proxied pages load the engine's rewriter as a script from /scramjet.wasm.wasm; the engine answers
+  // that with a script version of the file. Without it, scripts inside pages are not rewritten.
+  const rewriter = url.pathname === "/scramjet.wasm.wasm" && event.request.destination === "script";
+  if (!url.pathname.startsWith("/scramjet/") && !rewriter) return;
   event.respondWith(handle(event));
 });

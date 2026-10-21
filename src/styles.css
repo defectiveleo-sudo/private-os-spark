@@ -867,3 +867,204 @@ main[data-nova]:is([data-lite], [data-reduce]) .nova-saver-clock { animation: no
 .chat-bubble.is-mine { border-radius: 16px 16px 6px 16px; background: linear-gradient(120deg, #7c3aed, #db2777); }
 @keyframes chat-in { from { opacity: 0; transform: translateY(6px) scale(.98); } }
 @media (prefers-reduced-motion: reduce) { .chat-bubble { animation: none; } }
+
+/* ======================================================================
+   NOVA OS 4.0 "Prestige": DM Sans and DM Serif Display, navy glass with indigo
+   hairlines, expo-out motion (cubic-bezier(.16, 1, .3, 1)), letter-by-letter
+   headings, rising fades, glints on primary buttons and breathing glows.
+   ====================================================================== */
+main[data-nova], .nova-boot, .nova-optimize, .nsx-root, .tour-root {
+  --ease: cubic-bezier(.16, 1, .3, 1);
+  --line: color-mix(in oklab, var(--primary) 20%, transparent);
+  --line-bright: color-mix(in oklab, var(--primary) 46%, transparent);
+  --accent-dim: color-mix(in oklab, var(--primary) 12%, transparent);
+  --ink: #f0f2ff;
+  --ink-muted: #7a81a8;
+  font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+  letter-spacing: -.003em;
+}
+.nova-serif, .nova-hello, .nova-big-clock, .nova-lock-time, main[data-nova] .nova-panel-title { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; letter-spacing: -.01em; }
+.nova-serif em, .nova-hello em { font-style: italic; }
+
+@keyframes nova-up { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: none; } }
+@keyframes nova-up-sm { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes nova-letter { from { opacity: 0; transform: translateY(8px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes nova-glint { 0% { left: -100%; } 60%, 100% { left: 110%; } }
+@keyframes nova-glow-breathe { 0%, 100% { transform: scale(1); opacity: .75; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes nova-dot { 0% { box-shadow: 0 0 0 0 rgb(34 197 94 / .55); } 70% { box-shadow: 0 0 0 7px rgb(34 197 94 / 0); } 100% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0); } }
+@keyframes nova-card-in { from { opacity: 0; translate: 0 10px; scale: .96; } to { opacity: 1; translate: 0 0; scale: 1; } }
+
+/* Desktop greeting */
+.nova-greet { animation: none; }
+.nova-kicker { display: inline-flex; align-items: center; gap: 9px; margin-bottom: 18px; padding: 6px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--accent-dim); color: var(--ink-muted); font-size: 11px; font-weight: 600; letter-spacing: .2em; text-transform: uppercase; -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); animation: nova-up .9s .1s var(--ease) both; }
+.nova-hello { font-size: clamp(2.7rem, 6.4vw, 5.4rem); line-height: 1.02; color: var(--ink); text-shadow: 0 10px 50px rgb(0 0 0 / .35); }
+.nova-big-clock { font-size: clamp(4.4rem, 12vw, 9.5rem); line-height: .95; font-variant-numeric: tabular-nums; }
+.nova-sub { margin-top: 18px; font-size: 14.5px; color: var(--ink-muted); animation: nova-up .9s .55s var(--ease) both; }
+.nova-letters > span { display: inline-block; animation: nova-letter .7s var(--ease) both; }
+.nova-live-dot { display: inline-block; width: 7px; height: 7px; flex-shrink: 0; border-radius: 99px; background: #22c55e; animation: nova-dot 2s infinite; }
+.nova-live-dot.is-min { background: #f59e0b; animation: none; }
+.nova-live-dot.is-off { background: #4a5180; animation: none; }
+
+/* Glass, panels and menus */
+main[data-nova] .nova-glass { background: color-mix(in oklab, var(--nova-base) 70%, transparent); border: 1px solid var(--line); box-shadow: 0 30px 80px -30px rgb(0 0 0 / .85), inset 0 1px 0 rgb(255 255 255 / .06); transition: border-color .4s var(--ease), box-shadow .4s var(--ease), background-color .3s; }
+main[data-nova][data-glass="clear"] .nova-glass { background: color-mix(in oklab, var(--nova-base) 34%, transparent); }
+main[data-nova][data-glass="solid"] .nova-glass { background: color-mix(in oklab, var(--nova-base) 95%, #000); }
+main[data-nova] button.nova-glass:hover { border-color: var(--line-bright); box-shadow: 0 0 28px -10px var(--primary), inset 0 1px 0 rgb(255 255 255 / .08); }
+main[data-nova] .nova-pop { animation: nova-up-sm .5s var(--ease) both; }
+main[data-nova] .nova-panel-right { animation: nova-slide-r .6s var(--ease) both; }
+main[data-nova] .nova-panel-left { animation: nova-slide-l .6s var(--ease) both; }
+main[data-nova] .nova-panel-right > *, main[data-nova] .nova-panel-right .nova-scroll > *, main[data-nova] .nova-panel-left > * { animation: nova-up-sm .6s var(--ease) both; }
+main[data-nova] :is(.nova-panel-right, .nova-panel-left) > :nth-child(2) { animation-delay: .04s; }
+main[data-nova] :is(.nova-panel-right, .nova-panel-left) > :nth-child(3) { animation-delay: .08s; }
+main[data-nova] :is(.nova-panel-right, .nova-panel-left) > :nth-child(4) { animation-delay: .12s; }
+main[data-nova] :is(.nova-panel-right, .nova-panel-left) > :nth-child(5) { animation-delay: .16s; }
+main[data-nova] :is(.nova-panel-right, .nova-panel-left) > :nth-child(n+6) { animation-delay: .2s; }
+main[data-nova] .nova-panel-right [class*="bg-white/[.06]"], main[data-nova] .nova-panel-right [class*="bg-white/[.05]"] { border: 1px solid rgb(255 255 255 / .05); transition: border-color .4s var(--ease), background-color .3s; }
+main[data-nova] .nova-panel-right [class*="bg-white/[.06]"]:hover { border-color: var(--line); }
+main[data-nova] [role="menu"] button { transition: background-color .25s, padding-left .35s var(--ease), color .2s; }
+main[data-nova] [role="menu"] button:hover { padding-left: 14px; background: var(--accent-dim); }
+main[data-nova] .nova-tile { border: 1px solid transparent; transition: background-color .3s, color .3s, border-color .4s var(--ease), transform .45s var(--ease); }
+main[data-nova] .nova-tile:not([aria-checked="true"]):hover { border-color: var(--line); transform: translateY(-2px); }
+main[data-nova] .nova-tile[aria-checked="true"] { background: var(--primary); color: #07091a; box-shadow: 0 10px 30px -12px var(--primary); }
+.nova-note::placeholder { color: rgb(255 255 255 / .35); }
+
+/* Buttons that matter get a passing glint */
+.nova-optimize-btn, .nova-start-btn, .nsx-chip.is-on, .tour-next { position: relative; overflow: hidden; }
+.nova-optimize-btn::after, .nova-start-btn::after, .tour-next::after { content: ""; position: absolute; top: 0; left: -100%; width: 60%; height: 100%; background: linear-gradient(105deg, transparent, rgb(255 255 255 / .35), transparent); transform: skewX(-20deg); animation: nova-glint 3.2s var(--ease) infinite; pointer-events: none; }
+.nova-optimize-btn { transition: filter .3s, transform .45s var(--ease), box-shadow .45s var(--ease); }
+.nova-optimize-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -14px var(--primary); }
+
+/* Dynamic Island */
+main[data-nova] .nova-island { background: #04050c; box-shadow: 0 12px 34px -8px rgb(0 0 0 / .7), 0 0 0 1px var(--line), 0 0 30px -8px color-mix(in oklab, var(--primary) 60%, transparent); transition: width .7s var(--ease), height .7s var(--ease), border-radius .7s var(--ease), box-shadow .4s; }
+main[data-nova] .nova-island-more { transition: max-width .7s var(--ease), opacity .4s; }
+
+/* Orbit launcher and Search */
+main[data-nova] .nova-orbit { background: color-mix(in oklab, var(--nova-base) 72%, transparent); animation: nova-fade-o .5s var(--ease) both; }
+main[data-nova] .nova-app-tile { animation: nova-up .8s var(--ease) both; border: 1px solid transparent; transition: transform .45s var(--ease), background-color .3s, border-color .4s var(--ease); }
+main[data-nova] .nova-app-tile:hover { transform: translateY(-6px); background: var(--accent-dim); border-color: var(--line); }
+main[data-nova] .nova-search { border-color: var(--line-bright); box-shadow: 0 40px 120px -30px rgb(0 0 0 / .9), 0 0 80px -30px var(--primary); }
+main[data-nova] .nova-search input { font-family: "DM Serif Display", Georgia, serif; font-size: 22px; font-weight: 400; }
+main[data-nova] .nova-search button { transition: background-color .25s, transform .4s var(--ease); }
+
+/* Windows */
+main[data-nova] section.os-window { background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 8%, transparent), transparent 160px), color-mix(in oklab, var(--nova-base) 90%, #10142a); border-color: var(--line); box-shadow: 0 40px 110px -30px rgb(0 0 0 / .85), inset 0 1px 0 rgb(255 255 255 / .07), 0 0 90px -50px var(--primary); }
+main[data-nova] .os-window-anim { animation: nova-open .75s var(--ease) both; }
+main[data-nova] .window-titlebar { border-bottom-color: var(--line); }
+main[data-nova] .window-titlebar .text-\[11px\] { font-family: "DM Serif Display", Georgia, serif; font-size: 15px; font-weight: 400; letter-spacing: 0; }
+main[data-nova] .win-ctl { transition: background-color .25s, transform .45s var(--ease), color .2s; }
+main[data-nova][data-dockpos="left"] section.os-window:not(.rounded-none):not([style*="left"]) { bottom: 16px; left: 104px; }
+main[data-nova][data-dockpos="left"] section.os-window.rounded-none { left: 96px !important; bottom: 12px !important; }
+
+/* Lock, boot and start */
+.nova-lock-time { font-size: clamp(5.4rem, 18vw, 12.5rem); letter-spacing: -.02em; }
+.nova-boot { background: radial-gradient(ellipse at 50% 115%, color-mix(in oklab, var(--nova-a) 30%, #000), var(--nova-base, #060818) 62%); }
+.nova-word { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; letter-spacing: .3em; padding-left: .3em; animation: nova-word-in 1.6s var(--ease) both; }
+@keyframes nova-word-in { from { opacity: 0; letter-spacing: .9em; filter: blur(14px); } to { opacity: 1; letter-spacing: .3em; filter: none; } }
+.nova-start-btn { border-color: var(--line-bright, rgb(255 255 255 / .2)); }
+
+/* The 4.0 dock */
+.nova-dock4-wrap { position: absolute; left: 0; right: 0; bottom: 12px; z-index: 54; display: flex; justify-content: center; padding: 0 8px; pointer-events: none; transition: transform .6s var(--ease), opacity .35s; }
+.nova-dock4-wrap > nav { pointer-events: auto; }
+.nova-dock4-wrap.is-left { top: 0; bottom: 0; left: 12px; right: auto; flex-direction: column; justify-content: center; padding: 8px 0; }
+.nova-dock4-wrap[data-style="bar"] { bottom: 0; padding: 0; }
+.nova-dock4-wrap.is-left[data-style="bar"] { left: 0; padding: 0; }
+.nova-dock4-wrap[data-hidden] { transform: translateY(calc(100% + 28px)); opacity: 0; }
+.nova-dock4-wrap.is-left[data-hidden] { transform: translateX(calc(-100% - 28px)); }
+.nova-dock4-wrap.is-preview { position: absolute; }
+.nova-dock4 { position: relative; display: flex; align-items: flex-end; gap: var(--gap); padding: 10px; border-radius: 26px; transition: border-color .45s var(--ease), box-shadow .45s var(--ease), background-color .3s; }
+.nova-dock4[data-pos="left"] { flex-direction: column; align-items: flex-start; }
+.nova-dock4[data-style="float"] { background: color-mix(in oklab, var(--nova-base, #060818) 62%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); border: 1px solid var(--line, rgb(255 255 255 / .1)); box-shadow: 0 24px 60px -20px rgb(0 0 0 / .8), inset 0 1px 0 rgb(255 255 255 / .07), 0 0 60px -28px var(--primary); }
+.nova-dock4[data-style="float"]:hover { border-color: var(--line-bright, rgb(255 255 255 / .2)); }
+.nova-dock4[data-style="bar"] { width: 100%; justify-content: center; border-radius: 0; background: color-mix(in oklab, var(--nova-base, #060818) 78%, transparent); -webkit-backdrop-filter: blur(28px) saturate(1.6); backdrop-filter: blur(28px) saturate(1.6); border-top: 1px solid var(--line, rgb(255 255 255 / .1)); }
+.nova-dock4[data-style="bar"][data-pos="left"] { width: auto; height: 100%; justify-content: center; border-top: 0; border-right: 1px solid var(--line, rgb(255 255 255 / .1)); }
+.nova-dock4[data-style="bare"] { background: none; border: 0; }
+.nova-dock4[data-style="bare"] .nova-dock4-icon { filter: drop-shadow(0 8px 16px rgb(0 0 0 / .55)); }
+.nova-dock4[data-labels] { padding-bottom: 24px; }
+.nova-dock4[data-labels]:not([data-pos="left"]) { gap: calc(var(--gap) + 12px); }
+.nova-dock4[data-labels][data-pos="left"] { padding-bottom: 10px; gap: calc(var(--gap) + 14px); }
+.nova-dock4-cell { position: relative; display: grid; flex-shrink: 0; place-items: center; transform-origin: bottom center; transition: width .22s var(--ease), height .22s var(--ease), transform .5s var(--ease), opacity .3s; }
+.nova-dock4[data-pos="left"] .nova-dock4-cell { transform-origin: left center; }
+.nova-dock4-icon { display: grid; width: 100%; height: 100%; transition: transform .5s var(--ease), filter .3s; }
+.nova-dock4-icon > svg, .nova-dock4-icon > span, .nova-dock4-icon > img { width: 100% !important; height: 100% !important; }
+.nova-dock4-cell:hover .nova-dock4-icon { filter: brightness(1.08) drop-shadow(0 10px 18px color-mix(in oklab, var(--primary) 40%, transparent)); }
+.nova-dock4-cell:active .nova-dock4-icon { transform: scale(.88); transition-duration: .12s; }
+.nova-dock4-cell.is-bouncing { animation: nova-bounce .9s cubic-bezier(.3, 0, .3, 1); }
+.nova-dock4-cell.is-dragging { opacity: .35; }
+.nova-dock4-cell.is-drop { transform: translateX(12px); }
+.nova-dock4[data-pos="left"] .nova-dock4-cell.is-drop { transform: translateY(12px); }
+.nova-dock4-cell.is-picked { transform: translateY(-10px); }
+.nova-dock4[data-pos="left"] .nova-dock4-cell.is-picked { transform: translateX(10px); }
+.nova-dock4-cell.is-picked .nova-dock4-icon { filter: drop-shadow(0 0 14px var(--primary)); }
+.nova-dock4-run { position: absolute; bottom: -7px; left: 50%; width: 4px; height: 4px; margin-left: -2px; border-radius: 99px; background: rgb(240 242 255 / .65); }
+.nova-dock4-run.is-min { background: #f59e0b; opacity: .8; }
+.nova-dock4[data-pos="left"] .nova-dock4-run { bottom: auto; left: -7px; top: 50%; margin: -2px 0 0; }
+.nova-dock4[data-labels] .nova-dock4-run { bottom: -20px; }
+.nova-dock4-mark { position: absolute; bottom: 3px; height: 3px; border-radius: 99px; transform: translateX(-50%); background: var(--primary); box-shadow: 0 0 12px var(--primary), 0 0 2px var(--primary); pointer-events: none; transition: left .55s var(--ease), width .55s var(--ease); }
+.nova-dock4[data-pos="left"] .nova-dock4-mark { bottom: auto; left: 3px; width: 3px; transform: translateY(-50%); transition: top .55s var(--ease), height .55s var(--ease); }
+.nova-dock4[data-labels]:not([data-pos="left"]) .nova-dock4-mark { bottom: 2px; }
+.nova-dock4-break { flex-shrink: 0; align-self: center; width: 1px; height: calc(var(--cell) * .6); margin: 0 2px; background: var(--line-bright, rgb(255 255 255 / .2)); }
+.nova-dock4[data-pos="left"] .nova-dock4-break { width: calc(var(--cell) * .6); height: 1px; margin: 2px 0; }
+.nova-dock4-label { position: absolute; top: calc(100% + 4px); left: 50%; max-width: calc(var(--cell) + var(--gap) + 8px); overflow: hidden; transform: translateX(-50%); font-size: 10px; font-weight: 500; white-space: nowrap; text-overflow: ellipsis; color: rgb(240 242 255 / .75); }
+.nova-dock4-tip { position: absolute; bottom: calc(100% + 14px); left: 50%; padding: 5px 11px; border-radius: 10px; font-size: 12px; font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transform: translateX(-50%) translateY(6px); background: color-mix(in oklab, var(--nova-base, #060818) 88%, transparent); border: 1px solid var(--line, rgb(255 255 255 / .12)); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); transition: opacity .2s, transform .45s var(--ease); }
+.nova-dock4[data-pos="left"] .nova-dock4-tip { bottom: auto; top: 50%; left: calc(100% + 14px); transform: translateY(-50%) translateX(-6px); }
+.nova-dock4-cell:hover .nova-dock4-tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+.nova-dock4[data-pos="left"] .nova-dock4-cell:hover .nova-dock4-tip { transform: translateY(-50%) translateX(0); }
+.nova-dock4-card { position: fixed; z-index: 75; width: 244px; padding: 14px; border-radius: 20px; color: #fff; transform: translate(-50%, -100%); animation: nova-card-in .5s var(--ease) both; }
+.nova-dock4-card.is-side { transform: translate(0, -50%); }
+.nova-dock4-act { border-radius: 12px; padding: 7px 8px; font-size: 12px; font-weight: 600; background: rgb(255 255 255 / .06); border: 1px solid var(--line, rgb(255 255 255 / .1)); transition: background-color .25s, border-color .4s var(--ease), transform .4s var(--ease); }
+.nova-dock4-act:hover { background: var(--accent-dim); border-color: var(--line-bright); transform: translateY(-1px); }
+.nova-dock4-act.is-danger:hover { color: #fda4af; border-color: rgb(244 63 94 / .5); background: rgb(244 63 94 / .1); }
+main[data-nova][data-lite] .nova-dock4 { -webkit-backdrop-filter: none; backdrop-filter: none; }
+main[data-nova][data-lite] .nova-dock4[data-style="float"], main[data-nova][data-lite] .nova-dock4[data-style="bar"] { background: color-mix(in oklab, var(--nova-base) 94%, #111); }
+
+/* Settings: dock preview stage, style swatches, sound packs, mini desktop dock */
+.nsx-dock-stage { position: relative; width: 100%; height: 160px; overflow: hidden; border-radius: 22px; border: 1px solid var(--line, rgb(255 255 255 / .1)); isolation: isolate; }
+.nsx-dock-stage.is-left { height: 420px; }
+.nsx-dock-swatch { display: flex; align-items: center; justify-content: center; gap: 3px; width: 100%; height: 26px; padding: 0 8px; border-radius: 10px; background: rgb(255 255 255 / .1); border: 1px solid rgb(255 255 255 / .12); }
+.nsx-dock-swatch i { width: 10px; height: 10px; border-radius: 3px; background: linear-gradient(140deg, var(--primary), color-mix(in oklab, var(--primary) 40%, #fff)); }
+.nsx-dock-swatch.is-float { width: 70%; margin: 0 auto; border-radius: 999px; }
+.nsx-dock-swatch.is-bar { border-radius: 4px; }
+.nsx-dock-swatch.is-bare { background: none; border-color: transparent; }
+.nsx-wave { display: flex; align-items: center; gap: 3px; height: 22px; }
+.nsx-wave i { width: 3px; height: 30%; border-radius: 99px; background: var(--primary); opacity: .7; transition: height .4s var(--ease); }
+.nsx-option:hover .nsx-wave i { animation: nsx-wave .9s var(--ease) infinite alternate; }
+.nsx-wave i:nth-child(2) { animation-delay: .1s !important; } .nsx-wave i:nth-child(3) { animation-delay: .2s !important; } .nsx-wave i:nth-child(4) { animation-delay: .3s !important; } .nsx-wave i:nth-child(5) { animation-delay: .4s !important; }
+@keyframes nsx-wave { from { height: 25%; } to { height: 100%; } }
+.nsx-mini-dock { position: absolute; bottom: 5%; left: 50%; display: flex; align-items: center; gap: 1cqw; height: 11%; min-height: 18px; padding: 0 1.4cqw; border-radius: 999px; transform: translateX(-50%); background: rgb(255 255 255 / .1); border: 1px solid rgb(255 255 255 / .15); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.nsx-mini-app, .nsx-mini-tool { display: grid; height: 70%; aspect-ratio: 1; }
+.nsx-mini-tool { border-radius: 24%; background: rgb(255 255 255 / .22); }
+.nsx-mini-dock.is-bar { left: 0; right: 0; bottom: 0; justify-content: center; border-radius: 0; transform: none; }
+.nsx-mini-dock.is-bare { background: none; border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.nsx-mini-dock.is-left { top: 50%; bottom: auto; left: 2.5%; flex-direction: column; width: 7%; height: auto; padding: 1.4cqw 0; transform: translateY(-50%); border-radius: 999px; }
+.nsx-mini-dock.is-left .nsx-mini-app, .nsx-mini-dock.is-left .nsx-mini-tool { width: 70%; height: auto; }
+.nsx-mini-dock.is-left.is-bar { top: 0; bottom: 0; left: 0; justify-content: center; border-radius: 0; transform: none; }
+
+/* NOVA Settings app in the Prestige style */
+.nsx-root { --line: color-mix(in oklab, var(--primary) 20%, transparent); }
+.nsx-pane, .nsx-tile { border-color: var(--line); transition: border-color .45s var(--ease), transform .45s var(--ease), box-shadow .45s var(--ease); }
+.nsx-pane:hover { border-color: color-mix(in oklab, var(--primary) 34%, transparent); }
+.nsx-tile:hover { transform: translateY(-3px); box-shadow: 0 20px 50px -24px var(--primary); }
+.nsx-rise { animation: nova-up .8s var(--ease) both; }
+.nsx-btn, .nsx-chip, .nsx-option { transition: background-color .25s, border-color .4s var(--ease), color .2s, transform .45s var(--ease); }
+.nsx-btn:hover, .nsx-chip:hover, .nsx-option:hover { border-color: var(--line); }
+.nsx-chip.is-on { color: #07091a; }
+.nsx-toggle > span { transition: transform .5s var(--ease), width .3s var(--ease); }
+
+/* The Prestige wallpaper */
+.nw-prestige { overflow: hidden; }
+.nw-pg { position: absolute; border-radius: 50%; filter: blur(60px); mix-blend-mode: screen; will-change: transform; }
+.nw-pg-a { width: 62vmax; height: 62vmax; left: -14vmax; top: -24vmax; background: radial-gradient(circle, color-mix(in oklab, var(--pa) 85%, transparent), transparent 62%); animation: nova-glow-breathe 8s ease-in-out infinite; }
+.nw-pg-b { width: 54vmax; height: 54vmax; right: -16vmax; bottom: -26vmax; background: radial-gradient(circle, color-mix(in oklab, var(--pb) 90%, transparent), transparent 62%); animation: nova-glow-breathe 11s ease-in-out infinite reverse; }
+.nw-pg-c { width: 30vmax; height: 30vmax; left: 46%; top: 30%; background: radial-gradient(circle, color-mix(in oklab, var(--pc) 45%, transparent), transparent 65%); opacity: .55; animation: nova-glow-breathe 13s ease-in-out infinite; }
+.nw-grid { position: absolute; inset: 0; background-image: linear-gradient(rgb(255 255 255 / .035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .035) 1px, transparent 1px); background-size: 64px 64px; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 10%, transparent 70%); mask-image: radial-gradient(ellipse at 50% 30%, #000 10%, transparent 70%); }
+.nw-glint { position: absolute; top: 0; left: -100%; width: 40%; height: 100%; background: linear-gradient(100deg, transparent, rgb(255 255 255 / .04), transparent); transform: skewX(-18deg); animation: nova-glint 12s var(--ease, ease) infinite; }
+
+/* Calm mode keeps it all still */
+main[data-nova]:is([data-lite], [data-reduce]) :is(.nova-letters > span, .nova-kicker, .nova-sub, .nova-app-tile, .nova-live-dot) { animation: none; }
+main[data-nova]:is([data-lite], [data-reduce]) .nova-optimize-btn::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .nova-letters > span, .nova-kicker, .nova-sub, .nw-pg, .nw-glint, .nova-optimize-btn::after, .nova-start-btn::after { animation: none !important; } }
+.nova-name { display: inline-block; padding-right: .08em; animation: nova-letter 1s var(--ease) both; }
+main[data-nova]:is([data-lite], [data-reduce]) .nova-name { animation: none; }
+.tour-root h2 { font-family: "DM Serif Display", Georgia, serif; font-weight: 400; letter-spacing: -.01em; }
+.nova-hello em.nova-gradient-text { background: linear-gradient(100deg, var(--primary), color-mix(in oklab, var(--nova-c) 65%, #fff) 70%, var(--primary)); -webkit-background-clip: text; background-clip: text; }

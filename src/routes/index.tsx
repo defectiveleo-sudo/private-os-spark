@@ -5,7 +5,9 @@ import { OsPreview, WelcomeSetup, type WelcomeResult } from "@/components/welcom
 import { NovaSettingsApp } from "@/components/nova-settings";
 import { RedditView } from "@/components/reddit-view";
 import { isRedditUrl } from "@/lib/reddit";
-import { NOVA_PINS, NOVA_THEMES, OLD_NOVA_PINS, NovaBoot, NovaOptimize, NovaShell, NovaStart, novaTheme } from "@/components/nova-shell";
+import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_THEMES, OLD_NOVA_PINS, NovaBoot, NovaOptimize, NovaShell, NovaStart, applyCustomNovaTheme, convert as convertUnits, novaTheme } from "@/components/nova-shell";
+import { ActivityApp, ActivityIcon, trackOpen, trackTime } from "@/components/activity-app";
+import { AlphaBadge, AlphaWatermark, BUILD, RELEASE_LABEL, WhatsNewTour, releaseSeen } from "@/components/release";
 import { CometIcon, PulseIcon, PulseMonitor, Soundscapes, SoundscapesIcon } from "@/components/nova-apps";
 import { Component } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -231,8 +233,9 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "2.4";
+const OS_VERSION = "3.0";
 const CHANGELOG = [
+  { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu"] },
   { v: "2.4", date: "20 Oct 2026", items: ["Switching from NOVA OS to PRIVATE OS now shows a 5 second loading screen first, and you can cancel it", "Optimize button in NOVA OS, with its own optimize screen: find it in the Control Center, Settings › Speed, the Nova menu, a right-click on the desktop, or by typing “optimize” in Search", "New Desktop space in NOVA Settings: choose a greeting, a big clock or nothing, put it on the left or in the centre, add app shortcuts and widgets (calendar, music, notes, stopwatch) to the desktop", "NOVA dock: pick the icon size and let it hide until you move the mouse to the bottom of the screen", "Show the Dynamic Island all the time or only for notifications and timers", "Clear, frosted or solid glass for NOVA panels and menus", "Wallpaper shuffle: NOVA can move to the next live scene every few minutes", "Right-click an app in the dock to add it to the desktop", "Faster proxy: the browser now picks the first proxy server that answers instead of waiting for all of them, loads its engine files at the same time, and starts quietly in the background so the first page opens sooner"] },
   { v: "2.3", date: "19 Oct 2026", items: ["Brand new NOVA OS Settings, designed only for NOVA: a home of live tiles (your desktop, a theme orbit, quick toggles, brightness and volume), spaces that slide in with their own mini dock, and search that jumps straight to any setting", "New NOVA OS wallpapers: eight live scenes painted in your theme colours (Aurora, Fluid, Dunes, Planet, Tide, Bloom, Silk and Cosmos), plus photo and video wallpapers and your own photos, chosen right inside NOVA", "Dim wallpaper slider, and NOVA windows get round glass buttons", "NOVA OS no longer offers desktop styles; it has one desktop of its own", "Shorter NOVA OS dock: five apps by default, smaller icons and no extra buttons", "The browser in NOVA OS is now called Comet, with its own icon", "Reddit works in the browser: it opens in a built-in Reddit reader that loads posts, pictures, galleries, videos and comments straight from your own connection, because Reddit blocks proxy servers"] },
   { v: "2.2", date: "19 Oct 2026", items: ["Two operating systems: choose PRIVATE OS or the new NOVA OS when you set up, and switch any time in Settings", "NOVA OS: live animated wallpapers with depth, a Dynamic Island with notifications and a focus timer, a magnifying dock, the Orbit app launcher, Nova Search with a calculator, Control Center, and a notification and widget panel", "NOVA OS Overview: every open window flies into a live grid (Alt+Tab, F3 or the top-left hot corner)", "NOVA OS themes: Aurora, Nebula, Ember, Glacier, Verdant, Sakura, Solar and Graphite", "New NOVA apps: Soundscapes, a live ambient sound mixer, and Pulse, a system monitor", "NOVA OS has its own start, boot and lock screens and new window animations", "Setup now asks for your name and a theme before you can continue"] },
@@ -315,7 +318,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: ActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 // NOVA OS gets every app plus its own Soundscapes and Pulse. Its browser is called Comet.
 const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps.map((app) => (app.id === "browser" ? { id: "browser", label: "Comet", icon: CometIcon } : app)), { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
@@ -370,6 +373,8 @@ function PrivateOS() {
   const [runOpen, setRunOpen] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [tour, setTour] = useState(false);
+  const frontApp = useRef<string | null>(null);
   useEffect(() => {
     const start = () => setOptimizing(true);
     window.addEventListener(OPTIMIZE_EVENT, start);
@@ -403,6 +408,22 @@ function PrivateOS() {
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
+
+  // Activity: every 15 seconds, the app in front gets the time.
+  useEffect(() => {
+    if (phase !== "desktop" || locked || power !== "on") return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === "visible" && frontApp.current) trackTime(frontApp.current, 15);
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [phase, locked, power]);
+
+  // The 3.0 tour shows once, after the desktop unlocks.
+  useEffect(() => {
+    if (phase !== "desktop" || locked || !settingsReady || !settings.onboarded || releaseSeen(OS_VERSION)) return;
+    const timer = window.setTimeout(() => setTour(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [phase, locked, settingsReady, settings.onboarded]);
 
   // Start the browser's proxy engine in the background once the desktop is up.
   useEffect(() => {
@@ -635,6 +656,7 @@ function PrivateOS() {
     setMinWins((list) => list.filter((item) => item !== key));
     setOpenWins((list) => (list.includes(key) ? list : [...list, key]));
     raise(key);
+    if (!openWins.includes(key)) trackOpen(key);
   };
 
   const startItems: [string, () => void][] = [
@@ -671,6 +693,7 @@ function PrivateOS() {
   });
   const visibleWins = openWins.filter((id) => !minWins.includes(id));
   const topId = [...zOrder].reverse().find((id) => visibleWins.includes(id)) ?? null;
+  frontApp.current = topId;
   const dockHidden = settings.dockAutoHide && !dockShown && !startMenu && !dockMenu && !barMenu && !launcher && !taskView && !quickMenu;
   // Windows 11 style: one full-width bar with the apps centred and the tray on the right.
   const taskbarMode = settings.dockStyle === "taskbar" && settings.dockPos !== "right";
@@ -712,6 +735,7 @@ function PrivateOS() {
         ...(spotQuery.length >= 2
           ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: "File", run: () => openPathInApp(path, openApp) }))
           : []),
+        ...(convertUnits(runText) ? [{ key: "unit", label: `${runText.trim()} = ${convertUnits(runText)}`, hint: "Convert", run: () => { void navigator.clipboard?.writeText(convertUnits(runText) ?? "").catch(() => {}); } }] : []),
         ...(spotQuery ? [{ key: "web", label: `Search the web for “${runText.trim()}”`, hint: "Web", run: () => webSearch(runText.trim()) }] : []),
       ];
   const runSpotlight = (hit?: { run: () => void }) => {
@@ -810,18 +834,20 @@ function PrivateOS() {
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       case "soundscapes": return <WindowFrame title="Soundscapes" icon={SoundscapesIcon} close={close}><Soundscapes /></WindowFrame>;
+      case "activity": return <WindowFrame title="Activity" icon={ActivityIcon} close={close}><ActivityApp apps={NOVA_APPS} /></WindowFrame>;
       case "pulse": return <WindowFrame title="Pulse" icon={PulseIcon} close={close}><PulseMonitor windows={openWins.length} /></WindowFrame>;
       default: return null;
     }
   };
 
+  applyCustomNovaTheme(settings.novaCustom);
   // Wait for saved settings so the right OS shows its own start screen (no flash of the other one).
   if (phase === "start" && !settingsReady) return <main className="h-dvh bg-black" />;
   if (phase === "start") return nova ? <NovaStart theme={novaTheme(settings.novaTheme)} onStart={() => setPhase("boot")} /> : <StartScreen onStart={() => setPhase("boot")} />;
   if (phase === "boot") return nova ? <NovaBoot theme={novaTheme(settings.novaTheme)} /> : <BootScreen />;
 
   const welcome = settingsReady && !settings.onboarded
-    ? <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} novaThemes={NOVA_THEMES} lowPower={isLowPowerDevice()} onDone={finishSetup} />
+    ? <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} novaThemes={NOVA_THEMES.filter((theme) => theme.id !== "custom")} lowPower={isLowPowerDevice()} onDone={finishSetup} />
     : null;
   const renderSlot = (id: string) => (
     <WindowContext.Provider value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id, closing: closingWins.includes(id) }}>
@@ -860,7 +886,7 @@ function PrivateOS() {
         webSearch={webSearch}
         switchToPrivate={() => switchEdition("private")}
         optimize={() => setOptimizing(true)}
-        extra={<>{optimizing && <NovaOptimize theme={novaTheme(settings.novaTheme)} onApply={() => patchSettings(() => ({ lite: true }))} onDone={() => setOptimizing(false)} />}{switching && <SwitchScreen onDone={() => switchEdition("private", true)} onCancel={() => setSwitching(false)} />}{welcome}</>}
+        extra={<>{optimizing && <NovaOptimize theme={novaTheme(settings.novaTheme)} onApply={() => patchSettings(() => ({ lite: true }))} onDone={() => setOptimizing(false)} />}{switching && <SwitchScreen onDone={() => switchEdition("private", true)} onCancel={() => setSwitching(false)} />}{tour && <WhatsNewTour version={OS_VERSION} onDone={() => setTour(false)} />}{welcome}</>}
       />
     );
   }
@@ -1112,6 +1138,8 @@ function PrivateOS() {
         </div>
       )}
 
+      <AlphaWatermark name="PRIVATE OS" version={OS_VERSION} className={`absolute right-4 z-[2] text-white/40 ${settings.dockPos === "bottom" ? "bottom-[78px]" : "bottom-4"}`} />
+      {tour && <WhatsNewTour version={OS_VERSION} onDone={() => setTour(false)} />}
       {optimizing && <OptimizeOverlay onApply={() => patchSettings(() => ({ lite: true }))} onDone={() => setOptimizing(false)} />}
       {runOpen && (
         <div onClick={() => setRunOpen(false)} className="absolute inset-0 z-[46] flex items-start justify-center bg-black/30 px-3 pt-[14dvh] backdrop-blur-sm">
@@ -1289,7 +1317,7 @@ function StartScreen({ onStart }: { onStart: () => void }) {
         <span className="absolute -right-3 -top-2 rounded-[3px] bg-[#f2c783] px-1 py-px font-['Orbitron',sans-serif] text-[8px] font-bold leading-none text-black md:-right-5">OS</span>
       </div>
       <div className="mt-4 h-px w-[62%] max-w-sm bg-gradient-to-r from-white/10 via-white/80 to-white/20" />
-      <p className="beta-tag mt-4 rounded-full border border-[#f2c783]/60 bg-[#f2c783]/10 px-3 py-1 font-['Orbitron',sans-serif] text-[11px] font-bold tracking-[.32em] text-[#f2c783]">IN BETA</p>
+      <AlphaBadge className="mt-4 font-['Orbitron',sans-serif]" />
       <button type="button" onClick={onStart} className="mt-6 border border-white/15 px-5 py-1.5 font-['Rajdhani',sans-serif] text-[11px] font-bold tracking-[.2em] text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60">
         START
       </button>
@@ -1338,7 +1366,7 @@ function BootScreen() {
         <div className="mx-auto flex size-16 items-center justify-center rounded-lg border border-border bg-card shadow-2xl"><ShieldCheck className="size-8 text-primary" /></div>
         <h1 className="mt-5 text-xl font-semibold tracking-[.28em]">PRIVATE OS</h1>
         <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-muted-foreground">Private by design</p>
-        <p className="mx-auto mt-3 w-fit rounded-full border border-primary/50 px-2.5 py-0.5 text-[9px] font-bold tracking-[.3em] text-primary">IN BETA</p>
+        <AlphaBadge className="mt-3 !text-[8.5px]" />
         <div className="mx-auto mt-6 h-px w-40 overflow-hidden bg-muted"><div className="h-full origin-left bg-primary [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
         <div className="boot-spinner mx-auto mt-8" aria-hidden>{Array.from({ length: 5 }, (_, i) => <span key={i} style={{ animationDelay: `${i * 0.14}s` }} />)}</div>
       </div>
@@ -3638,8 +3666,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "aurora", novaPhoto: false, novaWall: "aurora", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0 };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "aurora", novaPhoto: false, novaWall: "aurora", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5 };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -4148,6 +4176,8 @@ function AboutApp({ close }: { close: () => void }) {
   const nav = typeof navigator === "undefined" ? null : (navigator as Navigator & { deviceMemory?: number });
   const rows: [string, string][] = [
     ["System", `PRIVATE OS ${OS_VERSION}`],
+    ["Channel", RELEASE_LABEL],
+    ["Build", BUILD],
     ["Browser", nav?.userAgent.match(/(Firefox|Edg|Chrome|Safari)\/[\d.]+/)?.[0] ?? "Unknown"],
     ["Screen", typeof window === "undefined" ? "" : `${window.screen.width} × ${window.screen.height}`],
     ["Language", nav?.language ?? ""],

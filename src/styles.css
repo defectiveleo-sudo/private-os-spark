@@ -850,3 +850,20 @@ main[data-nova]:is([data-lite], [data-reduce]) .nova-saver-clock { animation: no
 .nsx-color input { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 99px; background: none; cursor: pointer; }
 .nsx-color input::-webkit-color-swatch-wrapper { padding: 0; } .nsx-color input::-webkit-color-swatch { border: 0; border-radius: 99px; }
 .nsx-color input::-moz-color-swatch { border: 0; border-radius: 99px; }
+
+/* .. 3.0 Chat .. */
+.chat-root { background: radial-gradient(120% 90% at 0% 0%, color-mix(in oklab, #8b5cf6 22%, transparent), transparent 60%), radial-gradient(90% 80% at 100% 100%, color-mix(in oklab, #ec4899 16%, transparent), transparent 60%), #0d0d16; }
+.chat-side { background: rgb(255 255 255 / .035); border-right: 1px solid rgb(255 255 255 / .07); gap: 2px; }
+.chat-room { display: flex; align-items: center; gap: .5rem; border-radius: 10px; padding: .42rem .6rem; font-size: 13px; color: rgb(255 255 255 / .72); text-align: left; transition: background .15s, color .15s; }
+.chat-room:hover { background: rgb(255 255 255 / .06); color: #fff; }
+.chat-room.is-on { background: linear-gradient(120deg, rgb(139 92 246 / .35), rgb(236 72 153 / .22)); color: #fff; }
+.chat-head { border-bottom: 1px solid rgb(255 255 255 / .07); background: rgb(255 255 255 / .02); }
+.chat-input { width: 100%; border-radius: 12px; border: 1px solid rgb(255 255 255 / .1); background: rgb(255 255 255 / .06); padding: .6rem .85rem; font-size: 13px; color: #fff; outline: none; transition: border-color .15s, background .15s; }
+.chat-input:focus { border-color: rgb(167 139 250 / .7); background: rgb(255 255 255 / .09); }
+.chat-input option { color: #111; }
+.chat-send { background: linear-gradient(120deg, #8b5cf6, #ec4899); color: #fff; box-shadow: 0 6px 20px -6px rgb(236 72 153 / .6); }
+.chat-compose { border-top: 1px solid rgb(255 255 255 / .07); }
+.chat-bubble { display: inline-block; max-width: 100%; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 16px 16px 16px 6px; background: rgb(255 255 255 / .08); padding: .45rem .8rem; font-size: 13.5px; line-height: 1.45; animation: chat-in .22s cubic-bezier(.22,1,.36,1); }
+.chat-bubble.is-mine { border-radius: 16px 16px 6px 16px; background: linear-gradient(120deg, #7c3aed, #db2777); }
+@keyframes chat-in { from { opacity: 0; transform: translateY(6px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { .chat-bubble { animation: none; } }

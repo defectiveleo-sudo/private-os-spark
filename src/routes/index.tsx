@@ -7,6 +7,7 @@ import { RedditView } from "@/components/reddit-view";
 import { isRedditUrl } from "@/lib/reddit";
 import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_THEMES, OLD_NOVA_PINS, NovaBoot, NovaOptimize, NovaShell, NovaStart, applyCustomNovaTheme, convert as convertUnits, novaTheme } from "@/components/nova-shell";
 import { ActivityApp, ActivityIcon, trackOpen, trackTime } from "@/components/activity-app";
+import { ChatApp, ChatIcon } from "@/components/chat-app";
 import { AlphaBadge, AlphaWatermark, BUILD, RELEASE_LABEL, WhatsNewTour, releaseSeen } from "@/components/release";
 import { CometIcon, PulseIcon, PulseMonitor, Soundscapes, SoundscapesIcon } from "@/components/nova-apps";
 import { Component } from "react";
@@ -82,6 +83,7 @@ import {
   Mail,
   BookUser,
   Map as MapIcon,
+  History,
 } from "lucide-react";
 import { Copy as LuCopy, Square as LuSquare, CirclePlus as LuCirclePlus, Scissors as LuScissors, ClipboardPaste as LuClipboardPaste, TextCursorInput as LuTextCursorInput, Trash2 as LuTrash2, ArrowUpDown as LuArrowUpDown, LayoutList as LuLayoutList, Ellipsis as LuEllipsis, PanelRight as LuPanelRight, ArrowUp as LuArrowUp, Images as LuImages, Monitor as LuMonitor, HardDrive as LuHardDrive, Pin as LuPin, FolderOpen as LuFolderOpen, CheckCheck as LuCheckCheck, FlipHorizontal as LuFlipHorizontal, Bold as LuBold, Italic as LuItalic, Underline as LuUnderline, Strikethrough as LuStrikethrough, Subscript as LuSubscript, Superscript as LuSuperscript, Highlighter as LuHighlighter, Baseline as LuBaseline, List as LuList, ListOrdered as LuListOrdered, IndentDecrease as LuIndentDecrease, IndentIncrease as LuIndentIncrease, AlignLeft as LuAlignLeft, AlignCenter as LuAlignCenter, AlignRight as LuAlignRight, AlignJustify as LuAlignJustify, Replace as LuReplace, TextSelect as LuTextSelect, RemoveFormatting as LuRemoveFormatting, AArrowUp as LuAArrowUp, AArrowDown as LuAArrowDown, Table as LuTable, ImagePlus as LuImagePlus, Link as LuLink, SeparatorHorizontal as LuSeparatorHorizontal, CalendarClock as LuCalendarClock, FileDown as LuFileDown, Printer as LuPrinter, Sigma as LuSigma, Eraser as LuEraser, ArrowDownAZ as LuArrowDownAZ, ArrowDownZA as LuArrowDownZA, PaintBucket as LuPaintBucket, DollarSign as LuDollarSign, Percent as LuPercent, Rows3 as LuRows3, Columns3 as LuColumns3, SquarePlus as LuSquarePlus, Presentation as LuPresentation, StickyNote as LuStickyNote, ZoomIn as LuZoomIn, ZoomOut as LuZoomOut, Expand as LuExpand, MoveUp as LuMoveUp, MoveDown as LuMoveDown, ImageOff as LuImageOff, BetweenHorizontalStart as LuBetweenHorizontalStart, BetweenVerticalStart as LuBetweenVerticalStart, FilePen as LuFilePen, Clock as LuClock, Calendar as LuCalendar, SquareFunction as LuSquareFunction, Search as LuSearch, FileText as LuFileText, SquareCheck as LuSquareCheck } from "lucide-react";
 import { Backstage, FileGlyph, FolderGlyph, OFFICE, OfficeStatus, OfficeTitle, RBig, RColor, RGroup, RRow, RSmall, RStack, Ribbon, rSelect } from "@/components/office-ui";
@@ -235,7 +237,7 @@ const linkLauncher = LINK_APPS.map((app) => ({
 
 const OS_VERSION = "3.0";
 const CHANGELOG = [
-  { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu"] },
+  { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
   { v: "2.4", date: "20 Oct 2026", items: ["Switching from NOVA OS to PRIVATE OS now shows a 5 second loading screen first, and you can cancel it", "Optimize button in NOVA OS, with its own optimize screen: find it in the Control Center, Settings › Speed, the Nova menu, a right-click on the desktop, or by typing “optimize” in Search", "New Desktop space in NOVA Settings: choose a greeting, a big clock or nothing, put it on the left or in the centre, add app shortcuts and widgets (calendar, music, notes, stopwatch) to the desktop", "NOVA dock: pick the icon size and let it hide until you move the mouse to the bottom of the screen", "Show the Dynamic Island all the time or only for notifications and timers", "Clear, frosted or solid glass for NOVA panels and menus", "Wallpaper shuffle: NOVA can move to the next live scene every few minutes", "Right-click an app in the dock to add it to the desktop", "Faster proxy: the browser now picks the first proxy server that answers instead of waiting for all of them, loads its engine files at the same time, and starts quietly in the background so the first page opens sooner"] },
   { v: "2.3", date: "19 Oct 2026", items: ["Brand new NOVA OS Settings, designed only for NOVA: a home of live tiles (your desktop, a theme orbit, quick toggles, brightness and volume), spaces that slide in with their own mini dock, and search that jumps straight to any setting", "New NOVA OS wallpapers: eight live scenes painted in your theme colours (Aurora, Fluid, Dunes, Planet, Tide, Bloom, Silk and Cosmos), plus photo and video wallpapers and your own photos, chosen right inside NOVA", "Dim wallpaper slider, and NOVA windows get round glass buttons", "NOVA OS no longer offers desktop styles; it has one desktop of its own", "Shorter NOVA OS dock: five apps by default, smaller icons and no extra buttons", "The browser in NOVA OS is now called Comet, with its own icon", "Reddit works in the browser: it opens in a built-in Reddit reader that loads posts, pictures, galleries, videos and comments straight from your own connection, because Reddit blocks proxy servers"] },
   { v: "2.2", date: "19 Oct 2026", items: ["Two operating systems: choose PRIVATE OS or the new NOVA OS when you set up, and switch any time in Settings", "NOVA OS: live animated wallpapers with depth, a Dynamic Island with notifications and a focus timer, a magnifying dock, the Orbit app launcher, Nova Search with a calculator, Control Center, and a notification and widget panel", "NOVA OS Overview: every open window flies into a live grid (Alt+Tab, F3 or the top-left hot corner)", "NOVA OS themes: Aurora, Nebula, Ember, Glacier, Verdant, Sakura, Solar and Graphite", "New NOVA apps: Soundscapes, a live ambient sound mixer, and Pulse, a system monitor", "NOVA OS has its own start, boot and lock screens and new window animations", "Setup now asks for your name and a theme before you can continue"] },
@@ -318,7 +320,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: ActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: ActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: ChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 // NOVA OS gets every app plus its own Soundscapes and Pulse. Its browser is called Comet.
 const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps.map((app) => (app.id === "browser" ? { id: "browser", label: "Comet", icon: CometIcon } : app)), { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
@@ -834,6 +836,7 @@ function PrivateOS() {
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
       case "soundscapes": return <WindowFrame title="Soundscapes" icon={SoundscapesIcon} close={close}><Soundscapes /></WindowFrame>;
+      case "chat": return <WindowFrame title="Chat" icon={ChatIcon} close={close}><ChatApp userName={settings.userName} /></WindowFrame>;
       case "activity": return <WindowFrame title="Activity" icon={ActivityIcon} close={close}><ActivityApp apps={NOVA_APPS} /></WindowFrame>;
       case "pulse": return <WindowFrame title="Pulse" icon={PulseIcon} close={close}><PulseMonitor windows={openWins.length} /></WindowFrame>;
       default: return null;
@@ -1690,6 +1693,40 @@ type EngineWindow = {
 };
 
 let engineStart: Promise<EngineController> | null = null;
+// The live transport link, so the browser can move to another Wisp server when one drops connections.
+let engineLink: { connection: { setTransport: (path: string, args: unknown[]) => Promise<void> }; wisp: string } | null = null;
+let rotating: Promise<boolean> | null = null;
+
+// Moves the proxy to the next Wisp server that answers. Skipped when the person picked a server.
+function rotateWisp() {
+  if (rotating) return rotating;
+  rotating = (async () => {
+    const link = engineLink;
+    if (!link) return false;
+    try {
+      if ((localStorage.getItem("pos-wisp-choice") || "auto") !== "auto") return false;
+    } catch {
+      // storage unavailable: treat as automatic
+    }
+    for (const url of WISP_SERVERS.filter((item) => item !== link.wisp)) {
+      if (!(await probeWisp(url, 3000))) continue;
+      try {
+        await withTimeout(link.connection.setTransport("/epoxy.mjs", [{ wisp: url }]), 8000, "switch timed out");
+      } catch {
+        continue;
+      }
+      link.wisp = url;
+      try {
+        localStorage.setItem("pos-wisp-last", url);
+      } catch {
+        // storage unavailable
+      }
+      return true;
+    }
+    return false;
+  })().finally(() => window.setTimeout(() => { rotating = null; }, 4000));
+  return rotating;
+}
 
 function loadScript(src: string) {
   return new Promise<void>((resolve, reject) => {
@@ -1792,7 +1829,9 @@ function startProxyEngine() {
       const controller = new ScramjetController({ prefix: "/scramjet/" });
       await withTimeout(controller.init(), 10000, "The proxy engine did not initialise");
       const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
-      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: await wisp }]), 12000, "Could not reach a proxy server");
+      const server = await wisp;
+      await withTimeout(connection.setTransport("/epoxy.mjs", [{ wisp: server }]), 12000, "Could not reach a proxy server");
+      engineLink = { connection, wisp: server };
       return controller;
     })(), 30000, "The proxy engine took too long to start").catch((error) => {
       engineStart = null;
@@ -2072,7 +2111,169 @@ const NTP_SHORTCUTS = [
   { title: "DuckDuckGo", url: "https://duckduckgo.com/" },
   { title: "Coolmath", url: "https://www.coolmathgames.com/" },
   { title: "Twitch", url: "https://www.twitch.tv/" },
+  { title: "Gmail", url: "https://mail.google.com/" },
+  { title: "Discord", url: "https://discord.com/app" },
+  { title: "Roblox", url: "https://www.roblox.com/" },
+  { title: "Spotify", url: "https://open.spotify.com/" },
 ];
+
+// Browsing history, kept in this browser (shared by every tab and by both systems).
+type HistoryItem = { url: string; title: string; time: number };
+const HISTORY_KEY = "pos-history";
+const HISTORY_MAX = 400;
+function readHistory(): HistoryItem[] {
+  try {
+    const list = JSON.parse(localStorage.getItem(HISTORY_KEY) ?? "[]") as unknown;
+    return Array.isArray(list) ? (list as HistoryItem[]).filter((item) => item && typeof item.url === "string") : [];
+  } catch {
+    return [];
+  }
+}
+function writeHistory(list: HistoryItem[]) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_MAX)));
+  } catch {
+    // storage full or unavailable
+  }
+  window.dispatchEvent(new Event("pos-history"));
+}
+function addHistory(url: string, title = "") {
+  const list = readHistory();
+  const recent = list[0];
+  if (recent && recent.url === url && Date.now() - recent.time < 30 * 60_000) {
+    recent.time = Date.now();
+    if (title) recent.title = title;
+    return writeHistory(list);
+  }
+  writeHistory([{ url, title, time: Date.now() }, ...list]);
+}
+function titleHistory(url: string, title: string) {
+  const list = readHistory();
+  const item = list.find((entry) => entry.url === url);
+  if (!item || item.title === title) return;
+  item.title = title;
+  writeHistory(list);
+}
+function useHistoryList() {
+  const [list, setList] = useState<HistoryItem[]>([]);
+  useEffect(() => {
+    const load = () => setList(readHistory());
+    load();
+    window.addEventListener("pos-history", load);
+    return () => window.removeEventListener("pos-history", load);
+  }, []);
+  return list;
+}
+// Forgets every site cookie the proxy saved, which signs you out of sites opened in the browser.
+function clearSiteCookies() {
+  try {
+    navigator.serviceWorker?.controller?.postMessage({ posProxy: "clear-cookies" });
+  } catch {
+    // no proxy worker running
+  }
+  try {
+    const request = indexedDB.open("$scramjet");
+    request.onupgradeneeded = () => request.transaction?.abort();
+    request.onsuccess = () => {
+      const database = request.result;
+      if (database.objectStoreNames.contains("cookies")) database.transaction("cookies", "readwrite").objectStore("cookies").put({}, "cookies");
+      database.close();
+    };
+  } catch {
+    // nothing stored
+  }
+}
+
+function dayLabel(time: number) {
+  const date = new Date(time);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return "Today";
+  if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return date.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+}
+
+function HistoryPanel({ open, close }: { open: (url: string) => void; close: () => void }) {
+  const list = useHistoryList();
+  const [query, setQuery] = useState("");
+  const [cleared, setCleared] = useState("");
+  const shown = list.filter((item) => !query || `${item.title} ${item.url}`.toLowerCase().includes(query.toLowerCase()));
+  const groups: { label: string; items: HistoryItem[] }[] = [];
+  for (const item of shown) {
+    const label = dayLabel(item.time);
+    const group = groups[groups.length - 1];
+    if (group && group.label === label) group.items.push(item);
+    else groups.push({ label, items: [item] });
+  }
+  const remove = (target: HistoryItem) => writeHistory(readHistory().filter((item) => !(item.url === target.url && item.time === target.time)));
+  return (
+    <div className="absolute inset-0 z-20 overflow-auto bg-background p-4 [animation:rise_.25s_cubic-bezier(.22,1,.36,1)]">
+      <div className="mx-auto max-w-2xl">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="mr-auto flex items-center gap-2 text-lg font-semibold"><History className="size-5 text-primary" />History</h2>
+          <button type="button" onClick={() => { clearSiteCookies(); setCleared("Cookies cleared. You're signed out of sites in the browser."); }} className="rounded-full bg-white/[.07] px-3 py-1.5 text-[12px] hover:bg-white/[.12]">Clear cookies</button>
+          <button type="button" onClick={() => { writeHistory([]); setCleared("History cleared."); }} className="rounded-full bg-white/[.07] px-3 py-1.5 text-[12px] hover:bg-white/[.12]">Clear history</button>
+          <button type="button" aria-label="Close history" onClick={close} className="grid size-8 place-items-center rounded-full hover:bg-white/10"><X className="size-4" /></button>
+        </div>
+        <div className="chrome-omnibox mt-4 flex h-10 items-center gap-2 rounded-full px-4">
+          <Search className="size-4 text-foreground/55" />
+          <input autoFocus aria-label="Search history" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search history" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-foreground/45" />
+        </div>
+        {cleared && <p className="mt-3 rounded-xl bg-primary/10 px-3 py-2 text-[12px] text-primary">{cleared}</p>}
+        {groups.length === 0 && <p className="mt-10 text-center text-sm text-muted-foreground">{query ? "Nothing in your history matches that." : "Pages you visit show up here."}</p>}
+        {groups.map((group) => (
+          <section key={group.label} className="mt-5">
+            <h3 className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[.16em] text-muted-foreground">{group.label}</h3>
+            <ul className="overflow-hidden rounded-2xl bg-white/[.04]">
+              {group.items.map((item) => (
+                <li key={`${item.url}-${item.time}`} className="group flex items-center gap-3 px-3 py-2 hover:bg-white/[.06]">
+                  <span className="w-16 shrink-0 whitespace-nowrap text-[11px] tabular-nums text-muted-foreground">{new Date(item.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <SiteIcon host={hostOf(item.url)} />
+                  <button type="button" onClick={() => open(item.url)} className="min-w-0 flex-1 text-left">
+                    <span className="block truncate text-[13px]">{item.title || hostOf(item.url) || item.url}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">{item.url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+                  </button>
+                  <button type="button" aria-label={`Remove ${item.title || item.url} from history`} onClick={() => remove(item)} className="grid size-7 shrink-0 place-items-center rounded-full opacity-0 hover:bg-white/10 group-hover:opacity-100 focus:opacity-100"><X className="size-3.5" /></button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Google refuses sign-in inside other browsers and proxies ("This browser may not be secure"),
+// so Gmail and Google accounts open in a real browser window instead.
+const GOOGLE_SIGN_IN = ["accounts.google.com", "mail.google.com", "gmail.com", "www.gmail.com"];
+const isGoogleSignIn = (url: string) => GOOGLE_SIGN_IN.includes(hostOf(url)) || hostOf(url) === "gmail.com";
+function openGoogleWindow(url: string) {
+  const width = Math.min(1180, window.screen.availWidth - 80);
+  const height = Math.min(820, window.screen.availHeight - 80);
+  const left = Math.max(0, (window.screen.availWidth - width) / 2);
+  const top = Math.max(0, (window.screen.availHeight - height) / 2);
+  const opened = window.open(url, "pos-google", `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
+  if (!opened) window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function GoogleGate({ url, proceed }: { url: string; proceed: () => void }) {
+  const gmail = /mail\.google\.com|gmail\.com/.test(url);
+  return (
+    <div className="absolute inset-0 z-10 grid place-items-center overflow-auto bg-background p-6 [animation:rise_.3s_cubic-bezier(.22,1,.36,1)]">
+      <div className="w-full max-w-md text-center">
+        <SiteIcon host={gmail ? "mail.google.com" : "google.com"} className="mx-auto size-14" />
+        <h2 className="mt-4 text-xl font-semibold">{gmail ? "Open Gmail in its own window" : "Sign in with Google in its own window"}</h2>
+        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Google blocks signing in from inside another browser, so it would show "This browser may not be secure". A real window keeps you signed in and your Gmail works normally.</p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <button type="button" onClick={() => openGoogleWindow(url)} className="rounded-full bg-primary px-5 py-2.5 text-[13px] font-semibold text-primary-foreground">{gmail ? "Open Gmail" : "Open Google sign-in"}</button>
+          <button type="button" onClick={proceed} className="rounded-full bg-white/[.08] px-4 py-2.5 text-[13px] hover:bg-white/[.13]">Try here anyway</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 const hostOf = (url: string) => {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -2167,8 +2368,16 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const controllerRef = useRef<EngineController | null>(null);
   const engineFrame = useRef<{ element: HTMLIFrameElement; frame: EngineFrame } | null>(null);
   const pending = useRef(true);
+  const retried = useRef(false);
   const page = nav.index >= 0 ? nav.list[nav.index] : null;
-  const needsEngine = Boolean(frameTarget) && !isDirectHost(frameTarget ?? "") && !isRedditUrl(frameTarget ?? "");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [googleOk, setGoogleOk] = useState(false);
+  const gated = Boolean(frameTarget && isGoogleSignIn(frameTarget) && !googleOk);
+  const needsEngine = Boolean(frameTarget) && !gated && !isDirectHost(frameTarget ?? "") && !isRedditUrl(frameTarget ?? "");
+  const recentSites = useHistoryList();
+  useEffect(() => {
+    if (gated) setLoading(false);
+  }, [gated, frameKey]);
 
   // Called whenever the page inside the frame reports its real address.
   const realUrl = useRef<(url: string) => void>(() => {});
@@ -2211,6 +2420,22 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
       .catch(() => setEngine("failed"));
   }, [needsEngine, engine]);
 
+  // The proxy worker gave up on a page: move to another proxy server and try the page once more.
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const onWorker = (event: MessageEvent) => {
+      const data = event.data as { posProxy?: string; url?: string } | null;
+      if (data?.posProxy !== "failed" || !active || retried.current || !frameTarget) return;
+      if (data.url && hostOf(data.url) !== hostOf(frameTarget)) return;
+      retried.current = true;
+      void rotateWisp().then((moved) => {
+        if (moved) engineFrame.current?.frame.go(frameTarget);
+      });
+    };
+    navigator.serviceWorker.addEventListener("message", onWorker);
+    return () => navigator.serviceWorker.removeEventListener("message", onWorker);
+  }, [active, frameTarget]);
+
   // Send the current page through the engine.
   useEffect(() => {
     if (engine !== "ready" || !needsEngine || !frameTarget) return;
@@ -2227,6 +2452,8 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
 
   const show = (url: string) => {
     setResults(null);
+    setHistoryOpen(false);
+    retried.current = false;
     pending.current = true;
     setFrameTarget(url);
     setFrameKey((value) => value + 1);
@@ -2285,6 +2512,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
         : { mode: "engine" as const, src: undefined }
     : null;
   const goHome = () => {
+    setHistoryOpen(false);
     setResults(null);
     setFrameTarget(null);
     setAddress("");
@@ -2308,6 +2536,12 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
     return () => window.clearInterval(timer);
   }, [frameTarget, frameKey]);
   const shownUrl = page ?? frameTarget;
+  useEffect(() => {
+    if (page && /^https?:\/\//i.test(page)) addHistory(page);
+  }, [page]);
+  useEffect(() => {
+    if (page && docTitle) titleHistory(page, docTitle);
+  }, [page, docTitle]);
   useEffect(() => {
     if (results) return onInfo({ title: `${results.query} - Search`, host: "duckduckgo.com", loading: results.hits === null });
     if (!shownUrl) return onInfo({ title: "New Tab", host: "", loading: false });
@@ -2340,8 +2574,10 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
             <div role="menu" onMouseLeave={() => setMenuOpen(false)} className="soft-glass absolute right-0 top-full z-30 mt-1 w-52 rounded-xl p-1.5 text-xs shadow-2xl [animation:window-in_.16s_cubic-bezier(.22,1,.36,1)]">
               {([
                 ["New tab", () => newTab(), true],
+                ["History", () => setHistoryOpen(true), true],
                 ["Bookmark this page", () => page && toggleBookmark({ title: docTitle || hostOf(page) || page, url: page }), Boolean(page) && !marked],
                 ["Open in a real browser tab", () => page && window.open(page, "_blank", "noopener,noreferrer"), Boolean(page)],
+                ["Clear cookies", clearSiteCookies, true],
                 ["Go home", goHome, true],
               ] as [string, () => void, boolean][]).map(([label, run, enabled]) => (
                 <button key={label} type="button" role="menuitem" disabled={!enabled} onClick={() => { run(); setMenuOpen(false); }} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-35 disabled:hover:bg-transparent">{label}</button>
@@ -2376,7 +2612,8 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
             </div>
           </div>
         )}
-        {frame?.mode === "reddit" && frameTarget ? (
+        {historyOpen && <HistoryPanel open={(url) => navigateTo(url)} close={() => setHistoryOpen(false)} />}
+        {gated && frameTarget ? <GoogleGate url={frameTarget} proceed={() => setGoogleOk(true)} /> : frame?.mode === "reddit" && frameTarget ? (
           <RedditView url={frameTarget} go={navigateTo} onReady={(title) => { setDocTitle(title); setLoading(false); }} />
         ) : frame ? <>
           {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><SiteIcon host={hostOf(frameTarget ?? "")} className="mx-auto size-10 animate-pulse" /><p className="mt-3 text-xs text-muted-foreground">Opening {hostOf(frameTarget ?? "") || "page"} securely…</p></div></div>}
@@ -2399,7 +2636,20 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
                 </button>
               ))}
             </div>
-            <p className="mt-8 flex items-center gap-1.5 pb-6 text-[11px] text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />Shields on · trackers blocked · nothing saved after you close</p>
+            {recentSites.length > 0 && (
+              <div className="mt-7 w-full max-w-xl text-left">
+                <div className="mb-2 flex items-center justify-between px-1"><p className="text-[11px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Recently visited</p><button type="button" onClick={() => setHistoryOpen(true)} className="text-[11px] text-primary hover:underline">See all history</button></div>
+                <div className="grid gap-1 sm:grid-cols-2">
+                  {recentSites.filter((item, index, list) => list.findIndex((other) => hostOf(other.url) === hostOf(item.url)) === index).slice(0, 6).map((item) => (
+                    <button key={`${item.url}-${item.time}`} type="button" onClick={() => navigateTo(item.url)} className="flex min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left hover:bg-white/[.06]">
+                      <SiteIcon host={hostOf(item.url)} />
+                      <span className="min-w-0 truncate text-[12.5px]">{item.title || hostOf(item.url)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="mt-8 flex items-center gap-1.5 pb-6 text-[11px] text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />Shields on · trackers blocked · history and sign-ins stay on this device</p>
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
-import { Activity, ChevronLeft, ChevronRight, Command, Layers, MonitorSmartphone, Palette, Rocket, Sparkles, Zap } from "lucide-react";
+import { Activity, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, MonitorSmartphone, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
 // Release labels and the one-time "Welcome to 3.0" tour.
 
@@ -29,13 +29,14 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
-  { icon: Rocket, kicker: "Version 3.0", title: "The biggest update yet", body: "PRIVATE OS and NOVA OS are now an alpha release. Almost every part of both systems got something new.", points: ["New Activity app", "NOVA Spaces", "Screensaver", "Your own themes"], hue: ["#f59e0b", "#ef4444"] },
+  { icon: Rocket, kicker: "Version 3.0", title: "The biggest update yet", body: "PRIVATE OS and NOVA OS are now an alpha release. Almost every part of both systems got something new.", points: ["Live Chat with other people", "NOVA Spaces", "Browser history and saved sign-ins", "Your own themes"], hue: ["#f59e0b", "#ef4444"] },
   { icon: Layers, kicker: "NOVA OS", title: "Spaces", body: "Spread your windows over several desktops and slide between them.", points: ["Ctrl+Alt+← / → to switch", "Ctrl+Alt+Shift+arrow moves a window", "Add spaces in Overview (F3)"], hue: ["#6366f1", "#06b6d4"] },
+  { icon: MessagesSquare, kicker: "Both systems", title: "Chat with everyone", body: "The new Chat app connects you live with other people on PRIVATE OS and NOVA OS.", points: ["Public rooms: general, games, music, help", "Private rooms with a code you share", "Mute anyone you don't want to see"], hue: ["#8b5cf6", "#ec4899"] },
   { icon: Activity, kicker: "Both systems", title: "Activity", body: "See how long you spend in each app today and over the last week. It stays in this browser.", points: ["Screen time today", "7-day chart", "Most opened apps"], hue: ["#22c55e", "#0ea5e9"] },
   { icon: Palette, kicker: "NOVA OS", title: "Make your own theme", body: "Pick three colours and NOVA paints the wallpaper, dock, island and every switch with them.", points: ["Settings › Themes › Make your own", "Works with every live wallpaper"], hue: ["#ec4899", "#8b5cf6"] },
   { icon: MonitorSmartphone, kicker: "NOVA OS", title: "Screensaver", body: "Leave NOVA alone and a floating clock drifts over your live wallpaper. Any key brings you back.", points: ["Settings › Display › Screensaver", "1, 3, 5 or 10 minutes"], hue: ["#14b8a6", "#3b82f6"] },
   { icon: Command, kicker: "NOVA OS", title: "Smarter search", body: "Nova Search converts units and temperatures, and Ctrl+/ shows every keyboard shortcut.", points: ["Type 10 km in miles", "Type 72 f to c", "Ctrl+/ for shortcuts"], hue: ["#a855f7", "#f43f5e"] },
-  { icon: Zap, kicker: "Still in development", title: "Alpha release", body: "This is an alpha: things will keep changing and some parts are still being built. Thanks for trying it early.", points: ["Faster proxy and browser", "New start and boot screens", "Full list in What's new"], hue: ["#eab308", "#f97316"] },
+  { icon: Zap, kicker: "Still in development", title: "Alpha release", body: "This is an alpha: things will keep changing and some parts are still being built. Thanks for trying it early.", points: ["Browser keeps history and cookies", "Gmail opens in its own window", "Full list in What's new"], hue: ["#eab308", "#f97316"] },
 ];
 
 export const releaseSeen = (version: string) => {

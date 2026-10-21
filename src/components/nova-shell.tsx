@@ -155,7 +155,7 @@ export function novaVars(theme: NovaTheme): CSSProperties {
 }
 
 const CATEGORIES: { id: string; label: string; icon: Icon; ids: string[] }[] = [
-  { id: "work", label: "Work", icon: Briefcase, ids: ["writer", "sheets", "slides", "pdfreader", "notes", "mail", "todo", "calendar", "files", "contacts", "sticky", "messages"] },
+  { id: "work", label: "Work", icon: Briefcase, ids: ["writer", "sheets", "slides", "pdfreader", "notes", "mail", "todo", "calendar", "files", "contacts", "sticky", "messages", "chat"] },
   { id: "create", label: "Create", icon: Brush, ids: ["paint", "recorder", "camera", "photos", "media", "soundscapes"] },
   { id: "web", label: "Web", icon: Globe2, ids: ["browser", "figure", "beez", "youtube", "cherrion", "maps", "weather"] },
   { id: "play", label: "Play", icon: Gamepad2, ids: ["games", "minecraft"] },

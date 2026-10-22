@@ -10,6 +10,7 @@ import {
   ImagePlus,
   Info,
   LayoutDashboard,
+  LayoutGrid,
   LayoutPanelLeft,
   Moon,
   MoonStar,
@@ -20,6 +21,7 @@ import {
   Search,
   ShieldCheck,
   Sparkles,
+  SquareStack,
   Sun,
   SunDim,
   Trash2,
@@ -31,13 +33,15 @@ import {
 import { RELEASE_LABEL } from "@/components/release";
 import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_SETTINGS_EVENT, NOVA_THEMES, NOVA_WIDGETS, NovaMark, novaTheme, takeSettingsSpace, type NovaApp, type NovaSettings, type NovaTheme } from "@/components/nova-shell";
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
+import { NovaDock } from "@/components/nova-dock";
+import { SOUND_PACKS, playClick, playHover, type SoundPack } from "@/lib/ui-sound";
 
 // NOVA OS Settings. Not a list of pages: it opens on a home made of live tiles
 // (your desktop, theme orbit, quick toggles), and each space slides in with its
 // own mini dock to hop between spaces. Nothing here is shared with PRIVATE OS.
 
 type Icon = ComponentType<{ className?: string }>;
-export type NovaSettingsData = NovaSettings & { soundHover: boolean; soundClick: boolean; timeZone: string; autoLock: number };
+export type NovaSettingsData = NovaSettings & { soundHover: boolean; soundClick: boolean; timeZone: string; autoLock: number; soundPack: SoundPack };
 type Wall = { label: string; thumb: string; src?: string; video?: string };
 type Props = {
   settings: NovaSettingsData;
@@ -95,6 +99,10 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "corner", label: "Hot corner", space: "dock", words: "overview corner windows" },
   { key: "docksize", label: "Dock size", space: "dock", words: "dock icon size big small" },
   { key: "dockhide", label: "Auto-hide the dock", space: "dock", words: "dock hide auto hidden" },
+  { key: "dockstyle", label: "Dock style", space: "dock", words: "dock style floating bar edge icons only background look" },
+  { key: "dockpos", label: "Dock position", space: "dock", words: "dock left bottom side position vertical" },
+  { key: "docklabels", label: "App names in the dock", space: "dock", words: "dock labels names text" },
+  { key: "pack", label: "Sound pack", space: "sound", words: "sound pack prestige glass bubble classic click hover style" },
   { key: "bright", label: "Brightness", space: "display", words: "screen dim light" },
   { key: "night", label: "Night light", space: "display", words: "warm night blue light eyes" },
   { key: "sounds", label: "Interface sounds", space: "sound", words: "sound audio click hover effects" },
@@ -204,10 +212,11 @@ function MiniDesktop({ theme, settings, walls, apps, still, className = "" }: { 
           })}
         </span>
       )}
-      <span className="absolute bottom-[5%] left-1/2 flex h-[11%] min-h-5 -translate-x-1/2 items-center justify-center gap-[3%] rounded-[30%/50%] border border-white/15 bg-white/10 px-[2%] backdrop-blur-md" style={{ width: `${Math.max(22, pins.length * 6.5)}%` }}>
+      <span className={`nsx-mini-dock is-${settings.novaDockStyle} ${settings.novaDockPos === "left" ? "is-left" : ""}`}>
+        <span className="nsx-mini-tool" />
         {pins.map((app) => {
           const AppIcon = app.icon;
-          return <span key={app.id} className="aspect-square h-[72%]"><AppIcon className="!size-full" /></span>;
+          return <span key={app.id} className="nsx-mini-app"><AppIcon className="!size-full" /></span>;
         })}
       </span>
     </div>
@@ -410,7 +419,7 @@ export function NovaSettingsApp(props: Props) {
           </button>
           <div className="min-w-0">
             <p className="text-[12px] font-medium uppercase tracking-[.22em] text-white/50">NOVA OS {props.version}</p>
-            <h2 className="truncate text-[clamp(1.5rem,3.4cqw,2.3rem)] font-light leading-tight tracking-tight">{greeting}, <span className="nsx-gradient-text font-semibold">{settings.userName || "friend"}</span></h2>
+            <h2 className="nova-serif truncate text-[clamp(1.7rem,3.8cqw,2.6rem)] leading-tight">{greeting}, <em className="nsx-gradient-text">{settings.userName || "friend"}</em></h2>
           </div>
         </div>
         <div className="relative w-full @3xl:w-[340px]">
@@ -710,29 +719,65 @@ export function NovaSettingsApp(props: Props) {
         <>
           <Pane className="!pb-4">
             <div data-setting="pins" className="flex flex-col items-center gap-3">
-              <div className="nsx-dock-preview" aria-label="Dock preview">
-                {pins.map((id) => {
-                  const app = byId(id)!;
-                  const AppIcon = app.icon;
-                  return (
-                    <button key={id} type="button" aria-label={app.label} aria-pressed={picked === id} title={app.label} onClick={() => setPicked(picked === id ? null : id)} className={`nsx-dock-icon ${picked === id ? "is-on" : ""}`}>
-                      <AppIcon className="!size-full" />
-                    </button>
-                  );
-                })}
-                {pins.length === 0 && <span className="px-4 text-[12px] text-white/50">The dock is empty</span>}
+              {/* The same dock component as the desktop, over the same wallpaper, so what you see is what you get. */}
+              <div className={`nsx-dock-stage ${settings.novaDockPos === "left" ? "is-left" : ""}`} data-style={settings.novaDockStyle}>
+                <NovaWallpaper theme={theme} wall={settings.novaWall.startsWith("photo:") ? "prestige" : settings.novaWall} still dim={settings.novaWallDim} />
+                <div className={`nova-dock4-wrap is-preview ${settings.novaDockPos === "left" ? "is-left" : ""}`} data-style={settings.novaDockStyle}>
+                  <NovaDock
+                    preview
+                    items={[
+                      { key: "orbit", label: "All apps", tool: true, icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => setPicked(null) },
+                      ...pins.map((id) => {
+                        const app = byId(id)!;
+                        const AppIcon = app.icon;
+                        return { key: id, label: app.label, pinned: true, icon: <AppIcon className="size-full" />, running: id === pins[0], onClick: () => setPicked(picked === id ? null : id) };
+                      }),
+                      { key: "overview", label: "Overview", tool: true, icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => setPicked(null) },
+                    ]}
+                    breaks={[1, pins.length + 1]}
+                    selected={picked}
+                    reorder={(from, to) => {
+                      const list = pins.filter((id) => id !== from);
+                      const at = list.indexOf(to);
+                      list.splice(pins.indexOf(from) > pins.indexOf(to) ? at : at + 1, 0, from);
+                      patch({ novaPins: list });
+                    }}
+                    size={settings.novaDockSize}
+                    magnify={settings.novaMagnify && !settings.reduceMotion}
+                    style={settings.novaDockStyle}
+                    pos={settings.novaDockPos}
+                    labels={settings.novaDockLabels}
+                  />
+                </div>
               </div>
               {pickedApp ? (
                 <div className="nsx-rise flex flex-wrap items-center justify-center gap-2">
                   <span className="text-[12.5px] font-semibold">{pickedApp.label}</span>
-                  <button type="button" onClick={() => movePin(pickedApp.id, -1)} className="nsx-btn flex items-center gap-1"><ChevronLeft className="size-3.5" />Move left</button>
-                  <button type="button" onClick={() => movePin(pickedApp.id, 1)} className="nsx-btn flex items-center gap-1">Move right<ChevronRight className="size-3.5" /></button>
+                  <button type="button" onClick={() => movePin(pickedApp.id, -1)} className="nsx-btn flex items-center gap-1"><ChevronLeft className="size-3.5" />{settings.novaDockPos === "left" ? "Move up" : "Move left"}</button>
+                  <button type="button" onClick={() => movePin(pickedApp.id, 1)} className="nsx-btn flex items-center gap-1">{settings.novaDockPos === "left" ? "Move down" : "Move right"}<ChevronRight className="size-3.5" /></button>
                   <button type="button" onClick={() => { patch({ novaPins: pins.filter((item) => item !== pickedApp.id) }); setPicked(null); }} className="nsx-btn !text-rose-300">Remove</button>
                 </div>
               ) : (
-                <p className="text-[12px] text-white/50">Click an app in the dock to move or remove it.</p>
+                <p className="text-[12px] text-white/50">{pins.length ? "Drag apps to reorder them, or click one to move or remove it." : "The dock is empty. Add apps below."}</p>
               )}
             </div>
+          </Pane>
+          <Pane title="Look">
+            <div data-setting="dockstyle" className="grid grid-cols-3 gap-2">
+              {([["float", "Floating", "A glass pill above the edge"], ["bar", "Edge bar", "Full width, sits on the edge"], ["bare", "Icons only", "No background at all"]] as const).map(([id, label, hint]) => (
+                <button key={id} type="button" onClick={() => patch({ novaDockStyle: id })} className={`nsx-option flex-col !items-start ${settings.novaDockStyle === id ? "is-on" : ""}`}>
+                  <span className={`nsx-dock-swatch is-${id}`}><i /><i /><i /><i /></span>
+                  <span className="mt-2 block text-[13px] font-semibold">{label}</span>
+                  <span className="block text-[11px] text-white/50">{hint}</span>
+                </button>
+              ))}
+            </div>
+            <Line id="dockpos" label="Position" hint="Bottom of the screen, or down the left side.">
+              <Chips label="Dock position" value={settings.novaDockPos} set={(value) => patch({ novaDockPos: value })} options={[{ id: "bottom", label: "Bottom" }, { id: "left", label: "Left" }]} />
+            </Line>
+            <Line id="docklabels" label="App names" hint="Small names under each icon.">
+              <Toggle label="App names" on={settings.novaDockLabels} flip={() => patch({ novaDockLabels: !settings.novaDockLabels })} />
+            </Line>
           </Pane>
           <Pane title="Add to the dock">
             <label className="nsx-search mb-3 !h-10">
@@ -800,6 +845,21 @@ export function NovaSettingsApp(props: Props) {
           <Line id="sounds" label="Interface sounds" hint="Soft sounds as you click and hover.">
             <Toggle label="Interface sounds" on={settings.uiSounds} flip={() => patch({ uiSounds: !settings.uiSounds })} />
           </Line>
+          <div data-setting="pack" className="nsx-line flex-col !items-stretch">
+            <div>
+              <p className="text-[13.5px] font-semibold">Sound pack</p>
+              <p className="mt-0.5 text-[12px] text-white/55">Hover a pack to hear it, click to use it.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
+              {SOUND_PACKS.map((pack) => (
+                <button key={pack.id} type="button" onPointerEnter={() => playHover(settings.soundVolume / 100, pack.id)} onClick={() => { patch({ soundPack: pack.id }); window.setTimeout(() => playClick(settings.soundVolume / 100, pack.id), 40); }} className={`nsx-option flex-col !items-start ${settings.soundPack === pack.id ? "is-on" : ""}`}>
+                  <span className="nsx-wave" aria-hidden><i /><i /><i /><i /><i /></span>
+                  <span className="mt-2 block text-[13px] font-semibold">{pack.name}</span>
+                  <span className="block text-[11px] text-white/50">{pack.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div data-setting="volume" className="nsx-line flex-col !items-stretch">
             <p className="text-[13.5px] font-semibold">Volume</p>
             <Fader label="Volume" icon={Volume1} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
@@ -959,7 +1019,7 @@ export function NovaSettingsApp(props: Props) {
               <button type="button" onClick={() => go("home")} aria-label="Back to all settings" className="nsx-back"><ChevronLeft className="size-5" /></button>
               <SpaceIcon space={current} size={52} />
               <div className="min-w-0">
-                <h2 className="truncate text-[26px] font-semibold tracking-tight">{current.label}</h2>
+                <h2 className="nova-serif truncate text-[30px] leading-tight">{current.label}</h2>
                 <p className="truncate text-[12.5px] text-white/55">{current.blurb}</p>
               </div>
             </header>

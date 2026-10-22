@@ -1,5 +1,6 @@
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 import { AlphaBadge, AlphaWatermark } from "@/components/release";
+import { NovaDock, type DockItem } from "@/components/nova-dock";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import {
   BatteryFull,
@@ -36,6 +37,7 @@ import {
   Settings,
   Sparkles,
   SquareStack,
+  StickyNote,
   Sun,
   Timer,
   Volume2,
@@ -75,6 +77,9 @@ export type NovaSettings = {
   novaShuffle: number;
   novaCustom: string[];
   novaSaver: number;
+  novaDockStyle: "float" | "bar" | "bare";
+  novaDockPos: "bottom" | "left";
+  novaDockLabels: boolean;
   userName: string;
   clock24: boolean;
   reduceMotion: boolean;
@@ -84,6 +89,7 @@ export type NovaSettings = {
 };
 
 export const NOVA_THEMES: NovaTheme[] = [
+  { id: "prestige", name: "Prestige", sub: "Indigo on midnight", accent: "#8b80ff", base: "#060818", colors: ["#6352ff", "#1e2a78", "#a78bfa"] },
   { id: "aurora", name: "Aurora", sub: "Northern lights", accent: "#5eead4", base: "#04060e", colors: ["#10b981", "#3b82f6", "#a855f7"] },
   { id: "nebula", name: "Nebula", sub: "Deep space violet", accent: "#c4b5fd", base: "#07040f", colors: ["#7c3aed", "#db2777", "#1d4ed8"] },
   { id: "ember", name: "Ember", sub: "Glowing coals", accent: "#fdba74", base: "#0c0503", colors: ["#ea580c", "#be123c", "#f59e0b"] },
@@ -257,7 +263,7 @@ function calc(text: string): string | null {
   }
 }
 
-type MenuItem = { label: string; icon?: Icon; run: () => void; danger?: boolean };
+type MenuItem = { label: string; icon?: Icon | undefined; run: () => void; danger?: boolean };
 type Ctx = { x: number; y: number; items: MenuItem[] } | null;
 type Notice = { id: number; title: string; body: string; at: number };
 type Slot = { tx: number; ty: number; s: number; box: { l: number; t: number; w: number; h: number } };
@@ -307,7 +313,6 @@ export function NovaShell(p: NovaShellProps) {
   const [timer, setTimer] = useState<{ end: number; total: number } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [bounce, setBounce] = useState<string | null>(null);
-  const [hover, setHover] = useState<number | null>(null);
   const [dockPeek, setDockPeek] = useState(false);
   // Spaces: several desktops, each with its own windows.
   const [space, setSpace] = useState(0);
@@ -315,7 +320,6 @@ export function NovaShell(p: NovaShellProps) {
   const [spaceOf, setSpaceOf] = useState<Record<string, number>>({});
   const [spaceHud, setSpaceHud] = useState<{ at: number; dir: number } | null>(null);
   const [saver, setSaver] = useState(false);
-  const dockEdge = useRef(0);
   const wallNow = useRef(settings.novaWall);
   wallNow.current = settings.novaWall;
   const focusOn = useRef(settings.novaFocus);
@@ -416,6 +420,7 @@ export function NovaShell(p: NovaShellProps) {
       if (event.altKey && event.code === "KeyL") { event.preventDefault(); p.setLocked(true); return; }
       if (event.altKey && event.code === "KeyC") { event.preventDefault(); toggle("control"); return; }
       if (event.altKey && event.code === "KeyN") { event.preventDefault(); toggle("center"); return; }
+      if (event.altKey && event.code === "KeyD") { event.preventDefault(); p.minimizeAll(); return; }
       if (mod && (event.key === "/" || event.code === "Slash")) { event.preventDefault(); toggle("keys"); return; }
       if (event.ctrlKey && event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
         event.preventDefault();
@@ -590,52 +595,60 @@ export function NovaShell(p: NovaShellProps) {
   const remaining = timer ? Math.max(0, timer.end - now) : 0;
   const mmss = `${String(Math.floor(remaining / 60000)).padStart(2, "0")}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")}`;
 
-  // ---- Dock with magnification ----
-  type DockEntry = { key: string; label: string; icon: ReactNode; onClick: () => void; running?: boolean; focused?: boolean; onContext?: (event: React.MouseEvent) => void; tool?: boolean };
+  // ---- Dock ----
   const dockIds = [...settings.novaPins, ...p.openWins.filter((id) => !settings.novaPins.includes(id))];
-  const dockEntries: DockEntry[] = [
-    { key: "orbit", label: "Orbit (all apps)", icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => toggle("launcher"), tool: true },
-    ...dockIds.flatMap((id): DockEntry[] => {
-      const app = byId(id);
-      if (!app) return [];
-      const AppIcon = app.icon;
-      const running = p.openWins.includes(id);
-      const focused = topId === id;
-      return [{
-        key: id,
-        label: app.label,
-        icon: <AppIcon className="size-full" />,
-        running,
-        focused,
-        onClick: () => (focused ? p.minimize(id) : launch(id)),
-        onContext: (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setPanel(null);
-          setCtx({
-            x: event.clientX,
-            y: event.clientY,
-            items: [
-              { label: running ? "Show" : "Open", icon: AppWindowIcon, run: () => launch(id) },
-              ...(running ? [{ label: "Minimize", icon: SquareStack, run: () => p.minimize(id) }, { label: "Quit", icon: X, run: () => p.closeWindow(id), danger: true }] : []),
-              { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
-              { label: settings.novaIcons.includes(id) ? "Remove from desktop" : "Add to desktop", icon: LayoutDashboard, run: () => onDesktop(id) },
-              ...(running ? [{ label: (spaceOf[id] ?? 0) + 1 < spaceCount ? `Move to Space ${(spaceOf[id] ?? 0) + 2}` : "Move to a new Space", icon: Layers, run: () => moveToSpace(id, (spaceOf[id] ?? 0) + 1) }] : []),
-            ],
-          });
-        },
-      }];
-    }),
+  const appMenu = (id: string, running: boolean): MenuItem[] => [
+    { label: running ? "Show" : "Open", icon: AppWindowIcon, run: () => launch(id) },
+    ...(running ? [{ label: "Minimize", icon: SquareStack, run: () => p.minimize(id) }, { label: "Quit", icon: X, run: () => p.closeWindow(id), danger: true }] : []),
+    { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
+    { label: settings.novaIcons.includes(id) ? "Remove from desktop" : "Add to desktop", icon: LayoutDashboard, run: () => onDesktop(id) },
+    ...(running ? [{ label: (spaceOf[id] ?? 0) + 1 < spaceCount ? `Move to Space ${(spaceOf[id] ?? 0) + 2}` : "Move to a new Space", icon: Layers, run: () => moveToSpace(id, (spaceOf[id] ?? 0) + 1) }] : []),
+    { label: "Dock settings", icon: Settings, run: () => customize("dock") },
   ];
-  const magnify = settings.novaMagnify && motion;
-  const SIZE = settings.novaDockSize;
-  const STEP = SIZE + 6;
-  const dockHidden = settings.novaDockHide && !dockPeek && panel === null && !overview;
-  const scaleFor = (index: number) => {
-    if (!magnify || hover === null) return 1;
-    const d = hover - index;
-    return 1 + 0.62 * Math.exp(-(d * d) / 2.4);
+  const appItems: DockItem[] = dockIds.flatMap((id): DockItem[] => {
+    const app = byId(id);
+    if (!app) return [];
+    const AppIcon = app.icon;
+    const running = p.openWins.includes(id);
+    const minimized = p.minWins.includes(id);
+    const focused = topId === id;
+    const where = running && spaceCount > 1 ? ` · Space ${(spaceOf[id] ?? 0) + 1}` : "";
+    return [{
+      key: id,
+      label: app.label,
+      icon: <AppIcon className="size-full" />,
+      pinned: settings.novaPins.includes(id),
+      running,
+      minimized,
+      focused,
+      status: running ? `${minimized ? "Minimized" : focused ? "In front" : "Open"}${where}` : settings.novaPins.includes(id) ? "Kept in the dock" : "Not open",
+      onClick: () => (focused ? p.minimize(id) : launch(id)),
+      actions: running
+        ? [{ label: focused ? "Minimize" : "Show", run: () => (focused ? p.minimize(id) : launch(id)) }, { label: "Quit", run: () => p.closeWindow(id), danger: true }]
+        : [{ label: "Open", run: () => launch(id) }, { label: settings.novaPins.includes(id) ? "Unpin" : "Pin", run: () => pin(id) }],
+      onContext: (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setPanel(null);
+        setCtx({ x: event.clientX, y: event.clientY, items: appMenu(id, running) });
+      },
+    }];
+  });
+  const pinnedCount = appItems.filter((item) => item.pinned).length;
+  const dockItems: DockItem[] = [
+    { key: "orbit", label: "All apps", icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => toggle("launcher"), tool: true },
+    ...appItems,
+    { key: "overview", label: "Overview", icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => { setPanel(null); setOverview((value) => !value); }, tool: true },
+  ];
+  const dockBreaks = [1, ...(pinnedCount < appItems.length && pinnedCount > 0 ? [1 + pinnedCount] : []), 1 + appItems.length];
+  const reorderPins = (from: string, to: string) => {
+    const list = settings.novaPins.filter((id) => id !== from);
+    const at = list.indexOf(to);
+    const before = settings.novaPins.indexOf(from) > settings.novaPins.indexOf(to);
+    list.splice(before ? at : at + 1, 0, from);
+    patch({ novaPins: list });
   };
+  const dockHidden = settings.novaDockHide && !dockPeek && panel === null && !overview;
 
   // ---- Search ----
   const actions: { label: string; hint: string; icon: Icon; keys: string; run: () => void }[] = useMemo(() => [
@@ -672,6 +685,8 @@ export function NovaShell(p: NovaShellProps) {
       data-reduce={settings.reduceMotion ? "" : undefined}
       data-overview={overview ? "" : undefined}
       data-glass={settings.novaGlass}
+      data-dockpos={settings.novaDockPos}
+      data-dockstyle={settings.novaDockStyle}
       style={novaVars(theme)}
       onContextMenu={(event) => {
         if ((event.target as HTMLElement).closest("section, nav, aside, [data-nova-ui]")) return;
@@ -706,17 +721,19 @@ export function NovaShell(p: NovaShellProps) {
         <div className={`nova-greet pointer-events-none absolute z-[2] select-none ${settings.novaGreetPos === "center" ? "inset-x-0 top-[16dvh] flex flex-col items-center px-4 text-center" : "left-[6vw] top-[15dvh] max-w-[80vw]"}`}>
           {settings.novaGreet === "hello" && (
             <>
-              <p className="text-[clamp(2.1rem,5.2vw,4.2rem)] font-extralight leading-[1.05] tracking-tight text-white/90">
-                {greeting},<br />
-                <span className="nova-gradient-text font-normal">{settings.userName || "friend"}</span>
+              <p className="nova-kicker"><span className="nova-live-dot" />{longDate}</p>
+              <p className="nova-hello">
+                <Letters text={`${greeting},`} />
+                <br />
+                <em className="nova-gradient-text nova-name" style={{ animationDelay: `${0.3 + greeting.length * 0.035}s` }}>{settings.userName || "friend"}</em>
               </p>
-              <p className="mt-4 text-sm text-white/55">{longDate} · {p.openWins.length ? `${p.openWins.length} ${p.openWins.length === 1 ? "window" : "windows"} open` : "Press Ctrl+K to search everything"}</p>
+              <p className="nova-sub">{p.openWins.length ? `${p.openWins.length} ${p.openWins.length === 1 ? "window" : "windows"} open · Ctrl+K to search` : "Press Ctrl+K to search everything"}</p>
             </>
           )}
           {settings.novaGreet === "clock" && (
             <>
-              <p className="nova-gradient-text text-[clamp(4rem,11vw,8.5rem)] font-extralight leading-none tracking-tight tabular-nums">{clock}</p>
-              <p className="mt-3 text-[15px] text-white/70">{longDate}{settings.userName ? ` · Hi, ${settings.userName}` : ""}</p>
+              <p className="nova-big-clock nova-gradient-text nova-name">{clock}</p>
+              <p className="nova-sub">{longDate}{settings.userName ? ` · Hi, ${settings.userName}` : ""}</p>
             </>
           )}
           {settings.novaWidgets.length > 0 && (
@@ -892,37 +909,44 @@ export function NovaShell(p: NovaShellProps) {
       </div>
 
       {/* The dock */}
-      {settings.novaDockHide && dockHidden && <div aria-hidden onPointerEnter={() => setDockPeek(true)} className="absolute inset-x-0 bottom-0 z-[55] h-2" />}
-      <div data-nova-ui data-hidden={dockHidden ? "" : undefined} onPointerEnter={() => setDockPeek(true)} onPointerLeave={() => setDockPeek(false)} className="nova-dock-wrap absolute inset-x-0 bottom-3 z-[54] flex justify-center px-2">
-        <nav
-          aria-label="Nova dock"
-          onPointerEnter={(event) => { dockEdge.current = event.currentTarget.getBoundingClientRect().left + 12; }}
-          onPointerMove={(event) => { if (magnify) setHover((event.clientX - dockEdge.current - SIZE / 2) / STEP); }}
-          onPointerLeave={() => setHover(null)}
-          className="nova-dock nova-glass flex max-w-full items-end gap-1.5 overflow-x-auto overflow-y-visible rounded-[22px] px-2 pb-2 pt-2"
-        >
-          {dockEntries.map((entry, index) => {
-            const s = scaleFor(index);
-            const separator = index === 1;
-            return (
-              <div key={entry.key} className="contents">
-                {separator && <span aria-hidden className="mx-0.5 mb-2 h-7 w-px shrink-0 self-end bg-white/15" />}
-                <button
-                  type="button"
-                  aria-label={entry.label}
-                  onClick={entry.onClick}
-                  onContextMenu={entry.onContext}
-                  className={`nova-dock-item group relative shrink-0 ${bounce === entry.key ? "is-bouncing" : ""}`}
-                  style={{ width: SIZE * s, height: SIZE * s }}
-                >
-                  {entry.icon}
-                  <span className="nova-tip">{entry.label}</span>
-                  {entry.running && <span className={`nova-run ${entry.focused ? "is-focused" : ""}`} />}
-                </button>
-              </div>
-            );
-          })}
-        </nav>
+      {settings.novaDockHide && dockHidden && <div aria-hidden onPointerEnter={() => setDockPeek(true)} className={`absolute z-[55] ${settings.novaDockPos === "left" ? "inset-y-0 left-0 w-2" : "inset-x-0 bottom-0 h-2"}`} />}
+      <div
+        data-nova-ui
+        className={`nova-dock4-wrap ${settings.novaDockPos === "left" ? "is-left" : ""}`}
+        data-style={settings.novaDockStyle}
+        data-hidden={dockHidden ? "" : undefined}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setPanel(null);
+          setCtx({
+            x: event.clientX,
+            y: event.clientY,
+            items: [
+              { label: "Floating dock", icon: settings.novaDockStyle === "float" ? Check : undefined, run: () => patch({ novaDockStyle: "float" }) },
+              { label: "Edge bar", icon: settings.novaDockStyle === "bar" ? Check : undefined, run: () => patch({ novaDockStyle: "bar" }) },
+              { label: "Icons only", icon: settings.novaDockStyle === "bare" ? Check : undefined, run: () => patch({ novaDockStyle: "bare" }) },
+              { label: settings.novaDockPos === "left" ? "Move to the bottom" : "Move to the left", icon: ArrowRightLeft, run: () => patch({ novaDockPos: settings.novaDockPos === "left" ? "bottom" : "left" }) },
+              { label: settings.novaDockLabels ? "Hide app names" : "Show app names", icon: Keyboard, run: () => patch({ novaDockLabels: !settings.novaDockLabels }) },
+              { label: settings.novaDockHide ? "Always show" : "Auto-hide", icon: LayoutGrid, run: () => patch({ novaDockHide: !settings.novaDockHide }) },
+              { label: "Dock settings", icon: Settings, run: () => customize("dock") },
+            ],
+          });
+        }}
+      >
+        <NovaDock
+          items={dockItems}
+          breaks={dockBreaks}
+          bounce={bounce}
+          hidden={dockHidden}
+          size={settings.novaDockSize}
+          magnify={settings.novaMagnify && motion}
+          style={settings.novaDockStyle}
+          pos={settings.novaDockPos}
+          labels={settings.novaDockLabels}
+          reorder={reorderPins}
+          onPointerEnter={() => setDockPeek(true)}
+          onPointerLeave={() => setDockPeek(false)}
+        />
       </div>
 
       {/* Panels */}
@@ -989,7 +1013,7 @@ export function NovaShell(p: NovaShellProps) {
             const ItemIcon = item.icon;
             return (
               <button key={item.label} type="button" role="menuitem" onClick={() => { setCtx(null); item.run(); }} className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-white/10 ${item.danger ? "text-red-300" : ""}`}>
-                {ItemIcon && <ItemIcon className="size-4 opacity-70" />}{item.label}
+                {ItemIcon ? <ItemIcon className="size-4 shrink-0 opacity-70" /> : <span aria-hidden className="size-4 shrink-0" />}{item.label}
               </button>
             );
           })}
@@ -1010,7 +1034,7 @@ export function NovaShell(p: NovaShellProps) {
 
       {panel === "keys" && <ShortcutSheet close={() => setPanel(null)} />}
 
-      <AlphaWatermark name="NOVA OS" version="3.0" className="absolute bottom-[100px] right-4 z-[1] text-white/35" />
+      <AlphaWatermark name="NOVA OS" version="4.0" className="absolute bottom-[100px] right-4 z-[1] text-white/35" />
 
       {saver && (
         <div role="button" tabIndex={0} aria-label="Screensaver, press any key" onClick={() => setSaver(false)} className="nova-saver fixed inset-0 z-[84] cursor-none overflow-hidden">
@@ -1039,6 +1063,17 @@ export function NovaShell(p: NovaShellProps) {
 }
 
 const AppWindowIcon: Icon = ({ className }) => <Sparkles className={className} />;
+
+// Text that arrives one letter at a time, each rising and fading in.
+function Letters({ text, from = 0 }: { text: string; from?: number }) {
+  return (
+    <span aria-label={text} className="nova-letters">
+      {Array.from(text).map((char, index) => (
+        <span key={`${index}-${char}`} aria-hidden style={{ animationDelay: `${0.25 + (from + index) * 0.035}s` }}>{char === " " ? "\u00a0" : char}</span>
+      ))}
+    </span>
+  );
+}
 
 function NovaLock({ locked, unlock, clock, date, name, theme, battery }: { locked: boolean; unlock: () => void; clock: string; date: string; name: string; theme: NovaTheme; battery: number }) {
   return (
@@ -1118,6 +1153,12 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   const focusMatch = /^(?:focus|timer)\s*(\d{1,3})/.exec(query);
   const groups: { title: string; hits: Hit[] }[] = [];
   if (math !== null) groups.push({ title: "Calculator", hits: [{ key: "math", label: `${text.trim()} = ${math}`, hint: "Copy", icon: Calculator, run: () => { void navigator.clipboard?.writeText(math).catch(() => {}); } }] });
+  const hex = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(text.trim())?.[1];
+  if (hex) {
+    const full = `#${(hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex).toLowerCase()}`;
+    const [r, g, b] = hexRgb(full);
+    groups.push({ title: "Colour", hits: [{ key: "hex", label: `${full.toUpperCase()} · rgb(${r}, ${g}, ${b})`, hint: "Copy", node: <span className="size-6 rounded-lg ring-1 ring-white/25" style={{ background: full }} />, run: () => { void navigator.clipboard?.writeText(full).catch(() => {}); } }] });
+  }
   if (unit !== null) groups.push({ title: "Convert", hits: [{ key: "unit", label: `${text.trim()} = ${unit}`, hint: "Copy", icon: ArrowRightLeft, run: () => { void navigator.clipboard?.writeText(unit).catch(() => {}); } }] });
   if (focusMatch) {
     const minutes = Math.max(1, Math.min(180, Number(focusMatch[1])));
@@ -1148,7 +1189,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
             autoFocus
             value={text}
             aria-label="Nova Search"
-            placeholder="Search apps, files, actions, or type 12*8, 10 km in miles, focus 25…"
+            placeholder="Search apps, files, actions, or try 12*8, 10 km in miles, #6352ff…"
             onChange={(event) => { setText(event.target.value); setIndex(0); }}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") { event.preventDefault(); setIndex((value) => Math.min(value + 1, flat.length - 1)); }
@@ -1209,6 +1250,7 @@ const SHORTCUTS: [string, string][] = [
   ["Alt+C", "Control Center"],
   ["Alt+N", "Notifications and widgets"],
   ["Alt+L", "Lock"],
+  ["Alt+D", "Show the desktop"],
   ["Alt+arrows", "Snap the window"],
   ["Ctrl+/", "This list"],
   ["Esc", "Close panels"],
@@ -1275,7 +1317,7 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
       </div>
       <div className="mt-3 rounded-2xl bg-white/[.06] p-3.5">
         <p className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><Palette className="size-4 text-[var(--primary)]" />Theme</span><span className="text-white/60">{theme.name}</span></p>
-        <div className="mt-3 grid grid-cols-8 gap-1.5">
+        <div className="mt-3 grid grid-cols-5 gap-2 px-1">
           {NOVA_THEMES.map((item) => (
             <button key={item.id} type="button" aria-label={`${item.name} theme`} title={item.name} aria-pressed={item.id === theme.id} onClick={() => { patch({ novaTheme: item.id }); notify(`${item.name} theme`, item.sub); }} className={`nova-swatch aspect-square rounded-full ${item.id === theme.id ? "is-on" : ""}`} style={{ background: `conic-gradient(from 200deg, ${item.colors[0]}, ${item.colors[1]}, ${item.colors[2]}, ${item.colors[0]})` }}>
               {item.id === theme.id && <Check className="m-auto size-3.5 text-white drop-shadow" />}
@@ -1287,6 +1329,7 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
           <button type="button" onClick={() => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); }} className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-semibold hover:bg-[var(--primary)] hover:text-black">Next</button>
         </div>
       </div>
+      <QuickNote />
       <button type="button" onClick={optimize} className="nova-optimize-btn mt-3 flex w-full items-center gap-3 rounded-2xl p-3 text-left">
         <span className="grid size-10 shrink-0 place-items-center rounded-full bg-black/25"><Gauge className="size-5" /></span>
         <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">Optimize</span><span className="block truncate text-[11px] opacity-70">{settings.lite ? "Already optimized · run again" : "Make Nova faster on this device"}</span></span>
@@ -1297,6 +1340,33 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
         <button type="button" onClick={switchOS} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><RotateCw className="size-4" />PRIVATE OS</button>
       </div>
     </aside>
+  );
+}
+
+// A scratch note that lives in the Control Center and is saved as you type.
+function QuickNote() {
+  const [text, setText] = useState(() => {
+    try {
+      return localStorage.getItem("nova-quick-note") ?? "";
+    } catch {
+      return "";
+    }
+  });
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      try {
+        localStorage.setItem("nova-quick-note", text);
+      } catch {
+        // storage unavailable
+      }
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [text]);
+  return (
+    <label className="mt-3 block rounded-2xl bg-white/[.06] p-3.5">
+      <span className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><StickyNote className="size-4 text-[var(--primary)]" />Quick note</span><span className="text-[10.5px] font-normal text-white/40">{text ? "Saved" : "Saved as you type"}</span></span>
+      <textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} rows={3} placeholder="Jot something down…" aria-label="Quick note" className="nova-note mt-2 w-full resize-none bg-transparent text-[13px] leading-relaxed outline-none placeholder:text-white/35" />
+    </label>
   );
 }
 
@@ -1330,7 +1400,7 @@ export function NovaBoot({ theme }: { theme: NovaTheme }) {
         <NovaOrb fast />
         <div className="mt-14 h-[3px] w-48 overflow-hidden rounded-full bg-white/10"><div className="nova-boot-bar h-full rounded-full" /></div>
         <p key={line} className="mt-4 text-[12px] text-white/55 [animation:nova-fade_.4s_both]">{BOOT_LINES[line]}…</p>
-        <p className="mt-10 text-[9.5px] font-bold tracking-[.28em] text-white/35">NOVA OS 3.0 · ALPHA RELEASE (STILL IN DEVELOPMENT)</p>
+        <p className="mt-10 text-[9.5px] font-bold tracking-[.28em] text-white/35">NOVA OS 4.0 · ALPHA RELEASE (STILL IN DEVELOPMENT)</p>
       </div>
     </main>
   );

@@ -50,7 +50,7 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
         userName: name.trim(),
         theme: nova ? "private" : theme.id,
         accent: nova ? "" : theme.accent,
-        novaTheme: nova ? theme.id : "aurora",
+        novaTheme: nova ? theme.id : "prestige",
         uiStyle,
         uiSounds,
         lite,

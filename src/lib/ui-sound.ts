@@ -1,9 +1,9 @@
 // Soft interface sounds made with the Web Audio API (no audio files, nothing downloaded).
-export type SoundPack = "prestige" | "glass" | "bubble" | "classic";
+export type SoundPack = "eclipse" | "glass" | "bubble" | "classic";
 export type SoundPrefs = { enabled: boolean; hover: boolean; click: boolean; volume: number; pack?: SoundPack };
 
 export const SOUND_PACKS: { id: SoundPack; name: string; sub: string }[] = [
-  { id: "prestige", name: "Prestige", sub: "Velvet plucks and round pops" },
+  { id: "eclipse", name: "Eclipse", sub: "Velvet plucks and round pops" },
   { id: "glass", name: "Glass", sub: "Crystal pings" },
   { id: "bubble", name: "Bubble", sub: "Soft water drops" },
   { id: "classic", name: "Classic", sub: "Creamy key thocks" },
@@ -78,7 +78,7 @@ function bell(c: AudioContext, at: number, freq: number, duration: number, gain:
 type Sounds = { hover: (c: AudioContext, t: number, v: number) => void; click: (c: AudioContext, t: number, v: number) => void; release: (c: AudioContext, t: number, v: number) => void };
 const PACKS: Record<SoundPack, Sounds> = {
   // Velvet: a muted pluck on hover, a round "pop" with a soft low body on click.
-  prestige: {
+  eclipse: {
     hover: (c, t, v) => {
       tone(c, t, vary(1480), vary(1320), 0.07, 0.03 * v, "triangle");
       noise(c, t, 0.018, vary(6500), 8, 0.018 * v);
@@ -126,21 +126,21 @@ const PACKS: Record<SoundPack, Sounds> = {
 function play(kind: keyof Sounds, volume: number, pack: SoundPack) {
   const c = ready();
   if (!c || volume <= 0) return;
-  (PACKS[pack] ?? PACKS.prestige)[kind](c, c.currentTime, volume);
+  (PACKS[pack] ?? PACKS.eclipse)[kind](c, c.currentTime, volume);
 }
 
 /** The hover sound of a sound pack. `volume` is 0 to 1. */
-export function playHover(volume: number, pack: SoundPack = "prestige") {
+export function playHover(volume: number, pack: SoundPack = "eclipse") {
   play("hover", volume, pack);
 }
 
 /** The click sound of a sound pack. `volume` is 0 to 1. */
-export function playClick(volume: number, pack: SoundPack = "prestige") {
+export function playClick(volume: number, pack: SoundPack = "eclipse") {
   play("click", volume, pack);
 }
 
 /** The lighter sound when a pressed button is let go. `volume` is 0 to 1. */
-export function playRelease(volume: number, pack: SoundPack = "prestige") {
+export function playRelease(volume: number, pack: SoundPack = "eclipse") {
   play("release", volume, pack);
 }
 

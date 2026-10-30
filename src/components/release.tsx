@@ -1,10 +1,10 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
-import { MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
+import { Clapperboard, Globe2, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
-// Release labels and the one-time "Welcome to 4.0" tour.
+// Release labels and the one-time "Welcome to 4.1" tour.
 
 export const RELEASE_LABEL = "ALPHA RELEASE (STILL IN DEVELOPMENT)";
-export const BUILD = "4000.21";
+export const BUILD = "4100.30";
 const SEEN_KEY = "pos-seen-release";
 
 /** The ALPHA pill used on start and boot screens. */
@@ -29,10 +29,12 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
-  { icon: Rocket, kicker: "Version 4.0", title: "NOVA, rebuilt", body: "Every part of NOVA OS got a new look: new fonts, navy glass, and animations that rise into place.", points: ["The Prestige theme and wallpaper", "A brand-new dock", "Four sound packs", "A browser that switches servers by itself"], hue: ["#6352ff", "#a78bfa"] },
-  { icon: Palette, kicker: "NOVA OS", title: "Prestige", body: "Indigo glows breathing on midnight blue, DM Serif headlines and letters that arrive one by one.", points: ["New default theme and live wallpaper", "Glass panels with glowing edges", "Shine on the buttons that matter"], hue: ["#6352ff", "#22d3ee"] },
+  { icon: Clapperboard, kicker: "Version 4.1", title: "Watch anything", body: "The new Video Engine plays videos right in the browser and the Media Player, and converts formats that browsers can't play.", points: ["MKV, AVI, MOV, WMV, FLV and more, converted with ffmpeg", "Live streams (.m3u8) and direct video links", "Subtitles, speed, loop, picture in picture and snapshots", "Save the converted video as MP4"], hue: ["#6352ff", "#22d3ee"] },
+  { icon: Globe2, kicker: "Version 4.1", title: "Your language, a working proxy", body: "Pick your language when you set up. The browser's proxy is back after one of its servers moved.", points: ["8 languages, also in Settings", "Proxy servers fixed and checked before use", "Roblox: play it in the cloud from the browser"], hue: ["#22c55e", "#0ea5e9"] },
+  { icon: Rocket, kicker: "Version 4.0", title: "NOVA, rebuilt", body: "Every part of NOVA OS got a new look: new fonts, navy glass, and animations that rise into place.", points: ["The Eclipse theme and wallpaper", "A brand-new dock", "Four sound packs", "A browser that switches servers by itself"], hue: ["#6352ff", "#a78bfa"] },
+  { icon: Palette, kicker: "NOVA OS", title: "Eclipse", body: "Indigo glows breathing on midnight blue, DM Serif headlines and letters that arrive one by one.", points: ["New default theme and live wallpaper", "Glass panels with glowing edges", "Shine on the buttons that matter"], hue: ["#6352ff", "#22d3ee"] },
   { icon: Layers, kicker: "NOVA OS", title: "The new dock", body: "Rest on an app to see a preview card. A glowing marker follows the app in front.", points: ["Drag pinned apps to reorder them", "Floating, Edge bar or Icons only", "Bottom or left side, with app names if you like", "Right-click the dock for its options"], hue: ["#38bdf8", "#6366f1"] },
-  { icon: MessagesSquare, kicker: "Both systems", title: "Sounds you can choose", body: "Every hover and click has a new sound. Pick the pack you like best.", points: ["Prestige: velvet plucks and round pops", "Glass, Bubble and Classic", "Settings › Sound"], hue: ["#ec4899", "#8b5cf6"] },
+  { icon: MessagesSquare, kicker: "Both systems", title: "Sounds you can choose", body: "Every hover and click has a new sound. Pick the pack you like best.", points: ["Eclipse: velvet plucks and round pops", "Glass, Bubble and Classic", "Settings › Sound"], hue: ["#ec4899", "#8b5cf6"] },
   { icon: Zap, kicker: "Browser", title: "Sites that load", body: "The browser now uses two proxy servers together. When one blocks a site, the page goes through the other.", points: ["Remembers the server that works for each site", "Scripts inside pages are rewritten properly again", "Clearer error page when a site still refuses"], hue: ["#22c55e", "#0ea5e9"] },
   { icon: Command, kicker: "NOVA OS", title: "Small things", body: "A quick note in the Control Center, colours in search, and a new shortcut.", points: ["Quick note, saved as you type", "Type #6352ff in Search", "Alt+D shows the desktop"], hue: ["#a855f7", "#f43f5e"] },
   { icon: Sparkles, kicker: "Still in development", title: "Alpha release", body: "NOVA OS is still an alpha: things keep changing and some parts are still being built. Thanks for trying it early.", points: ["Full list in What's new", "Switch back to PRIVATE OS any time"], hue: ["#eab308", "#f97316"] },
@@ -77,7 +79,7 @@ export function WhatsNewTour({ version, onDone }: { version: string; onDone: () 
             <span className="tour-ring tour-ring-a" />
             <span className="tour-ring tour-ring-b" />
             <span className="tour-glyph grid size-28 place-items-center rounded-[34px]"><SlideIcon className="size-14" /></span>
-            {index === 0 && <span className="absolute bottom-6 text-[64px] font-black leading-none tracking-tighter text-white/90 md:text-[96px]">4.0</span>}
+            {index === 0 && <span className="absolute bottom-6 text-[64px] font-black leading-none tracking-tighter text-white/90 md:text-[96px]">4.1</span>}
           </div>
           <div key={`text-${index}`} className="tour-text flex flex-col p-7 md:p-9">
             <p className="text-[11px] font-bold uppercase tracking-[.28em] text-white/50">{slide.kicker}</p>

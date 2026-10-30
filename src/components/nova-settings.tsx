@@ -9,6 +9,7 @@ import {
   Image as ImageIcon,
   ImagePlus,
   Info,
+  Languages,
   LayoutDashboard,
   LayoutGrid,
   LayoutPanelLeft,
@@ -35,6 +36,7 @@ import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_SETTINGS_EVENT, NOVA_THEMES, NOVA_
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 import { NovaDock } from "@/components/nova-dock";
 import { SOUND_PACKS, playClick, playHover, type SoundPack } from "@/lib/ui-sound";
+import { LANGUAGES, comma, t, textDir, tx, type TKey } from "@/lib/i18n";
 
 // NOVA OS Settings. Not a list of pages: it opens on a home made of live tiles
 // (your desktop, theme orbit, quick toggles), and each space slides in with its
@@ -60,7 +62,7 @@ type Props = {
   wisp: { servers: string[]; probe: (url: string) => Promise<boolean> };
 };
 
-type Space = { id: string; label: string; blurb: string; icon: Icon; hue: [string, string] };
+type Space = { id: string; label: TKey; blurb: TKey; icon: Icon; hue: [string, string] };
 const SPACES: Space[] = [
   { id: "wallpaper", label: "Wallpaper", blurb: "Live scenes, photos and depth", icon: ImageIcon, hue: ["#22d3ee", "#6366f1"] },
   { id: "desktop", label: "Desktop", blurb: "Greeting, shortcuts and widgets", icon: LayoutDashboard, hue: ["#34d399", "#0891b2"] },
@@ -73,6 +75,7 @@ const SPACES: Space[] = [
   { id: "privacy", label: "Privacy", blurb: "Lock, Comet and proxy", icon: ShieldCheck, hue: ["#86efac", "#16a34a"] },
   { id: "speed", label: "Speed", blurb: "Optimize, lite mode, motion", icon: Gauge, hue: ["#fdba74", "#ea580c"] },
   { id: "profile", label: "Profile", blurb: "Your name", icon: UserRound, hue: ["#c4b5fd", "#7c3aed"] },
+  { id: "language", label: "Language", blurb: "Menus, setup and the desktop", icon: Languages, hue: ["#fcd34d", "#d97706"] },
   { id: "about", label: "About", blurb: "Version, updates and reset", icon: Info, hue: ["#e4e4e7", "#52525b"] },
 ];
 const spaceOf = (id: string) => SPACES.find((space) => space.id === id) ?? SPACES[0]!;
@@ -102,7 +105,7 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "dockstyle", label: "Dock style", space: "dock", words: "dock style floating bar edge icons only background look" },
   { key: "dockpos", label: "Dock position", space: "dock", words: "dock left bottom side position vertical" },
   { key: "docklabels", label: "App names in the dock", space: "dock", words: "dock labels names text" },
-  { key: "pack", label: "Sound pack", space: "sound", words: "sound pack prestige glass bubble classic click hover style" },
+  { key: "pack", label: "Sound pack", space: "sound", words: "sound pack eclipse glass bubble classic click hover style" },
   { key: "bright", label: "Brightness", space: "display", words: "screen dim light" },
   { key: "night", label: "Night light", space: "display", words: "warm night blue light eyes" },
   { key: "sounds", label: "Interface sounds", space: "sound", words: "sound audio click hover effects" },
@@ -118,6 +121,7 @@ const INDEX: { key: string; label: string; space: string; words: string }[] = [
   { key: "lite", label: "Lite mode", space: "speed", words: "fast slow performance lag" },
   { key: "motion", label: "Reduce motion", space: "speed", words: "animations motion" },
   { key: "name", label: "Your name", space: "profile", words: "name account user profile" },
+  { key: "language", label: "Language", space: "language", words: "language translate english français french español spanish deutsch german português portuguese italiano italian arabic العربية türkçe turkish langue idioma sprache lingua dil" },
   { key: "switch", label: "Switch to PRIVATE OS", space: "about", words: "private os classic edition switch" },
   { key: "setup", label: "Run setup again", space: "about", words: "welcome setup start" },
   { key: "erase", label: "Erase everything", space: "about", words: "reset erase delete wipe" },
@@ -284,7 +288,7 @@ function ProxyPane({ wisp }: { wisp: Props["wisp"] }) {
   };
   const options = [{ id: "auto", label: "Automatic", hint: "Fastest working server" }, ...wisp.servers.map((url) => ({ id: url, label: url.replace(/^wss:\/\//, "").replace(/\/.*$/, ""), hint: "Public server" })), { id: "custom", label: "Custom", hint: "Your own Wisp address" }];
   return (
-    <Pane title="Comet proxy server">
+    <Pane title={t("Comet proxy server")}>
       <div data-setting="proxy" className="grid gap-2 @lg:grid-cols-2">
         {options.map((option) => (
           <button key={option.id} type="button" onClick={() => save(option.id)} className={`nsx-option ${choice === option.id ? "is-on" : ""}`}>
@@ -341,7 +345,7 @@ export function NovaSettingsApp(props: Props) {
   const liveScene = settings.novaWall.startsWith("photo:") ? "aurora" : settings.novaWall;
   const initial = (settings.userName.trim()[0] ?? "N").toUpperCase();
   const hour = new Date().getHours();
-  const greeting = hour < 5 ? "Good night" : hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const greeting = hour < 5 ? t("Good night") : hour < 12 ? t("Good morning") : hour < 18 ? t("Good afternoon") : t("Good evening");
   const byId = (id: string) => apps.find((app) => app.id === id);
   const pins = settings.novaPins.filter((id) => byId(id));
   const zones = useMemo(() => {
@@ -354,8 +358,8 @@ export function NovaSettingsApp(props: Props) {
   const results = useMemo(() => {
     const text = query.trim().toLowerCase();
     if (!text) return [];
-    return INDEX.filter((item) => `${item.label} ${item.words}`.toLowerCase().includes(text)).slice(0, 7);
-  }, [query]);
+    return INDEX.filter((item) => `${tx(item.label)} ${item.label} ${item.words}`.toLowerCase().includes(text)).slice(0, 7);
+  }, [query, settings.language]);
 
   const go = (id: string, key = "") => {
     setSpace(id);
@@ -414,18 +418,18 @@ export function NovaSettingsApp(props: Props) {
     <div className="nsx-home space-y-4">
       <section className="nsx-hero nsx-rise">
         <div className="flex min-w-0 items-center gap-4">
-          <button type="button" onClick={() => go("profile")} aria-label="Profile" className="nsx-avatar" style={{ "--a1": theme.colors[0], "--a2": theme.accent, "--a3": theme.colors[2] } as CSSProperties}>
+          <button type="button" onClick={() => go("profile")} aria-label={t("Profile")} className="nsx-avatar" style={{ "--a1": theme.colors[0], "--a2": theme.accent, "--a3": theme.colors[2] } as CSSProperties}>
             <span>{initial}</span>
           </button>
           <div className="min-w-0">
             <p className="text-[12px] font-medium uppercase tracking-[.22em] text-white/50">NOVA OS {props.version}</p>
-            <h2 className="nova-serif truncate text-[clamp(1.7rem,3.8cqw,2.6rem)] leading-tight">{greeting}, <em className="nsx-gradient-text">{settings.userName || "friend"}</em></h2>
+            <h2 className="nova-serif truncate text-[clamp(1.7rem,3.8cqw,2.6rem)] leading-tight">{greeting}{comma()} <em className="nsx-gradient-text">{settings.userName || t("friend")}</em></h2>
           </div>
         </div>
         <div className="relative w-full @3xl:w-[340px]">
           <label className="nsx-search">
             <Search className="size-4 shrink-0 text-white/55" />
-            <input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && results[0]) go(results[0].space, results[0].key); if (event.key === "Escape") setQuery(""); }} placeholder="Search every setting" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-white/40" />
+            <input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && results[0]) go(results[0].space, results[0].key); if (event.key === "Escape") setQuery(""); }} placeholder={t("Search every setting")} className="min-w-0 flex-1 bg-transparent text-[14px] outline-none placeholder:text-white/40" />
             {query && <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="grid size-6 place-items-center rounded-full bg-white/10"><X className="size-3" /></button>}
           </label>
           {query && (
@@ -434,13 +438,13 @@ export function NovaSettingsApp(props: Props) {
                 <button key={item.key} type="button" role="option" aria-selected={false} onClick={() => go(item.space, item.key)} className="flex w-full items-center gap-3 rounded-2xl px-2.5 py-2 text-left hover:bg-white/10">
                   <SpaceIcon space={spaceOf(item.space)} size={30} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-semibold">{item.label}</span>
-                    <span className="block text-[11px] text-white/50">{spaceOf(item.space).label}</span>
+                    <span className="block truncate text-[13px] font-semibold">{tx(item.label)}</span>
+                    <span className="block text-[11px] text-white/50">{t(spaceOf(item.space).label)}</span>
                   </span>
                   <ChevronRight className="size-4 text-white/40" />
                 </button>
               ))}
-              {results.length === 0 && <p className="px-3 py-3 text-[12.5px] text-white/50">Nothing matches “{query}”.</p>}
+              {results.length === 0 && <p className="px-3 py-3 text-[12.5px] text-white/50">{t("Nothing matches “{q}”.", { q: query })}</p>}
             </div>
           )}
         </div>
@@ -451,24 +455,24 @@ export function NovaSettingsApp(props: Props) {
           <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="absolute inset-0" />
           <span className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 bg-gradient-to-t from-black/70 via-black/25 to-transparent p-4 pt-12">
             <span>
-              <span className="block text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">Wallpaper</span>
+              <span className="block text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">{t("Wallpaper")}</span>
               <span className="block text-[18px] font-semibold">{settings.novaWall.startsWith("photo:") ? walls[Number(settings.novaWall.slice(6))]?.label ?? "Photo" : novaWallName(settings.novaWall)}</span>
             </span>
-            <span className="nsx-btn pointer-events-none">Change</span>
+            <span className="nsx-btn pointer-events-none">{t("Change")}</span>
           </span>
         </button>
 
         <div className="nsx-tile nsx-rise col-span-2 flex flex-col p-4 @3xl:row-span-2">
-          <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">Theme<button type="button" onClick={() => go("themes")} className="normal-case tracking-normal text-[var(--primary)] hover:underline">All themes</button></p>
+          <p className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[.2em] text-white/60">{t("Theme")}<button type="button" onClick={() => go("themes")} className="normal-case tracking-normal text-[var(--primary)] hover:underline">{t("All themes")}</button></p>
           <div className="min-h-0 flex-1 py-2"><ThemeOrbit theme={theme} pick={(id) => patch({ novaTheme: id })} /></div>
         </div>
 
         <div className="nsx-tile nsx-rise col-span-2 grid grid-cols-4 items-center gap-2 px-3 py-3 @3xl:col-span-3">
           {[
-            { label: "Night light", icon: Moon, on: settings.novaNight, flip: () => patch({ novaNight: !settings.novaNight }) },
-            { label: "Focus", icon: BellOff, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
-            { label: "Sounds", icon: Volume2, on: settings.uiSounds, flip: () => patch({ uiSounds: !settings.uiSounds }) },
-            { label: "Magnify", icon: Sparkles, on: settings.novaMagnify, flip: () => patch({ novaMagnify: !settings.novaMagnify }) },
+            { label: t("Night light"), icon: Moon, on: settings.novaNight, flip: () => patch({ novaNight: !settings.novaNight }) },
+            { label: t("Focus"), icon: BellOff, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
+            { label: t("Sounds"), icon: Volume2, on: settings.uiSounds, flip: () => patch({ uiSounds: !settings.uiSounds }) },
+            { label: t("Magnify"), icon: Sparkles, on: settings.novaMagnify, flip: () => patch({ novaMagnify: !settings.novaMagnify }) },
           ].map((item) => {
             const QIcon = item.icon;
             return (
@@ -481,19 +485,19 @@ export function NovaSettingsApp(props: Props) {
         </div>
 
         <div className="nsx-tile nsx-rise col-span-2 flex flex-col justify-center gap-2.5 px-4 py-3 @3xl:col-span-3">
-          <Fader label="Brightness" icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
-          <Fader label="Volume" icon={Volume2} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
+          <Fader label={t("Brightness")} icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
+          <Fader label={t("Volume")} icon={Volume2} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
         </div>
       </div>
 
       <section className="nsx-rise">
-        <h3 className="nsx-pane-title px-1">Everything</h3>
+        <h3 className="nsx-pane-title px-1">{t("Everything")}</h3>
         <nav aria-label="Settings spaces" className="grid grid-cols-3 gap-2 @xl:grid-cols-4 @3xl:grid-cols-6">
           {SPACES.map((item) => (
             <button key={item.id} type="button" onClick={() => go(item.id)} className="nsx-space">
               <SpaceIcon space={item} size={48} />
-              <span className="text-[12.5px] font-semibold">{item.label}</span>
-              <span className="line-clamp-1 text-[10.5px] text-white/45">{item.blurb}</span>
+              <span className="text-[12.5px] font-semibold">{t(item.label)}</span>
+              <span className="line-clamp-1 text-[10.5px] text-white/45">{t(item.blurb)}</span>
             </button>
           ))}
         </nav>
@@ -510,7 +514,7 @@ export function NovaSettingsApp(props: Props) {
           <div className="nsx-rise relative overflow-hidden rounded-[28px] ring-1 ring-white/15">
             <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="relative aspect-[16/9] max-h-[360px] w-full" />
           </div>
-          <Pane title="Live scenes">
+          <Pane title={t("Live scenes")}>
             <div data-setting="scene" className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
               {NOVA_WALLS.map((wall) => {
                 const active = settings.novaWall === wall.id;
@@ -528,7 +532,7 @@ export function NovaSettingsApp(props: Props) {
             </div>
             <p className="mt-3 px-1 text-[11.5px] text-white/45">Every scene is painted in your theme's colours and keeps moving slowly. It holds still in Lite mode.</p>
           </Pane>
-          <Pane title="Photos">
+          <Pane title={t("Photos")}>
             <div data-setting="photos" className="grid grid-cols-2 gap-3 @xl:grid-cols-4">
               {walls.map((wall, index) => {
                 const active = settings.novaWall === `photo:${index}`;
@@ -549,28 +553,28 @@ export function NovaSettingsApp(props: Props) {
               })}
               <button type="button" onClick={() => upload.current?.click()} className="nsx-add">
                 <ImagePlus className="size-6" />
-                <span className="text-[12px] font-semibold">Add a photo</span>
+                <span className="text-[12px] font-semibold">{t("Add a photo")}</span>
               </button>
               <input ref={upload} type="file" accept="image/*" hidden onChange={(event) => { void addPhoto(event.target.files?.[0]); event.target.value = ""; }} />
             </div>
           </Pane>
           <Pane>
-            <Line id="depth" label="Depth effect" hint="The wallpaper drifts a little as your mouse moves.">
-              <Toggle label="Depth effect" on={settings.novaParallax} flip={() => patch({ novaParallax: !settings.novaParallax })} />
+            <Line id="depth" label={t("Depth effect")} hint="The wallpaper drifts a little as your mouse moves.">
+              <Toggle label={t("Depth effect")} on={settings.novaParallax} flip={() => patch({ novaParallax: !settings.novaParallax })} />
             </Line>
             <div data-setting="dim" className="nsx-line flex-col !items-stretch">
               <div>
-                <p className="text-[13.5px] font-semibold">Dim wallpaper</p>
+                <p className="text-[13.5px] font-semibold">{t("Dim wallpaper")}</p>
                 <p className="mt-0.5 text-[12px] text-white/55">Darkens the wallpaper so windows and text stand out.</p>
               </div>
-              <Fader label="Dim wallpaper" icon={SunDim} max={70} value={settings.novaWallDim} set={(value) => patch({ novaWallDim: value })} />
+              <Fader label={t("Dim wallpaper")} icon={SunDim} max={70} value={settings.novaWallDim} set={(value) => patch({ novaWallDim: value })} />
             </div>
             <div data-setting="shuffle" className="nsx-line flex-col !items-stretch">
               <div>
-                <p className="text-[13.5px] font-semibold">Wallpaper shuffle</p>
+                <p className="text-[13.5px] font-semibold">{t("Wallpaper shuffle")}</p>
                 <p className="mt-0.5 text-[12px] text-white/55">Moves to the next live scene on its own.</p>
               </div>
-              <Chips label="Wallpaper shuffle" value={settings.novaShuffle} set={(value) => patch({ novaShuffle: value })} options={[{ id: 0, label: "Off" }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }, { id: 60, label: "1 hour" }]} />
+              <Chips label={t("Wallpaper shuffle")} value={settings.novaShuffle} set={(value) => patch({ novaShuffle: value })} options={[{ id: 0, label: t("Off") }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }, { id: 60, label: "1 h" }]} />
             </div>
           </Pane>
         </>
@@ -583,26 +587,26 @@ export function NovaSettingsApp(props: Props) {
           <div className="nsx-rise relative overflow-hidden rounded-[28px] ring-1 ring-white/15">
             <MiniDesktop theme={theme} settings={settings} walls={walls} apps={apps} still={!motion} className="relative aspect-[16/9] max-h-[360px] w-full" />
           </div>
-          <Pane title="Greeting">
+          <Pane title={t("Greeting")}>
             <div data-setting="greet" className="grid grid-cols-3 gap-2">
-              {([["hello", "Hello", "Good morning and your name"], ["clock", "Big clock", "The time, large"], ["off", "Nothing", "Just the wallpaper"]] as const).map(([id, label, hint]) => (
+              {([["hello", t("Hello"), "Good morning and your name"], ["clock", t("Big clock"), "The time, large"], ["off", t("Nothing"), "Just the wallpaper"]] as const).map(([id, label, hint]) => (
                 <button key={id} type="button" aria-pressed={settings.novaGreet === id} onClick={() => patch({ novaGreet: id })} className={`nsx-pick ${settings.novaGreet === id ? "is-on" : ""}`}>
                   <span className="text-[13px] font-semibold">{label}</span>
                   <span className="text-[11px] text-white/55">{hint}</span>
                 </button>
               ))}
             </div>
-            <Line id="greetpos" label="Position">
-              <Chips label="Greeting position" value={settings.novaGreetPos} set={(value) => patch({ novaGreetPos: value })} options={[{ id: "left", label: "Left" }, { id: "center", label: "Centre" }]} />
+            <Line id="greetpos" label={t("Position")}>
+              <Chips label={t("Greeting position")} value={settings.novaGreetPos} set={(value) => patch({ novaGreetPos: value })} options={[{ id: "left", label: t("Left") }, { id: "center", label: t("Centre") }]} />
             </Line>
           </Pane>
-          <Pane title="Widgets">
+          <Pane title={t("Widgets")}>
             <div data-setting="widgets" className="grid grid-cols-2 gap-2 @xl:grid-cols-4">
               {NOVA_WIDGETS.map((widget) => {
                 const on = settings.novaWidgets.includes(widget.id);
                 return (
                   <button key={widget.id} type="button" role="switch" aria-checked={on} onClick={() => patch({ novaWidgets: on ? settings.novaWidgets.filter((item) => item !== widget.id) : [...settings.novaWidgets, widget.id] })} className={`nsx-pick !flex-row items-center justify-between ${on ? "is-on" : ""}`}>
-                    <span className="text-[13px] font-semibold">{widget.label}</span>
+                    <span className="text-[13px] font-semibold">{tx(widget.label)}</span>
                     <span className={`grid size-5 place-items-center rounded-full ${on ? "bg-[var(--primary)] text-black" : "bg-white/10"}`}>{on ? <Check className="size-3" /> : <Plus className="size-3" />}</span>
                   </button>
                 );
@@ -610,7 +614,7 @@ export function NovaSettingsApp(props: Props) {
             </div>
             <p className="mt-2 px-1 text-[11.5px] text-white/45">Widgets sit under the greeting. Right-click one to remove it.</p>
           </Pane>
-          <Pane title="App shortcuts">
+          <Pane title={t("App shortcuts")}>
             <div data-setting="icons" className="mb-3 flex min-h-12 flex-wrap gap-2">
               {settings.novaIcons.map((id) => {
                 const app = byId(id);
@@ -642,16 +646,16 @@ export function NovaSettingsApp(props: Props) {
               })}
             </div>
           </Pane>
-          <Pane title="Look">
-            <Line id="island" label="Dynamic Island" hint="The black pill at the top with the clock.">
-              <Chips label="Dynamic Island" value={settings.novaIsland ? "on" : "off"} set={(value) => patch({ novaIsland: value === "on" })} options={[{ id: "on", label: "Always" }, { id: "off", label: "Only for alerts" }]} />
+          <Pane title={t("Look")}>
+            <Line id="island" label={t("Dynamic Island")} hint="The black pill at the top with the clock.">
+              <Chips label={t("Dynamic Island")} value={settings.novaIsland ? "on" : "off"} set={(value) => patch({ novaIsland: value === "on" })} options={[{ id: "on", label: t("Always") }, { id: "off", label: t("Only for alerts") }]} />
             </Line>
-            <Line id="glass" label="Glass" hint="How see-through the dock, menus and panels are.">
-              <Chips label="Glass" value={settings.novaGlass} set={(value) => patch({ novaGlass: value })} options={[{ id: "clear", label: "Clear" }, { id: "frosted", label: "Frosted" }, { id: "solid", label: "Solid" }]} />
+            <Line id="glass" label={t("Glass")} hint="How see-through the dock, menus and panels are.">
+              <Chips label={t("Glass")} value={settings.novaGlass} set={(value) => patch({ novaGlass: value })} options={[{ id: "clear", label: t("Clear (glass)") }, { id: "frosted", label: t("Frosted") }, { id: "solid", label: t("Solid") }]} />
             </Line>
-            <Line id="spaces" label="Spaces" hint="Several desktops with their own windows. Ctrl+Alt+← / → switches, Ctrl+Alt+Shift+arrows moves a window, and Overview (F3) adds or removes Spaces." />
-            <Line label="Start over" hint="Greeting on the left, no shortcuts or widgets, frosted glass.">
-              <button type="button" onClick={() => patch({ novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaIsland: true, novaGlass: "frosted" })} className="nsx-btn">Reset desktop</button>
+            <Line id="spaces" label={t("Spaces")} hint="Several desktops with their own windows. Ctrl+Alt+← / → switches, Ctrl+Alt+Shift+arrows moves a window, and Overview (F3) adds or removes Spaces." />
+            <Line label={t("Start over")} hint="Greeting on the left, no shortcuts or widgets, frosted glass.">
+              <button type="button" onClick={() => patch({ novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaIsland: true, novaGlass: "frosted" })} className="nsx-btn">{t("Reset desktop")}</button>
             </Line>
           </Pane>
         </>
@@ -679,7 +683,7 @@ export function NovaSettingsApp(props: Props) {
               );
             })}
           </div>
-          <Pane title="Make your own">
+          <Pane title={t("Make your own")}>
             <div data-setting="custom" className="flex flex-col gap-4 @xl:flex-row @xl:items-center">
               <span className="relative block aspect-[16/10] w-full shrink-0 overflow-hidden rounded-[18px] ring-1 ring-white/15 @xl:w-56">
                 <NovaWallpaper theme={NOVA_THEMES.find((item) => item.id === "custom")!} wall={liveScene} still />
@@ -698,14 +702,14 @@ export function NovaSettingsApp(props: Props) {
                   })}
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => patch({ novaTheme: "custom" })} className={`nsx-btn ${theme.id === "custom" ? "!bg-[var(--primary)] !text-black" : ""}`}>{theme.id === "custom" ? "Using your theme" : "Use my theme"}</button>
-                  <button type="button" onClick={() => { const shuffle = () => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`; patch({ novaCustom: [shuffle(), shuffle(), shuffle()], novaTheme: "custom" }); }} className="nsx-btn">Surprise me</button>
+                  <button type="button" onClick={() => patch({ novaTheme: "custom" })} className={`nsx-btn ${theme.id === "custom" ? "!bg-[var(--primary)] !text-black" : ""}`}>{theme.id === "custom" ? t("Using your theme") : t("Use my theme")}</button>
+                  <button type="button" onClick={() => { const shuffle = () => `#${Math.floor(Math.random() * 0xffffff).toString(16).padStart(6, "0")}`; patch({ novaCustom: [shuffle(), shuffle(), shuffle()], novaTheme: "custom" }); }} className="nsx-btn">{t("Surprise me")}</button>
                 </div>
               </div>
             </div>
           </Pane>
           <Pane>
-            <Line label="Accent colour" hint={`${theme.name} lights up the dock, the Dynamic Island, switches and sliders in ${theme.accent.toUpperCase()}.`}>
+            <Line label={t("Accent colour")} hint={`${theme.name} lights up the dock, the Dynamic Island, switches and sliders in ${theme.accent.toUpperCase()}.`}>
               <span className="size-8 rounded-full ring-2 ring-white/25" style={{ background: theme.accent, boxShadow: `0 0 18px ${theme.accent}` }} />
             </Line>
           </Pane>
@@ -721,18 +725,18 @@ export function NovaSettingsApp(props: Props) {
             <div data-setting="pins" className="flex flex-col items-center gap-3">
               {/* The same dock component as the desktop, over the same wallpaper, so what you see is what you get. */}
               <div className={`nsx-dock-stage ${settings.novaDockPos === "left" ? "is-left" : ""}`} data-style={settings.novaDockStyle}>
-                <NovaWallpaper theme={theme} wall={settings.novaWall.startsWith("photo:") ? "prestige" : settings.novaWall} still dim={settings.novaWallDim} />
+                <NovaWallpaper theme={theme} wall={settings.novaWall.startsWith("photo:") ? "eclipse" : settings.novaWall} still dim={settings.novaWallDim} />
                 <div className={`nova-dock4-wrap is-preview ${settings.novaDockPos === "left" ? "is-left" : ""}`} data-style={settings.novaDockStyle}>
                   <NovaDock
                     preview
                     items={[
-                      { key: "orbit", label: "All apps", tool: true, icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => setPicked(null) },
+                      { key: "orbit", label: t("All apps"), tool: true, icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => setPicked(null) },
                       ...pins.map((id) => {
                         const app = byId(id)!;
                         const AppIcon = app.icon;
                         return { key: id, label: app.label, pinned: true, icon: <AppIcon className="size-full" />, running: id === pins[0], onClick: () => setPicked(picked === id ? null : id) };
                       }),
-                      { key: "overview", label: "Overview", tool: true, icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => setPicked(null) },
+                      { key: "overview", label: t("Overview"), tool: true, icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => setPicked(null) },
                     ]}
                     breaks={[1, pins.length + 1]}
                     selected={picked}
@@ -755,16 +759,16 @@ export function NovaSettingsApp(props: Props) {
                   <span className="text-[12.5px] font-semibold">{pickedApp.label}</span>
                   <button type="button" onClick={() => movePin(pickedApp.id, -1)} className="nsx-btn flex items-center gap-1"><ChevronLeft className="size-3.5" />{settings.novaDockPos === "left" ? "Move up" : "Move left"}</button>
                   <button type="button" onClick={() => movePin(pickedApp.id, 1)} className="nsx-btn flex items-center gap-1">{settings.novaDockPos === "left" ? "Move down" : "Move right"}<ChevronRight className="size-3.5" /></button>
-                  <button type="button" onClick={() => { patch({ novaPins: pins.filter((item) => item !== pickedApp.id) }); setPicked(null); }} className="nsx-btn !text-rose-300">Remove</button>
+                  <button type="button" onClick={() => { patch({ novaPins: pins.filter((item) => item !== pickedApp.id) }); setPicked(null); }} className="nsx-btn !text-rose-300">{t("Remove")}</button>
                 </div>
               ) : (
                 <p className="text-[12px] text-white/50">{pins.length ? "Drag apps to reorder them, or click one to move or remove it." : "The dock is empty. Add apps below."}</p>
               )}
             </div>
           </Pane>
-          <Pane title="Look">
+          <Pane title={t("Look")}>
             <div data-setting="dockstyle" className="grid grid-cols-3 gap-2">
-              {([["float", "Floating", "A glass pill above the edge"], ["bar", "Edge bar", "Full width, sits on the edge"], ["bare", "Icons only", "No background at all"]] as const).map(([id, label, hint]) => (
+              {([["float", t("Floating"), "A glass pill above the edge"], ["bar", t("Edge bar"), "Full width, sits on the edge"], ["bare", t("Icons only"), "No background at all"]] as const).map(([id, label, hint]) => (
                 <button key={id} type="button" onClick={() => patch({ novaDockStyle: id })} className={`nsx-option flex-col !items-start ${settings.novaDockStyle === id ? "is-on" : ""}`}>
                   <span className={`nsx-dock-swatch is-${id}`}><i /><i /><i /><i /></span>
                   <span className="mt-2 block text-[13px] font-semibold">{label}</span>
@@ -772,17 +776,17 @@ export function NovaSettingsApp(props: Props) {
                 </button>
               ))}
             </div>
-            <Line id="dockpos" label="Position" hint="Bottom of the screen, or down the left side.">
-              <Chips label="Dock position" value={settings.novaDockPos} set={(value) => patch({ novaDockPos: value })} options={[{ id: "bottom", label: "Bottom" }, { id: "left", label: "Left" }]} />
+            <Line id="dockpos" label={t("Position")} hint="Bottom of the screen, or down the left side.">
+              <Chips label={t("Dock position")} value={settings.novaDockPos} set={(value) => patch({ novaDockPos: value })} options={[{ id: "bottom", label: t("Bottom") }, { id: "left", label: t("Left") }]} />
             </Line>
-            <Line id="docklabels" label="App names" hint="Small names under each icon.">
-              <Toggle label="App names" on={settings.novaDockLabels} flip={() => patch({ novaDockLabels: !settings.novaDockLabels })} />
+            <Line id="docklabels" label={t("App names")} hint="Small names under each icon.">
+              <Toggle label={t("App names")} on={settings.novaDockLabels} flip={() => patch({ novaDockLabels: !settings.novaDockLabels })} />
             </Line>
           </Pane>
-          <Pane title="Add to the dock">
+          <Pane title={t("Add to the dock")}>
             <label className="nsx-search mb-3 !h-10">
               <Search className="size-4 text-white/50" />
-              <input aria-label="Find an app" value={appQuery} onChange={(event) => setAppQuery(event.target.value)} placeholder="Find an app" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40" />
+              <input aria-label={t("Find an app")} value={appQuery} onChange={(event) => setAppQuery(event.target.value)} placeholder="Find an app" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40" />
             </label>
             <div className="grid max-h-60 grid-cols-4 gap-1 overflow-y-auto @xl:grid-cols-6">
               {shownApps.map((app) => {
@@ -798,21 +802,21 @@ export function NovaSettingsApp(props: Props) {
             </div>
           </Pane>
           <Pane>
-            <Line id="magnify" label="Magnify on hover" hint="Icons swell as your mouse glides over the dock.">
-              <Toggle label="Magnify on hover" on={settings.novaMagnify} flip={() => patch({ novaMagnify: !settings.novaMagnify })} />
+            <Line id="magnify" label={t("Magnify on hover")} hint="Icons swell as your mouse glides over the dock.">
+              <Toggle label={t("Magnify on hover")} on={settings.novaMagnify} flip={() => patch({ novaMagnify: !settings.novaMagnify })} />
             </Line>
-            <Line id="corner" label="Hot corner" hint="Push the mouse into the top-left corner to see every window.">
-              <Toggle label="Hot corner" on={settings.novaHotCorner} flip={() => patch({ novaHotCorner: !settings.novaHotCorner })} />
+            <Line id="corner" label={t("Hot corner")} hint="Push the mouse into the top-left corner to see every window.">
+              <Toggle label={t("Hot corner")} on={settings.novaHotCorner} flip={() => patch({ novaHotCorner: !settings.novaHotCorner })} />
             </Line>
             <div data-setting="docksize" className="nsx-line flex-col !items-stretch">
-              <p className="text-[13.5px] font-semibold">Dock size</p>
-              <Fader label="Dock size" icon={LayoutPanelLeft} min={32} max={64} unit="px" value={settings.novaDockSize} set={(value) => patch({ novaDockSize: value })} />
+              <p className="text-[13.5px] font-semibold">{t("Dock size")}</p>
+              <Fader label={t("Dock size")} icon={LayoutPanelLeft} min={32} max={64} unit="px" value={settings.novaDockSize} set={(value) => patch({ novaDockSize: value })} />
             </div>
-            <Line id="dockhide" label="Auto-hide the dock" hint="The dock slides away and comes back when you move the mouse to the bottom of the screen.">
-              <Toggle label="Auto-hide the dock" on={settings.novaDockHide} flip={() => patch({ novaDockHide: !settings.novaDockHide })} />
+            <Line id="dockhide" label={t("Auto-hide the dock")} hint="The dock slides away and comes back when you move the mouse to the bottom of the screen.">
+              <Toggle label={t("Auto-hide the dock")} on={settings.novaDockHide} flip={() => patch({ novaDockHide: !settings.novaDockHide })} />
             </Line>
-            <Line label="Start over" hint="Put the five default apps back.">
-              <button type="button" onClick={() => { patch({ novaPins: NOVA_PINS }); setPicked(null); }} className="nsx-btn">Reset dock</button>
+            <Line label={t("Start over")} hint="Put the five default apps back.">
+              <button type="button" onClick={() => { patch({ novaPins: NOVA_PINS }); setPicked(null); }} className="nsx-btn">{t("Reset dock")}</button>
             </Line>
           </Pane>
         </>
@@ -823,18 +827,18 @@ export function NovaSettingsApp(props: Props) {
       content = (
         <Pane>
           <div data-setting="bright" className="nsx-line flex-col !items-stretch">
-            <p className="text-[13.5px] font-semibold">Brightness</p>
-            <Fader label="Brightness" icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
+            <p className="text-[13.5px] font-semibold">{t("Brightness")}</p>
+            <Fader label={t("Brightness")} icon={Sun} min={30} value={settings.novaBright} set={(value) => patch({ novaBright: value })} />
           </div>
-          <Line id="night" label="Night light" hint="Warmer colours that are easier on your eyes after dark.">
-            <Toggle label="Night light" on={settings.novaNight} flip={() => patch({ novaNight: !settings.novaNight })} />
+          <Line id="night" label={t("Night light")} hint="Warmer colours that are easier on your eyes after dark.">
+            <Toggle label={t("Night light")} on={settings.novaNight} flip={() => patch({ novaNight: !settings.novaNight })} />
           </Line>
           <div data-setting="saver" className="nsx-line flex-col !items-stretch">
             <div>
-              <p className="text-[13.5px] font-semibold">Screensaver</p>
+              <p className="text-[13.5px] font-semibold">{t("Screensaver")}</p>
               <p className="mt-0.5 text-[12px] text-white/55">A floating clock over your live wallpaper when you leave NOVA alone. Any key brings you back.</p>
             </div>
-            <Chips label="Screensaver" value={settings.novaSaver} set={(value) => patch({ novaSaver: value })} options={[{ id: 0, label: "Off" }, { id: 1, label: "1 min" }, { id: 3, label: "3 min" }, { id: 5, label: "5 min" }, { id: 10, label: "10 min" }]} />
+            <Chips label={t("Screensaver")} value={settings.novaSaver} set={(value) => patch({ novaSaver: value })} options={[{ id: 0, label: t("Off") }, { id: 1, label: "1 min" }, { id: 3, label: "3 min" }, { id: 5, label: "5 min" }, { id: 10, label: "10 min" }]} />
           </div>
         </Pane>
       );
@@ -842,12 +846,12 @@ export function NovaSettingsApp(props: Props) {
     case "sound":
       content = (
         <Pane>
-          <Line id="sounds" label="Interface sounds" hint="Soft sounds as you click and hover.">
-            <Toggle label="Interface sounds" on={settings.uiSounds} flip={() => patch({ uiSounds: !settings.uiSounds })} />
+          <Line id="sounds" label={t("Interface sounds")} hint="Soft sounds as you click and hover.">
+            <Toggle label={t("Interface sounds")} on={settings.uiSounds} flip={() => patch({ uiSounds: !settings.uiSounds })} />
           </Line>
           <div data-setting="pack" className="nsx-line flex-col !items-stretch">
             <div>
-              <p className="text-[13.5px] font-semibold">Sound pack</p>
+              <p className="text-[13.5px] font-semibold">{t("Sound pack")}</p>
               <p className="mt-0.5 text-[12px] text-white/55">Hover a pack to hear it, click to use it.</p>
             </div>
             <div className="grid grid-cols-2 gap-2 @lg:grid-cols-4">
@@ -861,14 +865,14 @@ export function NovaSettingsApp(props: Props) {
             </div>
           </div>
           <div data-setting="volume" className="nsx-line flex-col !items-stretch">
-            <p className="text-[13.5px] font-semibold">Volume</p>
-            <Fader label="Volume" icon={Volume1} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
+            <p className="text-[13.5px] font-semibold">{t("Volume")}</p>
+            <Fader label={t("Volume")} icon={Volume1} value={settings.soundVolume} set={(value) => patch({ soundVolume: value })} />
           </div>
-          <Line label="Click sound">
-            <Toggle label="Click sound" on={settings.soundClick} flip={() => patch({ soundClick: !settings.soundClick })} />
+          <Line label={t("Click sound")}>
+            <Toggle label={t("Click sound")} on={settings.soundClick} flip={() => patch({ soundClick: !settings.soundClick })} />
           </Line>
-          <Line label="Hover sound">
-            <Toggle label="Hover sound" on={settings.soundHover} flip={() => patch({ soundHover: !settings.soundHover })} />
+          <Line label={t("Hover sound")}>
+            <Toggle label={t("Hover sound")} on={settings.soundHover} flip={() => patch({ soundHover: !settings.soundHover })} />
           </Line>
         </Pane>
       );
@@ -878,11 +882,11 @@ export function NovaSettingsApp(props: Props) {
         <>
           <button type="button" data-setting="focus" role="switch" aria-checked={settings.novaFocus} onClick={() => patch({ novaFocus: !settings.novaFocus })} className={`nsx-focus nsx-rise ${settings.novaFocus ? "is-on" : ""}`}>
             <MoonStar className="size-10" />
-            <span className="text-[20px] font-semibold">{settings.novaFocus ? "Focus is on" : "Focus is off"}</span>
+            <span className="text-[20px] font-semibold">{settings.novaFocus ? t("Focus is on") : t("Focus is off")}</span>
             <span className="text-[12.5px] text-white/60">{settings.novaFocus ? "Notifications stay quiet and a moon sits in the Dynamic Island." : "Tap to silence notifications."}</span>
           </button>
           <Pane>
-            <Line label="Focus timer" hint="Start one from the Control Center, or type “focus 25” in Search (Ctrl+K)." />
+            <Line label={t("Focus timer")} hint="Start one from the Control Center, or type “focus 25” in Search (Ctrl+K)." />
           </Pane>
         </>
       );
@@ -892,12 +896,12 @@ export function NovaSettingsApp(props: Props) {
         <>
           <LiveClock zone={settings.timeZone} h24={settings.clock24} />
           <Pane>
-            <Line id="clock24" label="24-hour clock">
-              <Toggle label="24-hour clock" on={settings.clock24} flip={() => patch({ clock24: !settings.clock24 })} />
+            <Line id="clock24" label={t("24-hour clock")}>
+              <Toggle label={t("24-hour clock")} on={settings.clock24} flip={() => patch({ clock24: !settings.clock24 })} />
             </Line>
-            <Line id="zone" label="Time zone" hint="Automatic follows this computer.">
-              <select aria-label="Time zone" value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="nsx-input max-w-[14rem]">
-                <option value="">Automatic</option>
+            <Line id="zone" label={t("Time zone")} hint="Automatic follows this computer.">
+              <select aria-label={t("Time zone")} value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="nsx-input max-w-[14rem]">
+                <option value="">{t("Automatic")}</option>
                 {zones.map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
               </select>
             </Line>
@@ -908,19 +912,19 @@ export function NovaSettingsApp(props: Props) {
     case "privacy":
       content = (
         <>
-          <Pane title="Lock">
+          <Pane title={t("Lock")}>
             <div data-setting="lock" className="nsx-line flex-col !items-stretch">
               <div>
-                <p className="text-[13.5px] font-semibold">Lock automatically</p>
+                <p className="text-[13.5px] font-semibold">{t("Lock automatically")}</p>
                 <p className="mt-0.5 text-[12px] text-white/55">Locks NOVA OS when you leave it alone.</p>
               </div>
-              <Chips label="Lock automatically" value={settings.autoLock} set={(value) => patch({ autoLock: value })} options={[{ id: 0, label: "Never" }, { id: 1, label: "1 min" }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }]} />
+              <Chips label={t("Lock automatically")} value={settings.autoLock} set={(value) => patch({ autoLock: value })} options={[{ id: 0, label: t("Never") }, { id: 1, label: "1 min" }, { id: 5, label: "5 min" }, { id: 15, label: "15 min" }, { id: 30, label: "30 min" }]} />
             </div>
           </Pane>
           <Pane title="Comet">
             <Line id="reddit" label="Reddit" hint="Reddit blocks proxy servers, so Comet opens Reddit in its own reader that loads straight from your connection." />
-            <Line id="bookmarks" label="Bookmarks" hint="Remove every bookmark saved in Comet.">
-              <button type="button" onClick={() => { try { localStorage.removeItem("pos-bookmarks"); } catch { /* storage unavailable */ } }} className="nsx-btn">Clear</button>
+            <Line id="bookmarks" label={t("Bookmarks")} hint="Remove every bookmark saved in Comet.">
+              <button type="button" onClick={() => { try { localStorage.removeItem("pos-bookmarks"); } catch { /* storage unavailable */ } }} className="nsx-btn">{t("Clear")}</button>
             </Line>
           </Pane>
           <ProxyPane wisp={props.wisp} />
@@ -933,17 +937,17 @@ export function NovaSettingsApp(props: Props) {
         <button type="button" data-setting="optimize" onClick={props.optimize} className="nsx-optimize nsx-rise">
           <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-black/25"><Gauge className="size-7" /></span>
           <span className="min-w-0 flex-1 text-left">
-            <span className="block text-[19px] font-semibold">Optimize</span>
+            <span className="block text-[19px] font-semibold">{t("Optimize")}</span>
             <span className="block text-[12.5px] opacity-75">{settings.lite ? "Nova is optimized. Run it again any time." : "One tap to make Nova faster on this device: lite mode, calmer wallpaper and lighter glass."}</span>
           </span>
           <ChevronRight className="size-5 shrink-0 opacity-70" />
         </button>
         <Pane>
-          <Line id="lite" label="Lite mode" hint="Stills the wallpaper and turns off heavy effects for slower computers.">
-            <Toggle label="Lite mode" on={settings.lite} flip={() => patch({ lite: !settings.lite })} />
+          <Line id="lite" label={t("Lite mode")} hint="Stills the wallpaper and turns off heavy effects for slower computers.">
+            <Toggle label={t("Lite mode")} on={settings.lite} flip={() => patch({ lite: !settings.lite })} />
           </Line>
-          <Line id="motion" label="Reduce motion" hint="Fewer animations everywhere.">
-            <Toggle label="Reduce motion" on={settings.reduceMotion} flip={() => patch({ reduceMotion: !settings.reduceMotion })} />
+          <Line id="motion" label={t("Reduce motion")} hint="Fewer animations everywhere.">
+            <Toggle label={t("Reduce motion")} on={settings.reduceMotion} flip={() => patch({ reduceMotion: !settings.reduceMotion })} />
           </Line>
         </Pane>
         </>
@@ -958,11 +962,29 @@ export function NovaSettingsApp(props: Props) {
             <p className="text-[12px] text-white/50">Local account · saved in this browser only</p>
           </div>
           <Pane>
-            <Line id="name" label="Name" hint="Shown on the lock screen and in your greeting.">
-              <input aria-label="Your name" value={settings.userName} maxLength={24} onChange={(event) => patch({ userName: event.target.value })} className="nsx-input w-52" />
+            <Line id="name" label={t("Name")} hint="Shown on the lock screen and in your greeting.">
+              <input aria-label={t("Your name")} value={settings.userName} maxLength={24} onChange={(event) => patch({ userName: event.target.value })} className="nsx-input w-52" />
             </Line>
           </Pane>
         </>
+      );
+      break;
+    case "language":
+      content = (
+        <Pane title={t("Language")}>
+          <div data-setting="language" role="radiogroup" aria-label={t("Language")} className="grid grid-cols-2 gap-2 @xl:grid-cols-4">
+            {LANGUAGES.map((item) => (
+              <button key={item.id} type="button" role="radio" aria-checked={settings.language === item.id} lang={item.id} onClick={() => patch({ language: item.id })} className={`nsx-option ${settings.language === item.id ? "is-on" : ""}`}>
+                <span className="min-w-0 flex-1 text-start">
+                  <span dir={item.id === "ar" ? "rtl" : "ltr"} className="block truncate text-[13px] font-semibold">{item.name}</span>
+                  <span className="block truncate text-[11px] text-white/50">{item.english}</span>
+                </span>
+                {settings.language === item.id && <Check className="size-4 shrink-0 text-[var(--primary)]" />}
+              </button>
+            ))}
+          </div>
+          <p className="mt-3 px-1 text-[11.5px] text-white/45">{t("Office apps and some app windows stay in English for now.")}</p>
+        </Pane>
       );
       break;
     case "about":
@@ -972,25 +994,25 @@ export function NovaSettingsApp(props: Props) {
             <div className="absolute inset-0 opacity-60"><NovaWallpaper theme={theme} wall="cosmos" still={!motion} /></div>
             <NovaMark className="relative size-20 drop-shadow-[0_0_24px_var(--primary)]" />
             <p className="nsx-word relative mt-4">NOVA</p>
-            <p className="relative mt-1 text-[12px] uppercase tracking-[.3em] text-white/60">Version {props.version}</p>
+            <p className="relative mt-1 text-[12px] uppercase tracking-[.3em] text-white/60">{t("Version {v}", { v: props.version })}</p>
             <p className="relative mt-3 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-bold tracking-[.2em] text-amber-200">{RELEASE_LABEL}</p>
           </div>
           <Pane>
-            <Line id="switch" label="Switch to PRIVATE OS" hint="The classic desktop. Your open windows stay open.">
-              <button type="button" onClick={props.switchToPrivate} className="nsx-btn flex items-center gap-1.5"><RotateCw className="size-3.5" />Switch</button>
+            <Line id="switch" label={t("Switch to PRIVATE OS")} hint="The classic desktop. Your open windows stay open.">
+              <button type="button" onClick={props.switchToPrivate} className="nsx-btn flex items-center gap-1.5"><RotateCw className="size-3.5" />{t("Switch")}</button>
             </Line>
-            <Line id="setup" label="Run setup again" hint="Go through the welcome setup on the next start.">
-              <button type="button" onClick={props.restartSetup} className="nsx-btn">Run setup</button>
+            <Line id="setup" label={t("Run setup again")} hint="Go through the welcome setup on the next start.">
+              <button type="button" onClick={props.restartSetup} className="nsx-btn">{t("Run setup")}</button>
             </Line>
-            <Line id="erase" label="Erase everything" hint="Deletes all settings, files and bookmarks in this browser.">
-              <button type="button" onClick={() => { if (!window.confirm("Erase all data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable */ } window.setTimeout(() => window.location.reload(), 200); }} className="nsx-btn flex items-center gap-1.5 !text-rose-300"><Trash2 className="size-3.5" />Erase</button>
+            <Line id="erase" label={t("Erase everything")} hint="Deletes all settings, files and bookmarks in this browser.">
+              <button type="button" onClick={() => { if (!window.confirm("Erase all data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* storage unavailable */ } window.setTimeout(() => window.location.reload(), 200); }} className="nsx-btn flex items-center gap-1.5 !text-rose-300"><Trash2 className="size-3.5" />{t("Erase")}</button>
             </Line>
           </Pane>
-          <Pane title="What's new">
+          <Pane title={t("What's new")}>
             <ol data-setting="news" className="nsx-timeline">
               {props.changelog.slice(0, 4).map((entry) => (
                 <li key={entry.v}>
-                  <p className="flex items-baseline justify-between gap-2 text-[13px] font-bold"><span className="text-[var(--primary)]">Version {entry.v}</span><span className="text-[11px] font-medium text-white/40">{entry.date}</span></p>
+                  <p className="flex items-baseline justify-between gap-2 text-[13px] font-bold"><span className="text-[var(--primary)]">{t("Version {v}", { v: entry.v })}</span><span className="text-[11px] font-medium text-white/40">{entry.date}</span></p>
                   <ul className="mt-1.5 space-y-1 text-[12px] text-white/70">
                     {entry.items.map((item) => <li key={item}>{item}</li>)}
                   </ul>
@@ -1014,13 +1036,13 @@ export function NovaSettingsApp(props: Props) {
         {space === "home" ? (
           <div key="home" className="nsx-page mx-auto max-w-[1100px] px-5 pb-8 pt-14 @3xl:px-8">{home}</div>
         ) : (
-          <div key={space} className="nsx-page nsx-slide mx-auto max-w-[860px] px-5 pb-28 pt-14 @3xl:px-8">
+          <div key={space} dir={textDir()} className="nsx-page nsx-slide mx-auto max-w-[860px] px-5 pb-28 pt-14 @3xl:px-8">
             <header className="mb-5 flex items-center gap-4">
-              <button type="button" onClick={() => go("home")} aria-label="Back to all settings" className="nsx-back"><ChevronLeft className="size-5" /></button>
+              <button type="button" onClick={() => go("home")} aria-label={t("Back to all settings")} className="nsx-back"><ChevronLeft className="size-5" /></button>
               <SpaceIcon space={current} size={52} />
               <div className="min-w-0">
-                <h2 className="nova-serif truncate text-[30px] leading-tight">{current.label}</h2>
-                <p className="truncate text-[12.5px] text-white/55">{current.blurb}</p>
+                <h2 className="nova-serif truncate text-[30px] leading-tight">{t(current.label)}</h2>
+                <p className="truncate text-[12.5px] text-white/55">{t(current.blurb)}</p>
               </div>
             </header>
             <div className="space-y-4">{content}</div>
@@ -1030,7 +1052,7 @@ export function NovaSettingsApp(props: Props) {
       {space !== "home" && (
         <nav aria-label="Jump to" className="nsx-jump">
           {SPACES.map((item) => (
-            <button key={item.id} type="button" aria-label={item.label} title={item.label} aria-current={item.id === space ? "page" : undefined} onClick={() => go(item.id)} className={item.id === space ? "is-on" : ""}>
+            <button key={item.id} type="button" aria-label={t(item.label)} title={t(item.label)} aria-current={item.id === space ? "page" : undefined} onClick={() => go(item.id)} className={item.id === space ? "is-on" : ""}>
               <SpaceIcon space={item} size={34} />
             </button>
           ))}

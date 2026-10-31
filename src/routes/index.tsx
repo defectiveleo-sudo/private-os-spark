@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { installUiSounds, playClick, playHover, type SoundPack, type SoundPrefs, SOUND_PACKS } from "@/lib/ui-sound";
 import { MINI_GAMES, MiniGame, type MiniGameId } from "@/components/mini-games";
 import { OsPreview, WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
+import { VIDEO_LINK, VideoEngine } from "@/components/video-engine";
+import { LANGUAGES, detectLanguage, isLang, locale, setLanguage, t, textDir, tx, upper, type Lang } from "@/lib/i18n";
 import { NovaSettingsApp } from "@/components/nova-settings";
 import { RedditView } from "@/components/reddit-view";
 import { isRedditUrl } from "@/lib/reddit";
@@ -235,9 +237,10 @@ const linkLauncher = LINK_APPS.map((app) => ({
   icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
 }));
 
-const OS_VERSION = "4.0";
+const OS_VERSION = "4.1";
 const CHANGELOG = [
-  { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Prestige\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Prestige theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Prestige (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
+  { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
+  { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Eclipse\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Eclipse theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Eclipse (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
   { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
   { v: "2.4", date: "20 Oct 2026", items: ["Switching from NOVA OS to PRIVATE OS now shows a 5 second loading screen first, and you can cancel it", "Optimize button in NOVA OS, with its own optimize screen: find it in the Control Center, Settings › Speed, the Nova menu, a right-click on the desktop, or by typing “optimize” in Search", "New Desktop space in NOVA Settings: choose a greeting, a big clock or nothing, put it on the left or in the centre, add app shortcuts and widgets (calendar, music, notes, stopwatch) to the desktop", "NOVA dock: pick the icon size and let it hide until you move the mouse to the bottom of the screen", "Show the Dynamic Island all the time or only for notifications and timers", "Clear, frosted or solid glass for NOVA panels and menus", "Wallpaper shuffle: NOVA can move to the next live scene every few minutes", "Right-click an app in the dock to add it to the desktop", "Faster proxy: the browser now picks the first proxy server that answers instead of waiting for all of them, loads its engine files at the same time, and starts quietly in the background so the first page opens sooner"] },
   { v: "2.3", date: "19 Oct 2026", items: ["Brand new NOVA OS Settings, designed only for NOVA: a home of live tiles (your desktop, a theme orbit, quick toggles, brightness and volume), spaces that slide in with their own mini dock, and search that jumps straight to any setting", "New NOVA OS wallpapers: eight live scenes painted in your theme colours (Aurora, Fluid, Dunes, Planet, Tide, Bloom, Silk and Cosmos), plus photo and video wallpapers and your own photos, chosen right inside NOVA", "Dim wallpaper slider, and NOVA windows get round glass buttons", "NOVA OS no longer offers desktop styles; it has one desktop of its own", "Shorter NOVA OS dock: five apps by default, smaller icons and no extra buttons", "The browser in NOVA OS is now called Comet, with its own icon", "Reddit works in the browser: it opens in a built-in Reddit reader that loads posts, pictures, galleries, videos and comments straight from your own connection, because Reddit blocks proxy servers"] },
@@ -323,6 +326,11 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
 ];
 launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: ActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: ChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
+// App names in the interface language. Generic apps (Calculator, Photos...) are translated, brands are not.
+const appLabel = (app: { label: string }) => tx(app.label);
+// Search matches both the translated and the English name, so "calc" still finds Calculatrice.
+const appMatches = (app: { label: string }, query: string) => `${tx(app.label)} ${app.label}`.toLowerCase().includes(query.trim().toLowerCase());
+
 // NOVA OS gets every app plus its own Soundscapes and Pulse. Its browser is called Comet.
 const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps.map((app) => (app.id === "browser" ? { id: "browser", label: "Comet", icon: CometIcon } : app)), { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
 
@@ -392,6 +400,8 @@ function PrivateOS() {
   const [power, setPower] = useState<"on" | "sleep" | "off">("on");
   const [settings, setSettings] = useState<OsSettings>(DEFAULT_SETTINGS);
   const [settingsReady, setSettingsReady] = useState(false);
+  // Every screen below reads the interface language while it renders (see src/lib/i18n.ts).
+  setLanguage(settings.language);
   const [closingWins, setClosingWins] = useState<string[]>([]);
   const [customWalls, setCustomWalls] = useState<{ id: number; label: string; url: string }[]>([]);
 
@@ -462,11 +472,15 @@ function PrivateOS() {
 
   const zone = clockZone(time, settings.timeZone);
   const dateLabel = useMemo(
-    () => time.toLocaleDateString("en-US", { weekday: "long", timeZone: zone }).toUpperCase(),
-    [time, zone],
+    () => upper(time.toLocaleDateString(settings.language === "en" ? "en-US" : locale(), { weekday: "long", timeZone: zone })),
+    [time, zone, settings.language],
   );
+  // The lock screen shows a short day name: "WED" in English, the language's own short form otherwise.
+  const lockDay = settings.language === "en" ? dateLabel.slice(0, 3) : upper(time.toLocaleDateString(locale(), { weekday: settings.language === "ar" ? "long" : "short", timeZone: zone }).replace(/\.$/, ""));
+  // Tray and status dates: the browser's own format in English, the chosen language otherwise.
+  const dateLocale = settings.language === "en" ? undefined : settings.language;
   const timeLabel = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: !settings.clock24, timeZone: zone });
-  const lockDate = `${time.toLocaleDateString("en-GB", { day: "numeric", month: "long", timeZone: zone }).toUpperCase()}, ${time.toLocaleDateString("en-GB", { year: "numeric", timeZone: zone })}.`;
+  const lockDate = `${upper(time.toLocaleDateString(locale(), { day: "numeric", month: "long", timeZone: zone }))}, ${time.toLocaleDateString(locale(), { year: "numeric", timeZone: zone })}.`;
   const lockTime = time.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: !settings.clock24, timeZone: zone });
 
   const toggleFullscreen = () => {
@@ -528,13 +542,22 @@ function PrivateOS() {
         if (saved.novaPins && saved.novaPins.join() === OLD_NOVA_PINS.join()) saved.novaPins = NOVA_PINS;
         // NOVA OS 2.4 has its own wallpaper choice; the old "use my photo" switch becomes that photo.
         if (saved.novaPhoto && !saved.novaWall) saved.novaWall = `photo:${Number(localStorage.getItem("pos-wallpaper")) || 0}`;
-        // NOVA OS 4.0 brings the Prestige look; people still on the old default theme move to it once.
+        // NOVA OS 4.0 brings the Eclipse look; people still on the old default theme move to it once.
         if (!saved.nova4) {
           saved.nova4 = true;
-          if (!saved.novaTheme || saved.novaTheme === "aurora") saved.novaTheme = "prestige";
-          if (!saved.novaWall || saved.novaWall === "aurora") saved.novaWall = "prestige";
+          if (!saved.novaTheme || saved.novaTheme === "aurora") saved.novaTheme = "eclipse";
+          if (!saved.novaWall || saved.novaWall === "aurora") saved.novaWall = "eclipse";
         }
+        // 4.1 renames the Prestige look to Eclipse; saved choices follow it.
+        if (saved.novaTheme === "prestige") saved.novaTheme = "eclipse";
+        if (saved.novaWall === "prestige") saved.novaWall = "eclipse";
+        if ((saved.soundPack as string | undefined) === "prestige") saved.soundPack = "eclipse";
+        // 4.1 adds languages; anything unknown falls back to English.
+        if (!isLang(saved.language)) saved.language = "en";
         setSettings({ ...DEFAULT_SETTINGS, ...saved });
+      } else {
+        // First visit: start in the browser's language when we have it, so setup is already in it.
+        setSettings({ ...DEFAULT_SETTINGS, language: detectLanguage() });
       }
     } catch {
       // storage unavailable
@@ -543,6 +566,10 @@ function PrivateOS() {
     refreshWalls().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = settings.language;
+  }, [settings.language]);
 
   useEffect(() => {
     if (power === "on") return;
@@ -604,7 +631,7 @@ function PrivateOS() {
     if (settings.skipStart) setPhase((value) => (value === "start" ? "boot" : value));
   }, [settings.skipStart]);
 
-  const soundPrefs = useRef<SoundPrefs>({ enabled: true, hover: true, click: true, volume: 40, pack: "prestige" });
+  const soundPrefs = useRef<SoundPrefs>({ enabled: true, hover: true, click: true, volume: 40, pack: "eclipse" });
   useEffect(() => {
     soundPrefs.current = { enabled: settings.uiSounds, hover: settings.soundHover, click: settings.soundClick, volume: settings.soundVolume, pack: settings.soundPack };
   });
@@ -629,6 +656,8 @@ function PrivateOS() {
     window.setTimeout(() => removeWindow(id), 190);
   };
   const nova = settings.edition === "nova";
+  // NOVA shows app names in the interface language and keeps the English name for search.
+  const novaApps = useMemo(() => NOVA_APPS.map((app) => ({ ...app, label: tx(app.label), en: app.label })), [settings.language]);
   const switchEdition = (edition: "private" | "nova", now = false) => {
     // Leaving NOVA OS shows a 5 second loading screen first.
     if (edition === "private" && nova && !now) {
@@ -669,11 +698,11 @@ function PrivateOS() {
   };
 
   const startItems: [string, () => void][] = [
-    ["Show desktop", () => setMinWins(openWins)],
-    ["Lock", () => setLocked(true)],
-    ["Sleep", () => setPower("sleep")],
-    ["Restart", () => window.location.reload()],
-    ["Shut down", () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
+    [t("Show desktop"), () => setMinWins(openWins)],
+    [t("Lock"), () => setLocked(true)],
+    [t("Sleep"), () => setPower("sleep")],
+    [t("Restart"), () => window.location.reload()],
+    [t("Shut down"), () => { setOpenWins([]); setMinWins([]); setZOrder([]); setPower("off"); }],
   ];
 
   const extraStyle = {
@@ -713,10 +742,13 @@ function PrivateOS() {
       const width = Math.min(416, window.innerWidth - 16);
       setStartPos({ left: Math.max(8, Math.min(box.left - 8, window.innerWidth - width - 8)), bottom: settings.dockPos === "top" ? window.innerHeight - box.bottom - 460 : window.innerHeight - box.top + 10 });
     }
+    // A fresh, empty search box each time the Start menu opens, like Windows.
+    if (!startMenu) setQuery("");
     setStartMenu((value) => !value);
     setLauncher(false);
     setQuickMenu(false);
   };
+  const startMatches = launcherApps.filter((app) => appMatches(app, query));
   const dockSurface = { "--dock-alpha": `${settings.dockOpacity}%` } as React.CSSProperties;
   const hideShift = settings.dockPos === "right" ? "translateX(160%)" : settings.dockPos === "top" ? "translateY(-160%)" : "translateY(160%)";
 
@@ -739,13 +771,13 @@ function PrivateOS() {
   const spotlight: { key: string; label: string; hint: string; run: () => void }[] = !runOpen
     ? []
     : [
-        ...launcherApps.filter((item) => !spotQuery || item.label.toLowerCase().includes(spotQuery)).slice(0, 8).map((item) => ({ key: `app-${item.id}`, label: item.label, hint: "App", run: () => openApp(item.id) })),
-        ...commands.filter((item) => spotQuery && item.label.toLowerCase().includes(spotQuery)).map((item) => ({ key: `cmd-${item.label}`, label: item.label, hint: "Command", run: item.run })),
+        ...launcherApps.filter((item) => !spotQuery || appMatches(item, spotQuery)).slice(0, 8).map((item) => ({ key: `app-${item.id}`, label: appLabel(item), hint: t("App"), run: () => openApp(item.id) })),
+        ...commands.filter((item) => spotQuery && item.label.toLowerCase().includes(spotQuery)).map((item) => ({ key: `cmd-${item.label}`, label: item.label, hint: t("Command"), run: item.run })),
         ...(spotQuery.length >= 2
-          ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: "File", run: () => openPathInApp(path, openApp) }))
+          ? Object.entries(readFs()).filter(([path, value]) => typeof value === "string" && path.toLowerCase().includes(spotQuery)).slice(0, 6).map(([path]) => ({ key: `file-${path}`, label: path, hint: t("File"), run: () => openPathInApp(path, openApp) }))
           : []),
-        ...(convertUnits(runText) ? [{ key: "unit", label: `${runText.trim()} = ${convertUnits(runText)}`, hint: "Convert", run: () => { void navigator.clipboard?.writeText(convertUnits(runText) ?? "").catch(() => {}); } }] : []),
-        ...(spotQuery ? [{ key: "web", label: `Search the web for “${runText.trim()}”`, hint: "Web", run: () => webSearch(runText.trim()) }] : []),
+        ...(convertUnits(runText) ? [{ key: "unit", label: `${runText.trim()} = ${convertUnits(runText)}`, hint: t("Convert"), run: () => { void navigator.clipboard?.writeText(convertUnits(runText) ?? "").catch(() => {}); } }] : []),
+        ...(spotQuery ? [{ key: "web", label: t("Search the web for “{q}”", { q: runText.trim() }), hint: t("Web"), run: () => webSearch(runText.trim()) }] : []),
       ];
   const runSpotlight = (hit?: { run: () => void }) => {
     if (!hit) return;
@@ -756,11 +788,11 @@ function PrivateOS() {
   };
 
   const menuItems: { label: string; action: () => void; icon: ReactNode }[] = [
-    { label: "Adjust Wallpaper", action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
-    { label: "Expand Icons", action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
-    { label: "Standard Icons", action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
-    { label: "Search… (Ctrl+K)", action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
-    { label: "Reload", action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
+    { label: t("Adjust Wallpaper"), action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
+    { label: t("Expand Icons"), action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
+    { label: t("Standard Icons"), action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
+    { label: t("Search… (Ctrl+K)"), action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
+    { label: t("Reload"), action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
   ];
 
   useEffect(() => {
@@ -811,7 +843,7 @@ function PrivateOS() {
       case "minecraft": return <MinecraftApp close={close} />;
       case "settings": return nova ? (
         <WindowFrame title="Settings" icon={SettingsIcon} close={close} nova>
-          <NovaSettingsApp settings={settings} patch={patchSettings} apps={NOVA_APPS} version={OS_VERSION} changelog={CHANGELOG} walls={allWalls} customFrom={wallpaperOptions.length} customIds={customWalls.map((wall) => wall.id)} addWall={(file) => addWall(file, false)} removeWall={removeWall} switchToPrivate={() => switchEdition("private")} optimize={() => setOptimizing(true)} restartSetup={() => patchSettings({ onboarded: false })} wisp={{ servers: WISP_SERVERS, probe: probeWisp }} />
+          <NovaSettingsApp settings={settings} patch={patchSettings} apps={novaApps} version={OS_VERSION} changelog={CHANGELOG} walls={allWalls} customFrom={wallpaperOptions.length} customIds={customWalls.map((wall) => wall.id)} addWall={(file) => addWall(file, false)} removeWall={removeWall} switchToPrivate={() => switchEdition("private")} optimize={() => setOptimizing(true)} restartSetup={() => patchSettings({ onboarded: false })} wisp={{ servers: WISP_SERVERS, probe: probeWisp }} />
         </WindowFrame>
       ) : <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} walls={allWalls} custom={customWalls} addWall={addWall} removeWall={removeWall} settings={settings} patch={patchSettings} close={close} />;
       case "files": return <FilesWindow close={close} open={openApp} />;
@@ -857,7 +889,7 @@ function PrivateOS() {
   if (phase === "boot") return nova ? <NovaBoot theme={novaTheme(settings.novaTheme)} /> : <BootScreen />;
 
   const welcome = settingsReady && !settings.onboarded
-    ? <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} novaThemes={NOVA_THEMES.filter((theme) => theme.id !== "custom")} lowPower={isLowPowerDevice()} onDone={finishSetup} />
+    ? <WelcomeSetup themes={WELCOME_THEMES.flatMap((id) => THEMES.filter((theme) => theme.id === id))} novaThemes={NOVA_THEMES.filter((theme) => theme.id !== "custom")} lowPower={isLowPowerDevice()} onDone={finishSetup} language={settings.language} setLanguage={(language) => patchSettings({ language })} />
     : null;
   const renderSlot = (id: string) => (
     <WindowContext.Provider value={{ minimized: minWins.includes(id), minimize: () => setMinWins((list) => (list.includes(id) ? list : [...list, id])), focus: () => raise(id), z: 10 + Math.max(0, zOrder.indexOf(id)), top: zOrder[zOrder.length - 1] === id, closing: closingWins.includes(id) }}>
@@ -873,7 +905,7 @@ function PrivateOS() {
         patch={patchSettings}
         time={time}
         zone={zone}
-        apps={NOVA_APPS}
+        apps={novaApps}
         openWins={openWins}
         minWins={minWins}
         zOrder={zOrder}
@@ -929,19 +961,19 @@ function PrivateOS() {
         <div className="hidden w-48 shrink-0 md:block" aria-hidden />
         <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
           <span data-start id="start-anchor" className="inline-flex">
-            <OsButton label="Start" onClick={openStartMenu} className={`taskbar-btn ${startMenu ? "is-on" : ""}`}><StartGlyph /></OsButton>
+            <OsButton label={t("Start")} onClick={openStartMenu} className={`taskbar-btn ${startMenu ? "is-on" : ""}`}><StartGlyph /></OsButton>
           </span>
-          <OsButton label="Search" onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`taskbar-btn ${launcher ? "is-on" : ""}`}><Search className="size-[18px]" /></OsButton>
-          <OsButton label="Task view" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className={`taskbar-btn ${taskView ? "is-on" : ""}`}><PanelsTopLeft className="size-[18px]" /></OsButton>
+          <OsButton label={t("Search")} onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`taskbar-btn ${launcher ? "is-on" : ""}`}><Search className="size-[18px]" /></OsButton>
+          <OsButton label={t("Task view")} onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className={`taskbar-btn ${taskView ? "is-on" : ""}`}><PanelsTopLeft className="size-[18px]" /></OsButton>
           {dockList.map(({ id, app }) => {
             const Icon = app.icon;
             const open = openWins.includes(id);
             const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
             return (
               <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
-                <OsButton label={app.label} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className={`taskbar-btn group ${focused ? "is-on" : ""}`}>
+                <OsButton label={appLabel(app)} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className={`taskbar-btn group ${focused ? "is-on" : ""}`}>
                   <Icon className={settings.bigIcons ? "size-7" : "size-6"} />
-                  <span className="taskbar-tip">{app.label}</span>
+                  <span className="taskbar-tip">{appLabel(app)}</span>
                   {open && <span className={`taskbar-dot ${focused ? "is-focused" : ""}`} />}
                 </OsButton>
               </span>
@@ -950,14 +982,14 @@ function PrivateOS() {
         </nav>
         <div className="flex shrink-0 items-center gap-0.5 md:w-48 md:justify-end">
           <OsButton label="Show hidden icons" onClick={() => setLauncher((value) => !value)} className="taskbar-btn hidden w-7 sm:inline-flex"><ChevronUp className="size-4" /></OsButton>
-          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Open quick settings" className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
-            <span className="hidden text-[11px] font-medium leading-tight sm:block">ENG</span>
+          <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label={t("Quick settings")} className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
+            <span className="hidden text-[11px] font-medium leading-tight sm:block">{LANGUAGES.find((item) => item.id === settings.language)?.abbr ?? "ENG"}</span>
             <Wifi className="size-4" />
             <Volume2 className="size-4" />
             <BatteryFull className="size-4" />
           </button>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label="Date and time" className="taskbar-btn w-auto px-2 text-right">
-            <span className="flex flex-col items-end text-[11px] leading-tight tabular-nums"><span>{timeLabel}</span>{settings.showDate && <span className="text-white/75">{time.toLocaleDateString(undefined, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}</span>
+            <span className="flex flex-col items-end text-[11px] leading-tight tabular-nums"><span>{timeLabel}</span>{settings.showDate && <span className="text-white/75">{time.toLocaleDateString(dateLocale, { day: "2-digit", month: "2-digit", year: "numeric" })}</span>}</span>
           </button>
           {canFullscreen && <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="taskbar-btn hidden w-8 sm:inline-flex">{fullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</OsButton>}
         </div>
@@ -987,17 +1019,18 @@ function PrivateOS() {
                 const width = Math.min(416, window.innerWidth - 16);
                 setStartPos({ left: Math.max(8, Math.min(box.left - 8, window.innerWidth - width - 8)), bottom: window.innerHeight - box.top + 12 });
               }
+              if (!startMenu) setQuery("");
               setStartMenu((value) => !value);
               setLauncher(false);
               setQuickMenu(false);
             }} className="dock-app group relative size-7 shrink-0 rounded-lg">
               <Layers className="size-6 text-white" />
-              <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Menu</span>
+              <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{t("Menu")}</span>
             </OsButton>
           </span>
-          <OsButton label="Apps" onClick={() => setLauncher((value) => !value)} className="dock-app group relative size-7 shrink-0 rounded-lg">
+          <OsButton label={t("Apps")} onClick={() => setLauncher((value) => !value)} className="dock-app group relative size-7 shrink-0 rounded-lg">
             <LayoutGrid className="size-5 text-white/80" />
-            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Apps</span>
+            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{t("Apps")}</span>
           </OsButton>
           {dockList.map(({ id, app }) => {
             const Icon = app.icon;
@@ -1005,9 +1038,9 @@ function PrivateOS() {
             const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
             return (
               <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
-                <OsButton label={app.label} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className="dock-app group relative size-7 shrink-0 rounded-lg md:size-8">
+                <OsButton label={appLabel(app)} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className="dock-app group relative size-7 shrink-0 rounded-lg md:size-8">
                   <Icon className={settings.bigIcons ? "size-8 md:size-9" : "size-7 md:size-8"} />
-                  <span className="absolute bottom-11 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{app.label}</span>
+                  <span className="absolute bottom-11 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{appLabel(app)}</span>
                   {open && <span className={`absolute -bottom-2 left-1/2 size-1 -translate-x-1/2 rounded-full ${focused ? "bg-white" : "bg-white/50"}`} />}
                 </OsButton>
               </span>
@@ -1016,7 +1049,7 @@ function PrivateOS() {
           <span aria-hidden className={`bg-white/15 ${settings.dockPos === "right" ? "h-px w-5" : "h-5 w-px"}`} />
           <OsButton label="Task view (Alt+W)" onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className="dock-app group relative size-7 shrink-0 rounded-lg">
             <PanelsTopLeft className="size-5 text-white/80" />
-            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">Task view</span>
+            <span className="absolute bottom-10 left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded bg-popover px-2 py-1 text-[10px] shadow group-hover:block">{t("Task view")}</span>
           </OsButton>
         </nav>
 
@@ -1025,7 +1058,7 @@ function PrivateOS() {
             <Signal className="hidden size-3.5 md:block" />
             <Wifi className="size-3.5" />
             <BatteryFull className="size-4" />
-            <span className="flex flex-col items-end leading-tight"><span>{timeLabel}</span>{settings.showDate && <span className="text-[9px] text-white/60">{time.toLocaleDateString(undefined, { day: "numeric", month: "short" })}</span>}</span>
+            <span className="flex flex-col items-end leading-tight"><span>{timeLabel}</span>{settings.showDate && <span className="text-[9px] text-white/60">{time.toLocaleDateString(dateLocale, { day: "numeric", month: "short" })}</span>}</span>
           </button>
           {canFullscreen && (
             <OsButton label={fullscreen ? "Exit full screen" : "Full screen"} onClick={toggleFullscreen} className="size-6 shrink-0 rounded-md hover:bg-white/15">
@@ -1037,15 +1070,15 @@ function PrivateOS() {
 
       </>)}
 
-      {<div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span></div>}
+      {<div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</span></div>}
 
       {quickMenu && (
         <aside className={`glass-panel quick-settings absolute right-3 z-50 bottom-20 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5`}>
-          <div className="mb-5 flex items-center justify-between"><p className="text-sm font-semibold">Quick settings</p><OsButton label="Open settings" onClick={() => { setQuickMenu(false); openApp("settings"); }} className="utility-icon"><Settings className="size-4" /></OsButton></div>
-          <div className="grid grid-cols-3 gap-2"><div className="quick-tile"><Wifi className="size-5" /><span>Online</span></div><OsButton onClick={() => setSound(v => v === 0 ? 70 : 0)} className="quick-tile"><Volume2 className="size-5" /><span>{sound ? "Sound" : "Muted"}</span></OsButton><OsButton onClick={() => { setQuickMenu(false); setLocked(true); }} className="quick-tile"><LockKeyhole className="size-5" /><span>Lock</span></OsButton></div>
+          <div className="mb-5 flex items-center justify-between"><p className="text-sm font-semibold">{t("Quick settings")}</p><OsButton label={tx("Settings")} onClick={() => { setQuickMenu(false); openApp("settings"); }} className="utility-icon"><Settings className="size-4" /></OsButton></div>
+          <div className="grid grid-cols-3 gap-2"><div className="quick-tile"><Wifi className="size-5" /><span>{t("Online")}</span></div><OsButton onClick={() => setSound(v => v === 0 ? 70 : 0)} className="quick-tile"><Volume2 className="size-5" /><span>{sound ? t("Sound") : t("Muted")}</span></OsButton><OsButton onClick={() => { setQuickMenu(false); setLocked(true); }} className="quick-tile"><LockKeyhole className="size-5" /><span>{t("Lock")}</span></OsButton></div>
           <label className="mt-5 flex items-center gap-3 text-xs"><Volume2 className="size-4" /><input aria-label="OS sound level" type="range" min="0" max="100" value={sound} onChange={e => setSound(Number(e.target.value))} className="min-w-0 flex-1 accent-primary" /><span className="w-8 text-right">{sound}%</span></label>
-          <label className="mt-4 flex items-center gap-3 text-xs"><span>Dim</span><input aria-label="Desktop dimming" type="range" min="0" max="70" value={settings.dim} onChange={e => patchSettings({ dim: Number(e.target.value) })} className="min-w-0 flex-1 accent-primary" /></label>
-          <div className="mt-5 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><BatteryFull className="size-4" />{battery}%</span><span>Local session</span></div>
+          <label className="mt-4 flex items-center gap-3 text-xs"><span>{t("Dim")}</span><input aria-label="Desktop dimming" type="range" min="0" max="70" value={settings.dim} onChange={e => patchSettings({ dim: Number(e.target.value) })} className="min-w-0 flex-1 accent-primary" /></label>
+          <div className="mt-5 flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground"><span className="flex items-center gap-2"><BatteryFull className="size-4" />{battery}%</span><span>{t("Local session")}</span></div>
         </aside>
       )}
 
@@ -1059,7 +1092,7 @@ function PrivateOS() {
               <div key={id} className="group pointer-events-auto relative w-20 text-center">
                 <OsButton label={`Open ${app.label}`} onClick={() => openApp(id)} className="flex w-full flex-col items-center gap-1 rounded-lg p-2 hover:bg-white/10">
                   <Icon className={settings.bigIcons ? "size-16" : "size-12"} />
-                  {settings.desktopLabels && <span className="line-clamp-2 text-[11px] text-white drop-shadow">{app.label}</span>}
+                  {settings.desktopLabels && <span className="line-clamp-2 text-[11px] text-white drop-shadow">{appLabel(app)}</span>}
                 </OsButton>
                 <button type="button" aria-label={`Remove ${app.label} from desktop`} onClick={() => patchSettings((current) => ({ desktop: current.desktop.filter((item) => item !== id) }))} className="absolute right-0 top-0 hidden rounded-full bg-black/60 p-0.5 text-white group-hover:block"><X className="size-3" /></button>
               </div>
@@ -1071,13 +1104,16 @@ function PrivateOS() {
       <input ref={wallInput} type="file" accept="image/*" multiple hidden onChange={(event) => { Array.from(event.target.files ?? []).forEach((file) => void addWall(file)); event.target.value = ""; }} />
 
       {startMenu && startPos && (
-        <aside data-start style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel os-start-menu fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
-          <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" /><span className="text-sm font-semibold">PRIVATE OS</span></div><span className="text-xs text-muted-foreground">Personal</span></div>
-          <label className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3"><Search className="size-4 text-muted-foreground" /><input aria-label="Search start menu" placeholder="Search apps" value={query} onChange={event => setQuery(event.target.value)} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
+        <aside data-start dir={textDir()} style={{ left: startPos.left, bottom: startPos.bottom }} className="glass-panel os-start-menu fixed z-50 flex max-h-[min(36rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-1rem))] flex-col gap-4 overflow-auto rounded-3xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
+          <div className="flex items-center justify-between"><div className="flex items-center gap-2"><ShieldCheck className="size-5 text-primary" /><span className="text-sm font-semibold">PRIVATE OS</span></div><span className="text-xs text-muted-foreground">{t("Personal")}</span></div>
+          {/* Focused as soon as the menu opens so typing searches right away; Enter opens the first match. */}
+          <label className="flex items-center gap-2 rounded-md border border-border bg-secondary px-3"><Search className="size-4 text-muted-foreground" /><input autoFocus aria-label="Search start menu" placeholder={t("Search apps")} value={query} onChange={event => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && startMatches[0]) { event.preventDefault(); setStartMenu(false); openApp(startMatches[0].id); } else if (event.key === "Escape") setStartMenu(false); }} className="h-10 min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Pinned apps</p>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("Pinned apps")}</p>
             <div className="grid grid-cols-4 gap-2">
-              {launcherApps.filter(app => app.label.toLowerCase().includes(query.toLowerCase())).map(({ id, label, icon: Icon }) => {
+              {startMatches.map((app) => {
+                const { id, icon: Icon } = app;
+                const label = appLabel(app);
                 const pinned = settings.desktop.includes(id);
                 return (
                   <div key={id} className="relative">
@@ -1093,13 +1129,13 @@ function PrivateOS() {
 
           </div>
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Widgets</p>
+            <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">{t("Widgets")}</p>
             <div className="flex flex-wrap gap-2">
               {WIDGET_LIST.map((widget) => {
                 const on = settings.widgets.includes(widget.id);
                 return (
                   <button key={widget.id} type="button" onClick={() => patchSettings((current) => ({ widgets: current.widgets.includes(widget.id) ? current.widgets.filter((item) => item !== widget.id) : [...current.widgets, widget.id] }))} className={`rounded-md px-3 py-1.5 text-xs ${on ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
-                    {on ? "✓ " : "+ "}{widget.label}
+                    {on ? "✓ " : "+ "}{tx(widget.label)}
                   </button>
                 );
               })}
@@ -1107,7 +1143,7 @@ function PrivateOS() {
           </div>
           <button type="button" onClick={() => switchEdition("nova")} className="nova-try flex items-center gap-3 rounded-2xl border border-white/10 p-3 text-left">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-black/40"><Sparkles className="size-5 text-teal-300" /></span>
-            <span className="min-w-0 flex-1"><span className="block text-xs font-bold tracking-wide">Try NOVA OS</span><span className="block text-[10px] text-white/60">The reimagined desktop. Switch back any time.</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-xs font-bold tracking-wide">{t("Try NOVA OS")}</span><span className="block text-[10px] text-white/60">{t("The reimagined desktop. Switch back any time.")}</span></span>
             <ChevronRight className="size-4 text-white/60" />
           </button>
           <div className="grid grid-cols-5 gap-1 border-t border-border pt-3 text-center text-[11px]">
@@ -1130,16 +1166,16 @@ function PrivateOS() {
 
       {taskView && (
         <div onClick={() => setTaskView(false)} className="absolute inset-0 z-[45] stagger flex flex-wrap content-center items-center justify-center gap-4 bg-black/55 p-6 backdrop-blur-md [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
-          {openWins.length === 0 && <p className="text-sm text-white/80">No open windows. Open an app from the dock.</p>}
+          {openWins.length === 0 && <p className="text-sm text-white/80">{t("No open windows. Open an app from the dock.")}</p>}
           {openWins.map((id) => {
             const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
             const Icon = app?.icon ?? Folder;
-            const label = app?.label ?? id;
+            const label = app ? appLabel(app) : id;
             return (
               <div key={id} onClick={(event) => event.stopPropagation()} className="relative w-52 rounded-xl bg-white/10 p-3 text-white ring-1 ring-white/20 hover:bg-white/20">
                 <button type="button" onClick={() => { setTaskView(false); openApp(id); }} className="flex w-full flex-col items-center gap-2 py-3">
                   <Icon className="size-14" />
-                  <span className="text-xs">{label}{minWins.includes(id) ? " (minimized)" : ""}</span>
+                  <span className="text-xs">{label}{minWins.includes(id) ? ` (${t("minimized")})` : ""}</span>
                 </button>
                 <button type="button" aria-label={`Close ${label}`} onClick={() => closeWindow(id)} className="absolute right-2 top-2 rounded-full bg-black/50 p-1"><X className="size-3" /></button>
               </div>
@@ -1160,7 +1196,7 @@ function PrivateOS() {
                 autoFocus
                 value={runText}
                 aria-label="Search"
-                placeholder="Search apps, files and commands..."
+                placeholder={t("Search apps, files and commands...")}
                 onChange={(event) => { setRunText(event.target.value); setRunIndex(0); }}
                 onKeyDown={(event) => {
                   if (event.key === "ArrowDown") { event.preventDefault(); setRunIndex((value) => Math.min(value + 1, spotlight.length - 1)); }
@@ -1179,7 +1215,7 @@ function PrivateOS() {
                   </button>
                 </li>
               ))}
-              {spotlight.length === 0 && <li className="p-4 text-center text-xs text-white/50">No results</li>}
+              {spotlight.length === 0 && <li className="p-4 text-center text-xs text-white/50">{t("No results")}</li>}
             </ul>
           </div>
         </div>
@@ -1187,25 +1223,25 @@ function PrivateOS() {
 
       {barMenu && (
         <div role="menu" aria-label="Taskbar options" onClick={(event) => event.stopPropagation()} style={{ left: Math.max(8, barMenu.x), ...(settings.dockPos === "top" ? { top: barMenu.y + 12 } : { bottom: window.innerHeight - barMenu.y + 12 }) }} className="soft-glass fixed z-50 w-64 rounded-2xl p-3 text-[11px] text-white shadow-2xl [animation:start-menu-in_.22s_cubic-bezier(.16,1.1,.3,1)]">
-          <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-white/55">Taskbar</p>
+          <p className="px-1 text-[10px] font-semibold uppercase tracking-wider text-white/55">{t("Taskbar")}</p>
           <div className="mt-2 grid grid-cols-2 gap-1.5">
-            {([["taskbar", "Windows bar"], ["floating", "Floating dock"]] as const).map(([value, label]) => (
+            {([["taskbar", t("Windows bar")], ["floating", t("Floating dock")]] as const).map(([value, label]) => (
               <button key={value} type="button" aria-pressed={settings.dockStyle === value} onClick={() => patchSettings({ dockStyle: value })} className={`rounded-xl border px-2 py-2 font-semibold ${settings.dockStyle === value ? "border-primary bg-primary/20" : "border-white/10 hover:bg-white/10"}`}>{label}</button>
             ))}
           </div>
           <label className="mt-3 block px-1">
-            <span className="flex justify-between"><span>Transparency</span><span className="tabular-nums text-white/60">{100 - settings.dockOpacity}%</span></span>
+            <span className="flex justify-between"><span>{t("Transparency")}</span><span className="tabular-nums text-white/60">{100 - settings.dockOpacity}%</span></span>
             <input type="range" min={0} max={95} value={100 - settings.dockOpacity} aria-label="Taskbar transparency" onChange={(event) => patchSettings({ dockOpacity: 100 - Number(event.target.value) })} className="mt-1.5 w-full accent-primary" />
           </label>
           <button type="button" role="menuitemcheckbox" aria-checked={settings.dockLiquid} onClick={() => patchSettings((current) => ({ dockLiquid: !current.dockLiquid }))} className="mt-2 flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
-            <span>Liquid glass</span>
+            <span>{t("Liquid glass")}</span>
             <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockLiquid ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockLiquid ? "left-3.5" : "left-0.5"}`} /></span>
           </button>
           <button type="button" role="menuitemcheckbox" aria-checked={settings.dockAutoHide} onClick={() => patchSettings((current) => ({ dockAutoHide: !current.dockAutoHide }))} className="flex w-full items-center justify-between rounded-lg px-2 py-2 hover:bg-white/10">
-            <span>Auto-hide</span>
+            <span>{t("Auto-hide")}</span>
             <span className={`relative h-4 w-7 rounded-full transition-colors ${settings.dockAutoHide ? "bg-primary" : "bg-white/20"}`}><span className={`absolute top-0.5 size-3 rounded-full bg-white transition-[left] ${settings.dockAutoHide ? "left-3.5" : "left-0.5"}`} /></span>
           </button>
-          <p className="mt-2 border-t border-white/10 px-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">Apps on the taskbar</p>
+          <p className="mt-2 border-t border-white/10 px-1 pt-2.5 text-[10px] font-semibold uppercase tracking-wider text-white/55">{t("Apps on the taskbar")}</p>
           <div className="mt-1 max-h-48 overflow-auto pr-1">
             {launcherApps.map((app) => {
               const pinned = settings.dockPins.includes(app.id);
@@ -1213,13 +1249,13 @@ function PrivateOS() {
               return (
                 <button key={app.id} type="button" role="menuitemcheckbox" aria-checked={pinned} onClick={() => patchSettings((current) => ({ dockPins: current.dockPins.includes(app.id) ? current.dockPins.filter((entry) => entry !== app.id) : [...current.dockPins, app.id] }))} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-white/10">
                   <Icon className="size-5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{app.label}</span>
+                  <span className="min-w-0 flex-1 truncate">{appLabel(app)}</span>
                   {pinned && <Check className="size-3.5 text-primary" />}
                 </button>
               );
             })}
           </div>
-          <button type="button" onClick={() => { setBarMenu(null); openApp("settings"); }} className="mt-2 w-full rounded-lg border-t border-white/10 px-2 pt-2.5 text-left text-white/80 hover:text-white">Taskbar settings…</button>
+          <button type="button" onClick={() => { setBarMenu(null); openApp("settings"); }} className="mt-2 w-full rounded-lg border-t border-white/10 px-2 pt-2.5 text-left text-white/80 hover:text-white">{t("Taskbar settings…")}</button>
         </div>
       )}
       {dockMenu && (() => {
@@ -1229,23 +1265,23 @@ function PrivateOS() {
         const item = "block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10";
         return (
           <div role="menu" onClick={(event) => event.stopPropagation()} style={{ left: Math.max(8, Math.min(dockMenu.x - 80, window.innerWidth - 184)), ...(settings.dockPos === "top" ? { top: dockMenu.y + 16 } : { bottom: window.innerHeight - dockMenu.y + 12 }) }} className="soft-glass fixed z-50 w-44 rounded-2xl p-1.5 text-[11px] text-white [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
-            <p className="px-3 py-1.5 text-[10px] font-semibold text-white/50">{app?.label}</p>
-            <button type="button" role="menuitem" className={item} onClick={() => { openApp(dockMenu.id); setDockMenu(null); }}>Open</button>
-            {open && <button type="button" role="menuitem" className={item} onClick={() => { closeWindow(dockMenu.id); setDockMenu(null); }}>Close window</button>}
-            <button type="button" role="menuitem" className={item} onClick={() => { patchSettings((current) => ({ dockPins: current.dockPins.includes(dockMenu.id) ? current.dockPins.filter((entry) => entry !== dockMenu.id) : [...current.dockPins, dockMenu.id] })); setDockMenu(null); }}>{pinned ? "Unpin from dock" : "Pin to dock"}</button>
+            <p className="px-3 py-1.5 text-[10px] font-semibold text-white/50">{app ? appLabel(app) : ""}</p>
+            <button type="button" role="menuitem" className={item} onClick={() => { openApp(dockMenu.id); setDockMenu(null); }}>{t("Open")}</button>
+            {open && <button type="button" role="menuitem" className={item} onClick={() => { closeWindow(dockMenu.id); setDockMenu(null); }}>{t("Close window")}</button>}
+            <button type="button" role="menuitem" className={item} onClick={() => { patchSettings((current) => ({ dockPins: current.dockPins.includes(dockMenu.id) ? current.dockPins.filter((entry) => entry !== dockMenu.id) : [...current.dockPins, dockMenu.id] })); setDockMenu(null); }}>{pinned ? t("Unpin from dock") : t("Pin to dock")}</button>
           </div>
         );
       })()}
 
       {power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { setPower("on"); setLocked(true); if (power === "off") setPhase("boot"); }} className="fixed inset-0 z-[80] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/30">
-          {power === "off" ? "PRESS ANYTHING TO POWER ON" : ""}
+          {power === "off" ? upper(t("Press any key to power on")) : ""}
         </div>
       )}
 
 
       {menu && (
-        <div role="menu" style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 soft-glass rounded-2xl p-1.5 text-[11px] text-white shadow-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
+        <div role="menu" dir={textDir()} style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 soft-glass rounded-2xl p-1.5 text-[11px] text-white shadow-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           {menuItems.map((item, index) => (
             <div key={item.label}>
               {index === 4 && <div className="my-1 h-px bg-white/10" />}
@@ -1266,7 +1302,7 @@ function PrivateOS() {
       ))}
 
 
-      <LockScreen locked={locked} unlock={() => setLocked(false)} day={dateLabel} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} name={settings.userName} />
+      <LockScreen locked={locked} unlock={() => setLocked(false)} day={lockDay} date={lockDate} clock={lockTime} dim={settings.lockDim} blur={settings.lockBlur} name={settings.userName} />
       {welcome}
     </main>
   );
@@ -1303,17 +1339,17 @@ function LockScreen({ locked, unlock, day, date, clock, dim, blur, name }: { loc
       style={{ backgroundColor: `rgba(0,0,0,${dim / 100})`, backdropFilter: `blur(${blur}px)` }}
       className={`absolute inset-0 z-[60] flex cursor-pointer flex-col items-center pt-[30dvh] text-center text-[#f6d28b] transition-all duration-700 ${locked ? "" : "pointer-events-none -translate-y-8 opacity-0"}`}
     >
-      <p className="pl-[.1em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(2.4rem,11vw,5rem)] leading-none tracking-[.1em] [text-shadow:0_0_22px_rgb(240_170_70/.45),0_2px_12px_rgb(0_0_0/.6)]">{day.slice(0, 3)}</p>
+      <p dir={textDir()} className="pl-[.1em] font-['Zen_Dots','Orbitron',sans-serif] text-[clamp(2.4rem,11vw,5rem)] leading-none tracking-[.1em] [text-shadow:0_0_22px_rgb(240_170_70/.45),0_2px_12px_rgb(0_0_0/.6)]">{day}</p>
       <p className="mt-4 pl-[.25em] font-['Rajdhani',sans-serif] text-[11px] font-semibold tracking-[.25em] text-[#eadfc4]/90 sm:text-sm">{date}</p>
       <p className="mt-3 pl-[.15em] font-['Orbitron',sans-serif] text-[clamp(1.1rem,5vw,1.8rem)] font-bold leading-none tracking-[.12em] text-[#f9e2ae] [text-shadow:0_0_14px_rgb(240_170_70/.4)]">{clock}</p>
-      {name && <p className="mt-6 font-['Rajdhani',sans-serif] text-sm font-semibold tracking-[.18em] text-white/80 [animation:rise_.6s_.2s_both]">WELCOME BACK, {name.toUpperCase()}</p>}
+      {name && <p dir={textDir()} className="mt-6 font-['Rajdhani',sans-serif] text-sm font-semibold tracking-[.18em] text-white/80 [animation:rise_.6s_.2s_both]">{upper(t("Welcome back, {name}", { name }))}</p>}
       <div className="mt-10 flex items-center gap-3" aria-hidden>
         <span className="size-3 rounded-full border border-white/40" />
         <span className="size-4 rounded-full bg-emerald-400" />
         <span className="size-4 rounded-[5px] bg-lime-300" />
         <span className="size-4 rounded-[5px] bg-cyan-300" />
       </div>
-      <p className="absolute bottom-8 pl-[.3em] font-['Rajdhani',sans-serif] text-[11px] font-medium tracking-[.3em] text-white/50">TAP OR PRESS ANY KEY TO UNLOCK</p>
+      <p dir={textDir()} className="absolute bottom-8 pl-[.3em] font-['Rajdhani',sans-serif] text-[11px] font-medium tracking-[.3em] text-white/50">{upper(t("Tap or press any key to unlock"))}</p>
     </div>
   );
 }
@@ -1329,23 +1365,23 @@ function StartScreen({ onStart }: { onStart: () => void }) {
       <div className="mt-4 h-px w-[62%] max-w-sm bg-gradient-to-r from-white/10 via-white/80 to-white/20" />
       <AlphaBadge className="mt-4 font-['Orbitron',sans-serif]" />
       <button type="button" onClick={onStart} className="mt-6 border border-white/15 px-5 py-1.5 font-['Rajdhani',sans-serif] text-[11px] font-bold tracking-[.2em] text-white outline-none transition-colors hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/60">
-        START
+        {upper(t("Start"))}
       </button>
       <button type="button" onClick={() => setShowLog((value) => !value)} className="mt-5 font-['Rajdhani',sans-serif] text-[11px] font-semibold tracking-[.2em] text-white/55 outline-none hover:text-white focus-visible:text-white">
-        {showLog ? "HIDE CHANGELOG" : `WHAT'S NEW · v${OS_VERSION}`}
+        {showLog ? upper(t("Hide changelog")) : `${upper(t("What's new"))} · v${OS_VERSION}`}
       </button>
       {showLog && (
         <div className="glass-panel mt-3 max-h-[34dvh] w-[min(24rem,calc(100%-1rem))] overflow-auto rounded-3xl p-4 [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           <ChangelogList />
         </div>
       )}
-      <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">Press ENTER twice to skip</p>
+      <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">{t("Press ENTER twice to skip")}</p>
     </main>
   );
 }
 
 // Shown for 5 seconds while NOVA OS hands over to PRIVATE OS.
-const SWITCH_STEPS = ["Saving your NOVA session", "Folding away the Dynamic Island", "Building the taskbar", "Loading your PRIVATE OS theme", "Starting PRIVATE OS"];
+const SWITCH_STEPS = ["Saving your NOVA session", "Folding away the Dynamic Island", "Building the taskbar", "Loading your PRIVATE OS theme", "Starting PRIVATE OS"] as const;
 function SwitchScreen({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
   const [step, setStep] = useState(0);
   useEffect(() => {
@@ -1361,10 +1397,10 @@ function SwitchScreen({ onDone, onCancel }: { onDone: () => void; onCancel: () =
     <div role="alertdialog" aria-live="polite" aria-label="Switching to PRIVATE OS" className="os-switch fixed inset-0 z-[99] flex flex-col items-center justify-center text-white">
       <div className="os-switch-mark grid size-16 place-items-center rounded-lg border border-white/15 bg-white/[.04]"><ShieldCheck className="size-8 text-blue-400" /></div>
       <h1 className="mt-5 text-xl font-semibold tracking-[.28em]">PRIVATE OS</h1>
-      <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-white/50">Switching from NOVA OS</p>
+      <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-white/50">{t("Switching from NOVA OS")}</p>
       <div className="mt-8 h-[3px] w-56 overflow-hidden rounded-full bg-white/10"><div className="os-switch-bar h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-300" /></div>
-      <p key={step} className="mt-4 h-4 text-[12px] text-white/60 [animation:nova-fade_.35s_both]">{SWITCH_STEPS[step]}…</p>
-      <button type="button" onClick={onCancel} className="mt-10 rounded-full border border-white/15 px-4 py-1.5 text-[12px] text-white/70 transition-colors hover:bg-white/10 hover:text-white">Stay in NOVA</button>
+      <p key={step} className="mt-4 h-4 text-[12px] text-white/60 [animation:nova-fade_.35s_both]">{t(SWITCH_STEPS[step]!)}…</p>
+      <button type="button" onClick={onCancel} className="mt-10 rounded-full border border-white/15 px-4 py-1.5 text-[12px] text-white/70 transition-colors hover:bg-white/10 hover:text-white">{t("Stay in NOVA")}</button>
     </div>
   );
 }
@@ -1375,7 +1411,7 @@ function BootScreen() {
       <div className="text-center [animation:boot-mark_2.5s_ease-in-out_forwards]">
         <div className="mx-auto flex size-16 items-center justify-center rounded-lg border border-border bg-card shadow-2xl"><ShieldCheck className="size-8 text-primary" /></div>
         <h1 className="mt-5 text-xl font-semibold tracking-[.28em]">PRIVATE OS</h1>
-        <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-muted-foreground">Private by design</p>
+        <p className="mt-2 text-[10px] uppercase tracking-[.22em] text-muted-foreground">{t("Private by design")}</p>
         <AlphaBadge className="mt-3 !text-[8.5px]" />
         <div className="mx-auto mt-6 h-px w-40 overflow-hidden bg-muted"><div className="h-full origin-left bg-primary [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
         <div className="boot-spinner mx-auto mt-8" aria-hidden>{Array.from({ length: 5 }, (_, i) => <span key={i} style={{ animationDelay: `${i * 0.14}s` }} />)}</div>
@@ -1385,18 +1421,18 @@ function BootScreen() {
 }
 
 function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
-  const filtered = launcherApps.filter((app) => app.label.toLowerCase().includes(query.toLowerCase()));
+  const filtered = launcherApps.filter((app) => appMatches(app, query));
   return (
     <section onClick={close} className="absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-16 pt-[9dvh] backdrop-blur-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
       <div onClick={(event) => event.stopPropagation()} className="flex w-full max-w-xl items-center gap-2 soft-glass rounded-2xl px-4">
         <Search className="size-4 text-white/60" />
-        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search all apps..." className="h-11 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50" />
+        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && filtered[0]) openApp(filtered[0].id); }} placeholder={t("Search all apps...")} className="h-11 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50" />
       </div>
       <div onClick={(event) => event.stopPropagation()} className="mt-10 grid w-full max-w-3xl flex-1 grid-cols-3 content-start gap-x-3 gap-y-6 overflow-auto sm:grid-cols-4 md:grid-cols-6">
         {filtered.map(({ id, label, icon: Icon }) => (
           <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex flex-col items-center gap-2 rounded-2xl p-2 transition-transform hover:scale-105">
             <Icon className="size-14 md:size-16" />
-            <span className="text-center text-[11px] font-semibold leading-tight text-white drop-shadow">{label}</span>
+            <span className="text-center text-[11px] font-semibold leading-tight text-white drop-shadow">{tx(label)}</span>
           </OsButton>
         ))}
       </div>
@@ -1619,7 +1655,24 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
 // ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through Wisp servers) ----
 // Public Wisp servers. Each one blocks some sites, so the relay transport (/relay.mjs) sends a request
 // that fails on one server through the next, and remembers which server works for each site.
-const WISP_SERVERS = ["wss://anura.pro/", "wss://wisp.mercurywork.shop/"];
+const WISP_SERVERS = ["wss://anura.pro/", "wss://wisp.mercurywork.shop/wisp/"];
+// Addresses that moved or shut down. A saved choice pointing at one of them is moved to the new
+// address (or back to automatic), so an old setting can't leave the browser stuck on a dead server.
+const MOVED_WISP: Record<string, string> = { "wss://wisp.mercurywork.shop/": "wss://wisp.mercurywork.shop/wisp/", "wss://wisp.rhw.one/": "auto" };
+function savedWispChoice() {
+  let choice = "auto";
+  try {
+    choice = localStorage.getItem("pos-wisp-choice") || "auto";
+    const moved = MOVED_WISP[choice];
+    if (moved) {
+      choice = moved;
+      localStorage.setItem("pos-wisp-choice", moved);
+    }
+  } catch {
+    // storage unavailable: automatic
+  }
+  return choice;
+}
 // The servers the relay uses, starting with the given one. A server the person typed in is used alone.
 const relayServers = (first: string) => (WISP_SERVERS.includes(first) ? [first, ...WISP_SERVERS.filter((url) => url !== first)] : [first]);
 
@@ -1653,16 +1706,16 @@ function probeWisp(url: string, ms = 4000) {
 // Picks a working Wisp server: a custom choice if set, otherwise the first one that answers.
 // The last working server gets a short head start, and the others are only tried if it is slow.
 async function pickWisp() {
-  let choice = "auto";
+  const choice = savedWispChoice();
   let last = "";
   try {
-    choice = localStorage.getItem("pos-wisp-choice") || "auto";
     last = localStorage.getItem("pos-wisp-last") || "";
     if (!WISP_SERVERS.includes(last)) last = "";
   } catch {
     // storage unavailable
   }
-  if (choice.startsWith("wss://")) return choice;
+  // A server the person picked is used while it answers; if it is down, the automatic pick takes over.
+  if (choice.startsWith("wss://") && (await probeWisp(choice, 3500))) return choice;
   const list = [...new Set([last, ...WISP_SERVERS].filter(Boolean))];
   const working = await new Promise<string>((resolve) => {
     let pending = list.length;
@@ -1697,7 +1750,7 @@ type EngineFrame = {
   go: (url: string) => void;
   addEventListener: (type: string, listener: (event: { url?: string | URL }) => void) => void;
 };
-type EngineController = { init: () => Promise<void>; createFrame: (frame?: HTMLIFrameElement) => EngineFrame };
+type EngineController = { init: () => Promise<void>; createFrame: (frame?: HTMLIFrameElement) => EngineFrame; encodeUrl: (url: string) => string };
 type EngineWindow = {
   BareMux?: { BareMuxConnection: new (workerPath: string) => { setTransport: (path: string, args: unknown[]) => Promise<void> } };
   $scramjetLoadController?: () => { ScramjetController: new (config: Record<string, unknown>) => EngineController };
@@ -1852,6 +1905,15 @@ function startProxyEngine() {
   }
   return engineStart;
 }
+
+// The Video Engine loads links through the proxy engine, or straight from the site if the engine can't start.
+const proxyVideoUrl = async (url: string) => {
+  try {
+    return (await startProxyEngine()).encodeUrl(url);
+  } catch {
+    return url;
+  }
+};
 
 // Starts the proxy engine quietly once the desktop is idle, so the first page opens without the wait.
 function prewarmProxyEngine() {
@@ -2260,13 +2322,29 @@ function HistoryPanel({ open, close }: { open: (url: string) => void; close: () 
 // so Gmail and Google accounts open in a real browser window instead.
 const GOOGLE_SIGN_IN = ["accounts.google.com", "mail.google.com", "gmail.com", "www.gmail.com"];
 const isGoogleSignIn = (url: string) => GOOGLE_SIGN_IN.includes(hostOf(url)) || hostOf(url) === "gmail.com";
-function openGoogleWindow(url: string) {
+function openGoogleWindow(url: string, name = "pos-google") {
   const width = Math.min(1180, window.screen.availWidth - 80);
   const height = Math.min(820, window.screen.availHeight - 80);
   const left = Math.max(0, (window.screen.availWidth - width) / 2);
   const top = Math.max(0, (window.screen.availHeight - height) / 2);
-  const opened = window.open(url, "pos-google", `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
+  const opened = window.open(url, name, `popup=yes,width=${width},height=${height},left=${left},top=${top}`);
   if (!opened) window.open(url, "_blank", "noopener,noreferrer");
+}
+
+// Roblox games run in the Roblox app, never inside a web page, so the website works through the proxy
+// (browse, sign in, avatar, friends) and games are played in the cloud on now.gg. now.gg turns away
+// proxy servers, so it opens in its own window on the person's own connection.
+const ROBLOX_CLOUD_URL = "https://now.gg/apps/roblox-corporation/5349/roblox.html";
+const isRobloxHost = (url: string) => /(^|\.)roblox\.com$/.test(hostOf(url));
+
+function RobloxBar({ close }: { close: () => void }) {
+  return (
+    <div role="status" className="absolute inset-x-0 top-0 z-[15] flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-white/10 bg-[#101318]/95 px-3 py-2 text-[12px] text-white/85 backdrop-blur [animation:rise_.25s_cubic-bezier(.22,1,.36,1)]">
+      <span className="min-w-0 flex-1">Roblox games need the Roblox app, which can't run inside a web page. Browse and sign in here, or play in the cloud.</span>
+      <button type="button" onClick={() => openGoogleWindow(ROBLOX_CLOUD_URL, "pos-roblox")} className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1 text-[12px] font-semibold text-primary-foreground"><Play className="size-3" />Play Roblox in the cloud</button>
+      <button type="button" aria-label="Hide" onClick={close} className="grid size-6 place-items-center rounded-full hover:bg-white/10"><X className="size-3.5" /></button>
+    </div>
+  );
 }
 
 function GoogleGate({ url, proceed }: { url: string; proceed: () => void }) {
@@ -2384,11 +2462,14 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const [historyOpen, setHistoryOpen] = useState(false);
   const [googleOk, setGoogleOk] = useState(false);
   const gated = Boolean(frameTarget && isGoogleSignIn(frameTarget) && !googleOk);
+  // Links to video files open in the Video Engine instead of as a bare page.
+  const videoLink = Boolean(frameTarget && VIDEO_LINK.test(frameTarget));
+  const [robloxHidden, setRobloxHidden] = useState(false);
   const needsEngine = Boolean(frameTarget) && !gated && !isDirectHost(frameTarget ?? "") && !isRedditUrl(frameTarget ?? "");
   const recentSites = useHistoryList();
   useEffect(() => {
-    if (gated) setLoading(false);
-  }, [gated, frameKey]);
+    if (gated || videoLink) setLoading(false);
+  }, [gated, videoLink, frameKey]);
 
   // Called whenever the page inside the frame reports its real address.
   const realUrl = useRef<(url: string) => void>(() => {});
@@ -2626,9 +2707,10 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
           </div>
         )}
         {historyOpen && <HistoryPanel open={(url) => navigateTo(url)} close={() => setHistoryOpen(false)} />}
-        {gated && frameTarget ? <GoogleGate url={frameTarget} proceed={() => setGoogleOk(true)} /> : frame?.mode === "reddit" && frameTarget ? (
+        {videoLink && frameTarget ? <VideoEngine key={frameTarget} initialUrl={frameTarget} proxyUrl={proxyVideoUrl} onTitle={setDocTitle} /> : gated && frameTarget ? <GoogleGate url={frameTarget} proceed={() => setGoogleOk(true)} /> : frame?.mode === "reddit" && frameTarget ? (
           <RedditView url={frameTarget} go={navigateTo} onReady={(title) => { setDocTitle(title); setLoading(false); }} />
         ) : frame ? <>
+          {frameTarget && isRobloxHost(frameTarget) && !robloxHidden && <RobloxBar close={() => setRobloxHidden(true)} />}
           {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><SiteIcon host={hostOf(frameTarget ?? "")} className="mx-auto size-10 animate-pulse" /><p className="mt-3 text-xs text-muted-foreground">Opening {hostOf(frameTarget ?? "") || "page"} securely…</p></div></div>}
           <iframe ref={frameRef} key={frame.mode === "engine" ? "engine" : `${frame.mode}-${frameKey}`} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="fullscreen; clipboard-read; clipboard-write; autoplay" sandbox={frame.mode === "direct" ? DIRECT_SANDBOX : frame.mode === "loader" ? PROXY_SANDBOX : undefined} />
         </> : (
@@ -3842,7 +3924,7 @@ function NetworkPrivacy() {
   const [testing, setTesting] = useState(false);
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("pos-wisp-choice") || "auto";
+      const saved = savedWispChoice();
       if (!saved.startsWith("wss://")) return;
       if (WISP_SERVERS.includes(saved)) setChoice(saved);
       else {
@@ -3929,8 +4011,8 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "prestige", novaPhoto: false, novaWall: "prestige", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "prestige" };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en" };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -4092,9 +4174,10 @@ function CalendarWidget({ weekStart = 0 }: { weekStart?: number }) {
   const cells: (number | null)[] = [...Array.from({ length: first }, () => null), ...Array.from({ length: days }, (_, i) => i + 1)];
   return (
     <div>
-      <p className="mb-2 text-center font-semibold">{now.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</p>
+      <p className="mb-2 text-center font-semibold">{now.toLocaleDateString(locale(), { month: "long", year: "numeric" })}</p>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px]">
-        {(weekStart ? ["M", "T", "W", "T", "F", "S", "S"] : ["S", "M", "T", "W", "T", "F", "S"]).map((day, i) => <span key={i} className="text-muted-foreground">{day}</span>)}
+        {/* Day initials in the interface language; 4 Jan 1970 was a Sunday. */}
+        {Array.from({ length: 7 }, (_, i) => Array.from(new Date(Date.UTC(1970, 0, 4 + ((i + weekStart) % 7))).toLocaleDateString(locale(), { weekday: "narrow", timeZone: "UTC" }))[0]).map((day, i) => <span key={i} className="text-muted-foreground">{day}</span>)}
         {cells.map((day, i) => <span key={i} className={day === now.getDate() ? "rounded bg-primary text-primary-foreground" : ""}>{day}</span>)}
       </div>
     </div>
@@ -4411,22 +4494,9 @@ function CameraApp({ close }: { close: () => void }) {
 }
 
 function MediaApp({ close }: { close: () => void }) {
-  const [item, setItem] = useState<{ name: string; url: string; type: string } | null>(null);
-  const input = useRef<HTMLInputElement>(null);
-  useEffect(() => () => { if (item) URL.revokeObjectURL(item.url); }, [item]);
   return (
-    <WindowFrame title="Media Player" icon={MediaIcon} close={close}>
-      <div className="flex shrink-0 items-center gap-2 border-b border-border p-2">
-        <button type="button" onClick={() => input.current?.click()} className="rounded-md bg-primary px-3 py-1.5 text-xs text-primary-foreground">Open file</button>
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{item?.name ?? "Play music, video or view a picture from this device"}</span>
-        <input ref={input} type="file" accept="audio/*,video/*,image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) setItem({ name: file.name, url: URL.createObjectURL(file), type: file.type }); event.target.value = ""; }} />
-      </div>
-      <div className="flex min-h-0 flex-1 items-center justify-center bg-black/40 p-3">
-        {!item && <p className="text-sm text-muted-foreground">Nothing open yet.</p>}
-        {item?.type.startsWith("video/") && <video src={item.url} controls autoPlay className="max-h-full max-w-full rounded-xl" />}
-        {item?.type.startsWith("audio/") && <audio src={item.url} controls autoPlay className="w-full max-w-md" />}
-        {item?.type.startsWith("image/") && <img src={item.url} alt={item.name} className="max-h-full max-w-full rounded-xl object-contain" />}
-      </div>
+    <WindowFrame title={t("Media Player")} icon={MediaIcon} close={close}>
+      <VideoEngine proxyUrl={proxyVideoUrl} />
     </WindowFrame>
   );
 }
@@ -4559,16 +4629,16 @@ function CfgSlider({ label, value, max, unit, onChange, min = 0 }: { label: stri
 
 function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, removeWall, settings, patch, close }: { wallpaper: number; setWallpaper: (value: number) => void; walls: WallpaperOption[]; custom: { id: number; label: string; url: string }[]; addWall: (file: File) => void; removeWall: (id: number) => void; settings: OsSettings; patch: (patch: Partial<OsSettings>) => void; close: () => void }) {
   const NAV: { id: string; label: string; sub: string; icon: IconComponent; title: string; heading: string }[] = [
-    { id: "appearance", label: "Appearance", sub: "Wallpaper and glass", icon: ImageIcon, title: "Appearance", heading: "Wallpapers, blur and darkness" },
-    { id: "themes", label: "Themes", sub: "Choose your color story", icon: Palette, title: "Themes", heading: "Choose your color story" },
-    { id: "configs", label: "Configs", sub: "Save your loadouts", icon: Save, title: "Configs", heading: "Save your loadouts" },
-    { id: "widgets", label: "Widgets", sub: "Desktop widgets", icon: LayoutGrid, title: "Widgets", heading: "Add things to your desktop" },
-    { id: "network", label: "Network", sub: "Proxy servers", icon: Wifi, title: "Network", heading: "Proxy and privacy" },
-    { id: "settings", label: "Settings", sub: "Customize your OS", icon: Settings, title: "Settings", heading: "Customize your OS" },
-    { id: "time", label: "Date & time", sub: "Time zone and clocks", icon: Globe, title: "Date & time", heading: "Time zone, world clocks and format" },
-    { id: "dock", label: "Dock", sub: "Pinned apps and behaviour", icon: Layers, title: "Dock", heading: "Pin, reorder and hide" },
-    { id: "backup", label: "Backup", sub: "Export and import", icon: Download, title: "Backup", heading: "Move your setup between browsers" },
-    { id: "about", label: "About", sub: "Version and changelog", icon: Info, title: "About", heading: "What this OS is and what's new" },
+    { id: "appearance", label: t("Appearance"), sub: t("Wallpaper and glass"), icon: ImageIcon, title: t("Appearance"), heading: t("Wallpapers, blur and darkness") },
+    { id: "themes", label: t("Themes"), sub: t("Choose your color story"), icon: Palette, title: t("Themes"), heading: t("Choose your color story") },
+    { id: "configs", label: t("Configs"), sub: t("Save your loadouts"), icon: Save, title: t("Configs"), heading: t("Save your loadouts") },
+    { id: "widgets", label: t("Widgets"), sub: t("Desktop widgets"), icon: LayoutGrid, title: t("Widgets"), heading: t("Add things to your desktop") },
+    { id: "network", label: t("Network"), sub: t("Proxy servers"), icon: Wifi, title: t("Network"), heading: t("Proxy and privacy") },
+    { id: "settings", label: t("Settings"), sub: t("Customize your OS"), icon: Settings, title: t("Settings"), heading: t("Customize your OS") },
+    { id: "time", label: t("Date & time"), sub: t("Time zone and clocks"), icon: Globe, title: t("Date & time"), heading: t("Time zone, world clocks and format") },
+    { id: "dock", label: t("Dock"), sub: t("Pinned apps and behaviour"), icon: Layers, title: t("Dock"), heading: t("Pin, reorder and hide") },
+    { id: "backup", label: t("Backup"), sub: t("Export and import"), icon: Download, title: t("Backup"), heading: t("Move your setup between browsers") },
+    { id: "about", label: t("About"), sub: t("Version and changelog"), icon: Info, title: t("About"), heading: t("What this OS is and what's new") },
   ];
   const [page, setPage] = useState("themes");
   const [qcOpen, setQcOpen] = useState(false);
@@ -4686,7 +4756,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <span className="grid size-10 place-items-center rounded-xl bg-primary/20 text-primary"><ShieldCheck className="size-5" /></span>
             <div><p className="font-['Playfair_Display',serif] text-base font-bold leading-tight">PRIVATE</p><p className="text-[10px] italic text-muted-foreground">Custom Edition {OS_VERSION}</p></div>
           </div>
-          <label className="hidden items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 md:flex"><Search className="size-3.5 text-muted-foreground" /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search features..." className="h-9 w-full bg-transparent text-xs outline-none" /></label>
+          <label className="hidden items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 md:flex"><Search className="size-3.5 text-muted-foreground" /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("Search features...")} className="h-9 w-full bg-transparent text-xs outline-none" /></label>
           {navShown.map((item) => {
             const Icon = item.icon;
             const active = item.id === page;
@@ -4829,7 +4899,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "appearance" && (
             <div className="stagger space-y-4">
-              <CfgCard title="Wallpaper">
+              <CfgCard title={t("Wallpaper")}>
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {walls.map((item, index) => (
                     <button key={`${item.label}-${index}`} type="button" onClick={() => { setWallpaper(index); log(`Wallpaper: ${item.label}`); }} className={`overflow-hidden rounded-xl border-2 text-left ${wallpaper === index ? "border-primary" : "border-transparent"}`}>
@@ -4846,7 +4916,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   <div key={wall.id} className="flex items-center gap-3 text-xs"><img src={wall.url} alt="" className="h-8 w-14 rounded object-cover" /><span className="min-w-0 flex-1 truncate">{wall.label}</span><button type="button" onClick={() => removeWall(wall.id)} className={`${btn} bg-white/10`}>Remove</button></div>
                 ))}
               </CfgCard>
-              <CfgCard title="Glass and darkness">
+              <CfgCard title={t("Glass and darkness")}>
                 <CfgSlider label="Wallpaper blur" value={settings.blur} max={24} unit="px" onChange={(value) => patch({ blur: value })} />
                 <CfgSlider label="Wallpaper darkness" value={settings.dim} max={80} unit="%" onChange={(value) => patch({ dim: value })} />
                 <CfgSlider label="Lock screen blur" value={settings.lockBlur} max={30} unit="px" onChange={(value) => patch({ lockBlur: value })} />
@@ -4863,11 +4933,11 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           )}
 
           {page === "widgets" && (
-            <CfgCard title="Desktop widgets">
+            <CfgCard title={t("Desktop widgets")}>
               {WIDGET_LIST.map((widget) => {
                 const on = settings.widgets.includes(widget.id);
                 return (
-                  <CfgRow key={widget.id} title={widget.label} sub={on ? "Shown on the desktop. Drag it by its title." : "Hidden"}>
+                  <CfgRow key={widget.id} title={tx(widget.label)} sub={on ? "Shown on the desktop. Drag it by its title." : "Hidden"}>
                     <Switch on={on} label={widget.label} onChange={(value) => { patch({ widgets: value ? [...settings.widgets, widget.id] : settings.widgets.filter((id) => id !== widget.id) }); log(`${widget.label} widget ${value ? "added" : "removed"}`); }} />
                   </CfgRow>
                 );
@@ -4879,16 +4949,16 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "time" && (
             <div className="stagger space-y-4">
-              <CfgCard title="Time zone">
+              <CfgCard title={t("Time zone")}>
                 <CfgRow title="Current time" sub={settings.timeZone || "Automatic (this device)"}><LiveTime zone={settings.timeZone || undefined} hour12={!settings.clock24} /></CfgRow>
                 <select aria-label="Time zone" value={settings.timeZone} onChange={(event) => patch({ timeZone: event.target.value })} className="w-full rounded-md bg-white/10 px-2 py-2 text-xs">
                   <option value="">Automatic (this device)</option>
                   {ZONES.map((zone) => <option key={zone} value={zone}>{zone.replace(/_/g, " ")}</option>)}
                 </select>
-                <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
-                <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
+                <CfgRow title={t("24-hour clock")} sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
+                <CfgRow title={t("Date in the tray")} sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
               </CfgCard>
-              <CfgCard title="World clocks">
+              <CfgCard title={t("World clocks")}>
                 {settings.worldClocks.length === 0 && <p className="text-xs text-muted-foreground">Add cities to see their time here.</p>}
                 {settings.worldClocks.map((zone) => (
                   <CfgRow key={zone} title={(zone.split("/").pop() ?? zone).replace(/_/g, " ")} sub={zone}>
@@ -4905,15 +4975,15 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "dock" && (
             <div className="stagger space-y-4">
-              <CfgCard title="Behaviour">
-                <CfgRow title="Auto-hide" sub="Slides away until you move to the screen edge"><Switch on={settings.dockAutoHide} label="Auto-hide the dock" onChange={(value) => patch({ dockAutoHide: value })} /></CfgRow>
+              <CfgCard title={t("Behaviour")}>
+                <CfgRow title={t("Auto-hide")} sub="Slides away until you move to the screen edge"><Switch on={settings.dockAutoHide} label="Auto-hide the dock" onChange={(value) => patch({ dockAutoHide: value })} /></CfgRow>
                 <CfgRow title="Position" sub="Or drag the handle above the dock">
                   <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
                 </CfgRow>
-                <CfgSlider label="Dock size" value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
-                <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
+                <CfgSlider label={t("Dock size")} value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
+                <CfgRow title={t("Large icons")} sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
               </CfgCard>
-              <CfgCard title="Pinned apps">
+              <CfgCard title={t("Pinned apps")}>
                 {settings.dockPins.map((id, index) => {
                   const app = launcherApps.find((item) => item.id === id) ?? dockApps.find((item) => item.id === id);
                   if (!app) return null;
@@ -4928,7 +4998,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                   return (
                     <div key={id} className="flex items-center gap-3">
                       <Icon className="size-8 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{app.label}</span>
+                      <span className="min-w-0 flex-1 truncate text-xs font-medium">{appLabel(app)}</span>
                       <button type="button" aria-label={`Move ${app.label} left`} disabled={index === 0} onClick={() => move(-1)} className={`${btn} bg-white/10`}>↑</button>
                       <button type="button" aria-label={`Move ${app.label} right`} disabled={index === settings.dockPins.length - 1} onClick={() => move(1)} className={`${btn} bg-white/10`}>↓</button>
                       <button type="button" onClick={() => patch({ dockPins: settings.dockPins.filter((entry) => entry !== id) })} className={`${btn} bg-white/10`}>Unpin</button>
@@ -4937,7 +5007,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 })}
                 <select aria-label="Pin an app" value="" onChange={(event) => { if (event.target.value) patch({ dockPins: [...settings.dockPins, event.target.value] }); }} className="w-full rounded-md bg-white/10 px-2 py-2 text-xs">
                   <option value="">Pin another app…</option>
-                  {launcherApps.filter((item) => !settings.dockPins.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
+                  {launcherApps.filter((item) => !settings.dockPins.includes(item.id)).map((item) => <option key={item.id} value={item.id}>{appLabel(item)}</option>)}
                 </select>
               </CfgCard>
             </div>
@@ -4945,7 +5015,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 
           {page === "backup" && (
             <div className="stagger space-y-4">
-              <CfgCard title="Backup">
+              <CfgCard title={t("Backup")}>
                 <p className="text-xs text-muted-foreground">Saves your settings, themes, configs, notes, files and to-dos to one file. Custom wallpapers and music are not included.</p>
                 <div className="flex gap-2">
                   <button type="button" onClick={exportAll} className={`${btn} bg-primary text-primary-foreground`}>Export backup</button>
@@ -4962,12 +5032,12 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 <CfgRow title="Version">{OS_VERSION}</CfgRow>
                 <CfgRow title="Data">Stored only in this browser</CfgRow>
               </CfgCard>
-              <CfgCard title="Keyboard shortcuts">
+              <CfgCard title={t("Keyboard shortcuts")}>
                 {([["Ctrl + K", "Search apps, files and commands"], ["Alt + W", "Task view"], ["Alt + L", "Lock"], ["Ctrl + Space", "App launcher"], ["Alt + Arrows", "Snap, maximize or minimize a window"], ["Esc", "Close overlays"]] as const).map(([keys, what]) => (
                   <CfgRow key={keys} title={what}><kbd className="rounded-md bg-white/10 px-2 py-1 text-[11px] font-semibold">{keys}</kbd></CfgRow>
                 ))}
               </CfgCard>
-              <CfgCard title="Changelog"><ChangelogList /></CfgCard>
+              <CfgCard title={t("Changelog")}><ChangelogList /></CfgCard>
             </div>
           )}
 
@@ -4981,10 +5051,18 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           {page === "settings" && (
             <div className="grid gap-4 lg:grid-cols-[1fr_14rem]">
               <div className="stagger space-y-4">
-                <CfgCard title="Interface style">
+                <CfgCard title={t("Language")}>
+                  <CfgRow title={t("Language")} sub={t("Language of menus, setup and the desktop")}>
+                    <select aria-label={t("Language")} value={settings.language} onChange={(event) => { const language = event.target.value as Lang; patch({ language }); log(`Language: ${LANGUAGES.find((item) => item.id === language)?.english ?? language}`); }} className="rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-[12px]">
+                      {LANGUAGES.map((item) => <option key={item.id} value={item.id}>{item.name}{item.id === "en" ? "" : ` · ${item.english}`}</option>)}
+                    </select>
+                  </CfgRow>
+                  <p className="text-[10px] text-muted-foreground">{t("Office apps and some app windows stay in English for now.")}</p>
+                </CfgCard>
+                <CfgCard title={t("Interface style")}>
                   <p className="text-[10px] text-muted-foreground">Pick how every app looks. Both keep the same animations and sounds.</p>
                   <div className="grid grid-cols-2 gap-3">
-                    {([["classic", "Classic", "The current look, with a serif heading and soft glass."], ["modern", "Modern", "Dark frosted panels, purple toggles, a search bar, quick configs and a themes grid."]] as const).map(([id, label, sub]) => (
+                    {([["classic", t("Classic"), "The current look, with a serif heading and soft glass."], ["modern", t("Modern"), "Dark frosted panels, purple toggles, a search bar, quick configs and a themes grid."]] as const).map(([id, label, sub]) => (
                       <button key={id} type="button" aria-pressed={settings.uiStyle === id} onClick={() => patch({ uiStyle: id })} className={`fx-card rounded-2xl border p-2.5 text-left ${settings.uiStyle === id ? "border-primary bg-primary/10" : "border-white/10 bg-black/20"}`}>
                         <StylePreview kind={id} />
                         <p className="mt-2 text-xs font-bold">{label}{settings.uiStyle === id ? " ✓" : ""}</p>
@@ -4993,7 +5071,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                     ))}
                   </div>
                 </CfgCard>
-                <CfgCard title="Performance">
+                <CfgCard title={t("Performance")}>
                   <CfgRow title={settings.lite ? "Optimized ✓" : "Full effects"} sub={settings.lite ? "Blur, glow, particles and looping animations are off so every theme runs smoothly." : isLowPowerDevice() ? "This device looks low-power. Optimize to make every theme faster." : "Glass blur, glow and particles are on. Optimize if things feel slow."}>
                     {settings.lite ? (
                       <button type="button" onClick={() => { patch({ lite: false }); log("Full effects restored"); }} className={`${btn} bg-white/10`}>Restore full effects</button>
@@ -5002,7 +5080,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                     )}
                   </CfgRow>
                 </CfgCard>
-                <CfgCard title="Operating system">
+                <CfgCard title={t("Operating system")}>
                   <p className="text-[10px] text-muted-foreground">Both have every app and keep your files. Switching keeps your windows open.</p>
                   <div className="grid grid-cols-2 gap-3">
                     {([["private", "PRIVATE OS", "The classic desktop with a Windows-style taskbar."], ["nova", "NOVA OS", "Reimagined: live wallpapers, Dynamic Island, Overview, new apps."]] as const).map(([id, label, sub]) => {
@@ -5017,7 +5095,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                     })}
                   </div>
                 </CfgCard>
-                <CfgCard title="Desktop style">
+                <CfgCard title={t("Desktop style")}>
                   <p className="text-[10px] text-muted-foreground">Clay is a warm theme with its own moving wallpaper and softer windows. You can still pick any theme below.</p>
                   <div className="grid grid-cols-2 gap-3">
                     {([["private", "Standard", "The PRIVATE OS desktop with your own wallpaper."], ["clay", "Clay", "Warm terracotta, a slow glowing wallpaper and soft rounded windows."]] as const).map(([id, label, sub]) => {
@@ -5032,59 +5110,59 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                     })}
                   </div>
                 </CfgCard>
-                <CfgCard title="Sounds">
-                  <CfgRow title="Interface sounds" sub="A soft tick when you hover a button and a pop when you click"><Switch on={settings.uiSounds} label="Interface sounds" onChange={(value) => patch({ uiSounds: value })} /></CfgRow>
-                  <CfgRow title="Hover sound" sub="Plays when the pointer moves onto a button"><Switch on={settings.soundHover} label="Hover sound" onChange={(value) => patch({ soundHover: value })} /></CfgRow>
-                  <CfgRow title="Click sound" sub="Plays when you press a button or switch"><Switch on={settings.soundClick} label="Click sound" onChange={(value) => patch({ soundClick: value })} /></CfgRow>
-                  <CfgSlider label="Volume" value={settings.soundVolume} max={100} unit="%" onChange={(value) => patch({ soundVolume: value })} />
-                  <CfgRow title="Sound pack" sub={SOUND_PACKS.find((item) => item.id === settings.soundPack)?.sub ?? ""}><select aria-label="Sound pack" value={settings.soundPack} onChange={(event) => { const pack = event.target.value as SoundPack; patch({ soundPack: pack }); playClick(settings.soundVolume / 100, pack); }} className="rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-[12px]">{SOUND_PACKS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></CfgRow>
+                <CfgCard title={t("Sounds")}>
+                  <CfgRow title={t("Interface sounds")} sub="A soft tick when you hover a button and a pop when you click"><Switch on={settings.uiSounds} label="Interface sounds" onChange={(value) => patch({ uiSounds: value })} /></CfgRow>
+                  <CfgRow title={t("Hover sound")} sub="Plays when the pointer moves onto a button"><Switch on={settings.soundHover} label="Hover sound" onChange={(value) => patch({ soundHover: value })} /></CfgRow>
+                  <CfgRow title={t("Click sound")} sub="Plays when you press a button or switch"><Switch on={settings.soundClick} label="Click sound" onChange={(value) => patch({ soundClick: value })} /></CfgRow>
+                  <CfgSlider label={t("Volume")} value={settings.soundVolume} max={100} unit="%" onChange={(value) => patch({ soundVolume: value })} />
+                  <CfgRow title={t("Sound pack")} sub={SOUND_PACKS.find((item) => item.id === settings.soundPack)?.sub ?? ""}><select aria-label="Sound pack" value={settings.soundPack} onChange={(event) => { const pack = event.target.value as SoundPack; patch({ soundPack: pack }); playClick(settings.soundVolume / 100, pack); }} className="rounded-lg border border-white/15 bg-black/30 px-2 py-1.5 text-[12px]">{SOUND_PACKS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></CfgRow>
                   <button type="button" onClick={() => { playHover(settings.soundVolume / 100, settings.soundPack); window.setTimeout(() => playClick(settings.soundVolume / 100, settings.soundPack), 260); }} className={`${btn} bg-white/10`}>Play a test sound</button>
                   <p className="text-[10px] text-muted-foreground">Sounds are made on your device. Hover sounds only play with a mouse. Your browser may stay silent until you click once.</p>
                 </CfgCard>
-                <CfgCard title="General">
-                  <CfgRow title="Search key" sub="Search apps, files and commands"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Ctrl + K</kbd></CfgRow>
-                  <CfgRow title="24-hour clock" sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
-                  <CfgRow title="Date in the tray" sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
-                  <CfgRow title="Desktop icons" sub="Show app shortcuts on the desktop"><Switch on={settings.showIcons} label="Desktop icons" onChange={(value) => patch({ showIcons: value })} /></CfgRow>
-                  <CfgRow title="Desktop labels" sub="Show names under desktop icons"><Switch on={settings.desktopLabels} label="Desktop labels" onChange={(value) => patch({ desktopLabels: value })} /></CfgRow>
-                  <CfgRow title="Skip start screen" sub="Go straight to the lock screen when you open PRIVATE OS"><Switch on={settings.skipStart} label="Skip start screen" onChange={(value) => patch({ skipStart: value })} /></CfgRow>
-                  <CfgRow title="Auto-lock" sub="Lock after you stop using it">
-                    <select aria-label="Auto-lock" value={settings.autoLock} onChange={(event) => patch({ autoLock: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>Never</option><option value={1}>1 minute</option><option value={5}>5 minutes</option><option value={10}>10 minutes</option><option value={30}>30 minutes</option></select>
+                <CfgCard title={t("General")}>
+                  <CfgRow title={t("Search key")} sub="Search apps, files and commands"><kbd className="rounded-md bg-white/10 px-2 py-1 text-xs font-semibold">Ctrl + K</kbd></CfgRow>
+                  <CfgRow title={t("24-hour clock")} sub="Switch between 24h and 12h time"><Switch on={settings.clock24} label="24-hour clock" onChange={(value) => patch({ clock24: value })} /></CfgRow>
+                  <CfgRow title={t("Date in the tray")} sub="Show the date under the time"><Switch on={settings.showDate} label="Date in the tray" onChange={(value) => patch({ showDate: value })} /></CfgRow>
+                  <CfgRow title={t("Desktop icons")} sub="Show app shortcuts on the desktop"><Switch on={settings.showIcons} label="Desktop icons" onChange={(value) => patch({ showIcons: value })} /></CfgRow>
+                  <CfgRow title={t("Desktop labels")} sub="Show names under desktop icons"><Switch on={settings.desktopLabels} label="Desktop labels" onChange={(value) => patch({ desktopLabels: value })} /></CfgRow>
+                  <CfgRow title={t("Skip start screen")} sub="Go straight to the lock screen when you open PRIVATE OS"><Switch on={settings.skipStart} label="Skip start screen" onChange={(value) => patch({ skipStart: value })} /></CfgRow>
+                  <CfgRow title={t("Auto-lock")} sub="Lock after you stop using it">
+                    <select aria-label="Auto-lock" value={settings.autoLock} onChange={(event) => patch({ autoLock: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>{t("Never")}</option><option value={1}>1 minute</option><option value={5}>5 minutes</option><option value={10}>10 minutes</option><option value={30}>30 minutes</option></select>
                   </CfgRow>
-                  <CfgRow title="Week starts on" sub="Used by the calendar widget">
-                    <select aria-label="Week starts on" value={settings.weekStart} onChange={(event) => patch({ weekStart: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>Sunday</option><option value={1}>Monday</option></select>
+                  <CfgRow title={t("Week starts on")} sub="Used by the calendar widget">
+                    <select aria-label="Week starts on" value={settings.weekStart} onChange={(event) => patch({ weekStart: Number(event.target.value) })} className="rounded-md bg-white/10 px-2 py-1 text-xs"><option value={0}>{t("Sunday")}</option><option value={1}>{t("Monday")}</option></select>
                   </CfgRow>
                 </CfgCard>
-                <CfgCard title="Appearance">
-                  <CfgRow title="Main color" sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
-                  <CfgRow title="Scroll bar color" sub="Tint applied to scroll bars"><input type="color" aria-label="Scroll bar color" value={settings.scrollAccent || "#9aa4ff"} onChange={(event) => patch({ scrollAccent: event.target.value })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
-                  <CfgRow title="Particles" sub="Soft dots drifting behind settings"><Switch on={settings.particles} label="Particles" onChange={(value) => patch({ particles: value })} /></CfgRow>
-                  <CfgRow title="Ambient glow" sub="Slow colour glow and floating dots on the desktop"><Switch on={settings.ambient} label="Ambient glow" onChange={(value) => patch({ ambient: value })} /></CfgRow>
+                <CfgCard title={t("Appearance")}>
+                  <CfgRow title={t("Main color")} sub="Used for highlights, toggles and selection"><input type="color" aria-label="Main color" value={settings.accent || "#f2c783"} onChange={(event) => patch({ accent: event.target.value, theme: "custom" })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
+                  <CfgRow title={t("Scroll bar color")} sub="Tint applied to scroll bars"><input type="color" aria-label="Scroll bar color" value={settings.scrollAccent || "#9aa4ff"} onChange={(event) => patch({ scrollAccent: event.target.value })} className="h-7 w-12 rounded bg-transparent" /></CfgRow>
+                  <CfgRow title={t("Particles")} sub="Soft dots drifting behind settings"><Switch on={settings.particles} label="Particles" onChange={(value) => patch({ particles: value })} /></CfgRow>
+                  <CfgRow title={t("Ambient glow")} sub="Slow colour glow and floating dots on the desktop"><Switch on={settings.ambient} label="Ambient glow" onChange={(value) => patch({ ambient: value })} /></CfgRow>
                 </CfgCard>
-                <CfgCard title="Interface">
-                  <CfgRow title="Large icons" sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
-                  <CfgSlider label="Dock size" value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
-                  <CfgRow title="Dock position" sub="Or drag the handle above the dock">
+                <CfgCard title={t("Interface")}>
+                  <CfgRow title={t("Large icons")} sub="Bigger dock and desktop icons"><Switch on={settings.bigIcons} label="Large icons" onChange={(value) => patch({ bigIcons: value })} /></CfgRow>
+                  <CfgSlider label={t("Dock size")} value={settings.dockScale} min={70} max={140} unit="%" onChange={(value) => patch({ dockScale: value })} />
+                  <CfgRow title={t("Dock position")} sub="Or drag the handle above the dock">
                     <div className="flex gap-1">{(["bottom", "top", "right"] as const).map((pos) => <button key={pos} type="button" onClick={() => patch({ dockPos: pos })} className={`${btn} capitalize ${settings.dockPos === pos ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{pos}</button>)}</div>
                   </CfgRow>
                 </CfgCard>
-                <CfgCard title="Windows">
-                  <CfgRow title="Title bar buttons" sub="Bigger buttons are easier to click">
+                <CfgCard title={t("Windows")}>
+                  <CfgRow title={t("Title bar buttons")} sub="Bigger buttons are easier to click">
                     <div className="flex gap-1">{(["compact", "comfortable", "large"] as const).map((size) => <button key={size} type="button" onClick={() => patch({ titleButtons: size })} className={`${btn} capitalize ${settings.titleButtons === size ? "bg-primary text-primary-foreground" : "bg-white/10"}`}>{size}</button>)}</div>
                   </CfgRow>
                 </CfgCard>
-                <CfgCard title="Accessibility">
-                  <CfgRow title="Reduce motion" sub="Turns off animations and transitions"><Switch on={settings.reduceMotion} label="Reduce motion" onChange={(value) => patch({ reduceMotion: value })} /></CfgRow>
-                  <CfgRow title="Mint cursors" sub="Off uses your system cursor"><Switch on={!settings.nativeCursor} label="Mint cursors" onChange={(value) => patch({ nativeCursor: !value })} /></CfgRow>
+                <CfgCard title={t("Accessibility")}>
+                  <CfgRow title={t("Reduce motion")} sub="Turns off animations and transitions"><Switch on={settings.reduceMotion} label="Reduce motion" onChange={(value) => patch({ reduceMotion: value })} /></CfgRow>
+                  <CfgRow title={t("Mint cursors")} sub="Off uses your system cursor"><Switch on={!settings.nativeCursor} label="Mint cursors" onChange={(value) => patch({ nativeCursor: !value })} /></CfgRow>
                 </CfgCard>
-                <CfgCard title="Reset">
-                  <button type="button" onClick={resetDefaults} className={`${btn} w-full bg-white/10 py-2`}>Reset look and widgets</button>
-                  <button type="button" onClick={() => { if (!window.confirm("Erase all PRIVATE OS data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ } window.setTimeout(() => window.location.reload(), 200); }} className="w-full rounded-lg bg-red-600 py-2.5 text-xs font-bold text-white">Clear all data</button>
+                <CfgCard title={t("Reset")}>
+                  <button type="button" onClick={resetDefaults} className={`${btn} w-full bg-white/10 py-2`}>{t("Reset look and widgets")}</button>
+                  <button type="button" onClick={() => { if (!window.confirm("Erase all PRIVATE OS data in this browser?")) return; try { localStorage.clear(); sessionStorage.clear(); } catch { /* ignore */ } window.setTimeout(() => window.location.reload(), 200); }} className="w-full rounded-lg bg-red-600 py-2.5 text-xs font-bold text-white">{t("Clear all data")}</button>
                   <p className="text-[10px] text-muted-foreground">Wipes wallpapers, files, notes and settings stored in this browser.</p>
                 </CfgCard>
               </div>
               <aside className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />System Logs</h4>
+                <h4 className="mb-3 flex items-center gap-2 text-[11px] font-semibold"><span className="h-3 w-0.5 rounded bg-primary" />{t("System Logs")}</h4>
                 <ol className="space-y-1 font-mono text-[10px] text-muted-foreground">{logs.map((line, index) => <li key={index}><span className="mr-2 opacity-50">{String(index + 1).padStart(4, "0")}</span>{line}</li>)}</ol>
               </aside>
             </div>
@@ -5110,7 +5188,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
         return <button key={item.id} type="button" onClick={() => setPage(item.id)} aria-current={on ? "page" : undefined} className={`flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[11px] font-semibold ${on ? "bg-primary/15 shadow-[inset_2px_0_0_var(--primary)]" : "text-muted-foreground hover:bg-white/5 hover:text-foreground"}`}><Icon className="size-3.5" /><span className="flex-1">{item.label}</span>{(categoryCounts[item.id] ?? 0) > 0 && <span className="text-[9px] tabular-nums text-muted-foreground">{categoryCounts[item.id]}</span>}</button>;
       })}
       <div className="mt-auto hidden space-y-2 md:block">
-        <button type="button" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true }))} className="flex w-full items-center gap-2 rounded-lg border border-white/[.07] px-2.5 py-2 text-[10px] text-muted-foreground hover:bg-white/5"><Search className="size-3" aria-hidden />Quick switch<span className="ml-auto rounded bg-white/10 px-1 text-[9px]">Ctrl K</span></button>
+        <button type="button" onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", code: "KeyK", ctrlKey: true }))} className="flex w-full items-center gap-2 rounded-lg border border-white/[.07] px-2.5 py-2 text-[10px] text-muted-foreground hover:bg-white/5"><Search className="size-3" aria-hidden />{t("Quick switch")}<span className="ml-auto rounded bg-white/10 px-1 text-[9px]">Ctrl K</span></button>
         <div className="flex items-center gap-2 rounded-lg border border-white/[.07] p-2"><span className="grid size-7 place-items-center rounded-lg bg-primary/25 text-[11px] font-bold text-primary">P</span><div><p className="text-[10px] font-semibold">private</p><p className="text-[9px] text-muted-foreground">Local profile</p></div></div>
       </div>
     </aside>
@@ -5119,9 +5197,9 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
     <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 border-b border-white/[.06] bg-[#0d0e14] px-4 py-2">
       <span className="flex items-center gap-2 text-[11px] text-muted-foreground"><current.icon className="size-3.5" />{current.title}</span>
       <div className="ml-auto flex items-center gap-2">
-        <label className="flex w-40 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5 sm:w-60"><Search className="size-3.5 text-muted-foreground" aria-hidden /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && navShown[0]) { setPage(navShown[0].id); setQuery(""); } }} placeholder="Search modules or settings…" className="h-8 w-full bg-transparent text-[11px] outline-none" /></label>
+        <label className="flex w-40 items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-2.5 sm:w-60"><Search className="size-3.5 text-muted-foreground" aria-hidden /><input aria-label="Search settings" value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && navShown[0]) { setPage(navShown[0].id); setQuery(""); } }} placeholder={t("Search modules or settings…")} className="h-8 w-full bg-transparent text-[11px] outline-none" /></label>
         <div className="relative">
-          <button type="button" aria-haspopup="true" aria-expanded={qcOpen} onClick={() => setQcOpen((value) => !value)} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-[11px] font-semibold"><Save className="size-3.5" aria-hidden />Quick configs<ChevronDown className="size-3" aria-hidden /></button>
+          <button type="button" aria-haspopup="true" aria-expanded={qcOpen} onClick={() => setQcOpen((value) => !value)} className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 text-[11px] font-semibold"><Save className="size-3.5" aria-hidden />{t("Quick configs")}<ChevronDown className="size-3" aria-hidden /></button>
           {qcOpen && (
             <div role="dialog" aria-label="Quick configs" className="absolute right-0 top-full z-30 mt-2 w-72 rounded-xl border border-white/10 bg-[#14151d] p-3 shadow-2xl [animation:window-in_.18s_cubic-bezier(.22,1,.36,1)]">
               <div className="flex items-start gap-2"><Save className="mt-0.5 size-4 text-primary" aria-hidden /><div className="flex-1"><p className="text-xs font-bold">Quick configs</p><p className="text-[9px] text-muted-foreground">Your personal library</p></div><button type="button" aria-label="Close quick configs" onClick={() => setQcOpen(false)} className="rounded p-1 hover:bg-white/10"><X className="size-3.5" /></button></div>

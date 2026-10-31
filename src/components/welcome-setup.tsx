@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Gauge, Monitor, Sparkles, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Gauge, Languages, Monitor, Sparkles, Volume2 } from "lucide-react";
+import { LANGUAGES, t, textDir, type Lang } from "@/lib/i18n";
 
-// First-run setup, shown once after the first boot: hello, pick an OS, name, look, preferences, finish.
+// First-run setup, shown once after the first boot: hello, language, pick an OS, name, look, preferences, finish.
 // The OS, the name and the theme are required; Next stays off until each is chosen.
+// The language applies to the whole OS as soon as it is picked, so the rest of setup is already in it.
 
 export type Edition = "private" | "nova";
-export type WelcomeResult = { edition: Edition; userName: string; theme: string; accent: string; novaTheme: string; uiStyle: "classic" | "modern"; uiSounds: boolean; lite: boolean; reduceMotion: boolean };
+export type WelcomeResult = { edition: Edition; userName: string; theme: string; accent: string; novaTheme: string; uiStyle: "classic" | "modern"; uiSounds: boolean; lite: boolean; reduceMotion: boolean; language: Lang };
 type ThemeChoice = { id: string; name: string; sub: string; accent: string; glass?: boolean; colors?: string[] | undefined };
 
 const HELLOS = ["Hello", "Bonjour", "Hola", "مرحبا", "Ciao", "こんにちは", "Hallo", "Olá", "Привет", "안녕하세요"];
-const STEPS = ["Welcome", "System", "Name", "Look", "Preferences", "Ready"];
+const STEPS = ["Welcome", "Language", "System", "Name", "Look", "Preferences", "Ready"];
 const LAST = STEPS.length - 1;
+const LANG_STEP = 1;
+const OS_STEP = 2;
+const NAME_STEP = 3;
+const LOOK_STEP = 4;
+const PREFS_STEP = 5;
 
-export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes: ThemeChoice[]; novaThemes: ThemeChoice[]; onDone: (result: WelcomeResult) => void; lowPower: boolean }) {
+export function WelcomeSetup({ themes, novaThemes, onDone, lowPower, language, setLanguage }: { themes: ThemeChoice[]; novaThemes: ThemeChoice[]; onDone: (result: WelcomeResult) => void; lowPower: boolean; language: Lang; setLanguage: (lang: Lang) => void }) {
   const [step, setStep] = useState(0);
   const [hello, setHello] = useState(0);
   const [edition, setEdition] = useState<Edition | null>(null);
@@ -29,7 +36,7 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
 
   const nova = edition === "nova";
   const list = nova ? novaThemes : themes.slice(0, 12);
-  const canNext = step === 1 ? edition !== null : step === 2 ? name.trim().length > 0 : step === 3 ? theme !== null : true;
+  const canNext = step === OS_STEP ? edition !== null : step === NAME_STEP ? name.trim().length > 0 : step === LOOK_STEP ? theme !== null : true;
 
   useEffect(() => {
     if (step !== 0) return;
@@ -50,16 +57,17 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
         userName: name.trim(),
         theme: nova ? "private" : theme.id,
         accent: nova ? "" : theme.accent,
-        novaTheme: nova ? theme.id : "prestige",
+        novaTheme: nova ? theme.id : "eclipse",
         uiStyle,
         uiSounds,
         lite,
         reduceMotion,
+        language,
       }), 450);
       return () => window.clearTimeout(timer);
     }
     return undefined;
-  }, [step, progress, edition, nova, name, theme, uiStyle, uiSounds, lite, reduceMotion]);
+  }, [step, progress, edition, nova, name, theme, uiStyle, uiSounds, lite, reduceMotion, language]);
 
   // Choosing the other OS resets the theme, because each OS has its own themes.
   const pickEdition = (value: Edition) => {
@@ -93,7 +101,7 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
   const accent = theme?.accent || (nova ? "#5eead4" : "#f2c783");
 
   return (
-    <div role="dialog" aria-label="Set up your computer" className="welcome-root fixed inset-0 z-[90] flex items-center justify-center overflow-hidden bg-black text-white" style={{ "--wa": accent } as React.CSSProperties}>
+    <div role="dialog" aria-label={t("Set up your computer")} className="welcome-root fixed inset-0 z-[90] flex items-center justify-center overflow-hidden bg-black text-white" style={{ "--wa": accent } as React.CSSProperties}>
       <div aria-hidden className="welcome-orb welcome-orb-a" />
       <div aria-hidden className="welcome-orb welcome-orb-b" />
       <div aria-hidden className="welcome-orb welcome-orb-c" />
@@ -101,34 +109,30 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
       {step === 0 ? (
         <div className="relative z-10 flex flex-col items-center text-center">
           <h1 key={hello} className="welcome-hello text-[clamp(3rem,12vw,7rem)] font-semibold leading-none tracking-tight">{HELLOS[hello]}</h1>
-          <p className="mt-6 text-sm text-white/60 [animation:rise_.8s_.4s_both]">Let's set up your computer</p>
-          <button type="button" onClick={next} className="welcome-cta mt-10 flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold [animation:rise_.8s_.8s_both]">Get started <ArrowRight className="size-4" /></button>
+          <p dir={textDir()} className="mt-6 text-sm text-white/60 [animation:rise_.8s_.4s_both]">{t("Let's set up your computer")}</p>
+          <button type="button" onClick={next} className="welcome-cta mt-10 flex items-center gap-2 rounded-full px-7 py-3 text-sm font-semibold [animation:rise_.8s_.8s_both]">{t("Get started")} <ArrowRight className="size-4" /></button>
         </div>
       ) : (
-        <div key={step} className={`welcome-card relative z-10 rounded-[28px] p-7 ${step === 1 ? "w-[min(46rem,calc(100%-2rem))]" : "w-[min(34rem,calc(100%-2rem))]"}`}>
-          <div className="mb-6 flex items-center gap-1.5" aria-label={`Step ${step} of ${LAST}`}>
+        <div key={step} dir={textDir()} className={`welcome-card relative z-10 rounded-[28px] p-7 ${step === OS_STEP ? "w-[min(46rem,calc(100%-2rem))]" : "w-[min(34rem,calc(100%-2rem))]"}`}>
+          <div className="mb-6 flex items-center gap-1.5" aria-label={t("Step {n} of {total}", { n: step, total: LAST })}>
             {STEPS.slice(1).map((label, index) => <span key={label} className={`h-1 flex-1 rounded-full transition-all duration-500 ${index < step ? "bg-[var(--wa)]" : "bg-white/15"}`} />)}
           </div>
 
-          {step === 1 && (
+          {step === LANG_STEP && (
             <div className="stagger">
-              <h2 className="text-2xl font-semibold">Choose your operating system</h2>
-              <p className="mt-1.5 text-sm text-white/55">Both have every app. You can switch later in Settings.</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {([
-                  ["private", "PRIVATE OS", "The classic", "Windows-style taskbar and Start menu, your photo wallpapers, and the look you know."],
-                  ["nova", "NOVA OS", "Reimagined", "Live wallpapers, a Dynamic Island, a magnifying dock, Overview, Nova Search, new apps and smoother animations."],
-                ] as const).map(([id, title, tag, sub]) => {
-                  const on = edition === id;
+              <h2 className="flex items-center gap-2.5 text-2xl font-semibold"><Languages className="size-6 text-[var(--wa)]" />{t("Choose your language")}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{t("Menus, setup and the desktop use this language. You can change it any time in Settings.")}</p>
+              <div role="radiogroup" aria-label={t("Language")} className="mt-5 grid grid-cols-2 gap-2">
+                {LANGUAGES.map((item) => {
+                  const on = item.id === language;
                   return (
-                    <button key={id} type="button" aria-pressed={on} onClick={() => pickEdition(id)} className={`welcome-os group relative rounded-[22px] border p-2.5 text-left transition-all ${on ? "border-[var(--wa)] bg-white/10" : "border-white/10 bg-white/[.03] hover:bg-white/[.07]"}`}>
-                      <OsPreview kind={id} />
-                      <span className="mt-3 flex items-center gap-2 px-1">
-                        <span className="text-[15px] font-semibold tracking-wide">{title}</span>
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${id === "nova" ? "bg-gradient-to-r from-teal-300 to-violet-400 text-black" : "bg-white/15 text-white/80"}`}>{id === "nova" ? "NEW" : tag}</span>
-                        {on && <Check className="ml-auto size-4 text-[var(--wa)]" />}
+                    <button key={item.id} type="button" role="radio" aria-checked={on} lang={item.id} onClick={() => setLanguage(item.id)} className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 text-start transition-all ${on ? "border-[var(--wa)] bg-white/10" : "border-white/10 bg-white/[.03] hover:bg-white/[.07]"}`}>
+                      <span className="grid h-7 w-10 shrink-0 place-items-center rounded-lg bg-white/10 text-[10px] font-bold tracking-wider text-white/70">{item.abbr}</span>
+                      <span className="min-w-0 flex-1">
+                        <span dir={item.id === "ar" ? "rtl" : "ltr"} className="block text-sm font-semibold">{item.name}</span>
+                        <span className="block text-[11px] text-white/45">{item.english}</span>
                       </span>
-                      <span className="mt-1 block px-1 pb-1 text-[12px] leading-snug text-white/55">{sub}</span>
+                      {on && <Check className="size-4 shrink-0 text-[var(--wa)]" />}
                     </button>
                   );
                 })}
@@ -136,19 +140,45 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
             </div>
           )}
 
-          {step === 2 && (
+          {step === OS_STEP && (
             <div className="stagger">
-              <h2 className="text-2xl font-semibold">What should we call you?</h2>
-              <p className="mt-1.5 text-sm text-white/55">Your name shows on the lock screen. It stays on this device.</p>
-              <input autoFocus value={name} onChange={(event) => setName(event.target.value.slice(0, 24))} placeholder="Your name" aria-label="Your name" aria-required className={`mt-6 h-12 w-full rounded-2xl border bg-white/5 px-4 text-base outline-none transition-colors focus:border-[var(--wa)] ${nudge ? "welcome-shake border-red-400/70" : "border-white/15"}`} />
-              {nudge && <p className="mt-2 text-xs text-red-300">Please enter a name to continue.</p>}
+              <h2 className="text-2xl font-semibold">{t("Choose your operating system")}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{t("Both have every app. You can switch later in Settings.")}</p>
+              <div dir="ltr" className="mt-5 grid gap-3 sm:grid-cols-2">
+                {([
+                  ["private", "PRIVATE OS", t("The classic"), t("Windows-style taskbar and Start menu, your photo wallpapers, and the look you know.")],
+                  ["nova", "NOVA OS", t("Reimagined"), t("Live wallpapers, a Dynamic Island, a magnifying dock, Overview, Nova Search, new apps and smoother animations.")],
+                ] as const).map(([id, title, tag, sub]) => {
+                  const on = edition === id;
+                  return (
+                    <button key={id} type="button" aria-pressed={on} onClick={() => pickEdition(id)} className={`welcome-os group relative rounded-[22px] border p-2.5 text-left transition-all ${on ? "border-[var(--wa)] bg-white/10" : "border-white/10 bg-white/[.03] hover:bg-white/[.07]"}`}>
+                      <OsPreview kind={id} />
+                      <span className="mt-3 flex items-center gap-2 px-1">
+                        <span className="text-[15px] font-semibold tracking-wide">{title}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${id === "nova" ? "bg-gradient-to-r from-teal-300 to-violet-400 text-black" : "bg-white/15 text-white/80"}`}>{id === "nova" ? t("NEW") : tag}</span>
+                        {on && <Check className="ml-auto size-4 text-[var(--wa)]" />}
+                      </span>
+                      <span dir={textDir()} className="mt-1 block px-1 pb-1 text-start text-[12px] leading-snug text-white/55">{sub}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {step === 3 && (
+          {step === NAME_STEP && (
             <div className="stagger">
-              <h2 className="text-2xl font-semibold">Choose your look</h2>
-              <p className="mt-1.5 text-sm text-white/55">{nudge ? <span className="text-red-300">Pick a theme to continue.</span> : nova ? "Each NOVA theme has its own live wallpaper." : "You can change it any time in Settings."}</p>
+              <h2 className="text-2xl font-semibold">{t("What should we call you?")}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{t("Your name shows on the lock screen. It stays on this device.")}</p>
+              <input autoFocus value={name} onChange={(event) => setName(event.target.value.slice(0, 24))} placeholder={t("Your name")} aria-label={t("Your name")} aria-required className={`mt-6 h-12 w-full rounded-2xl border bg-white/5 px-4 text-base outline-none transition-colors focus:border-[var(--wa)] ${nudge ? "welcome-shake border-red-400/70" : "border-white/15"}`} />
+              {nudge && <p className="mt-2 text-xs text-red-300">{t("Please enter a name to continue.")}</p>}
+            </div>
+          )}
+
+          {step === LOOK_STEP && (
+            <div className="stagger">
+              <h2 className="text-2xl font-semibold">{t("Choose your look")}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{nudge ? <span className="text-red-300">{t("Pick a theme to continue.")}</span> : nova ? t("Each NOVA theme has its own live wallpaper.") : t("You can change it any time in Settings.")}</p>
               <div className={`mt-5 grid max-h-[38dvh] grid-cols-3 gap-2 overflow-auto pr-1 sm:grid-cols-4 ${nudge ? "welcome-shake" : ""}`}>
                 {list.map((item) => {
                   const on = item.id === theme?.id;
@@ -169,21 +199,21 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
               {!nova && (
                 <div className="mt-4 grid grid-cols-2 gap-2">
                   {(["classic", "modern"] as const).map((style) => (
-                    <button key={style} type="button" aria-pressed={uiStyle === style} onClick={() => setUiStyle(style)} className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-xs font-semibold capitalize transition-colors ${uiStyle === style ? "border-[var(--wa)] bg-white/10" : "border-white/10 hover:bg-white/5"}`}><Monitor className="size-4" />{style} interface</button>
+                    <button key={style} type="button" aria-pressed={uiStyle === style} onClick={() => setUiStyle(style)} className={`flex items-center gap-2 rounded-2xl border px-3 py-2.5 text-xs font-semibold transition-colors ${uiStyle === style ? "border-[var(--wa)] bg-white/10" : "border-white/10 hover:bg-white/5"}`}><Monitor className="size-4" />{style === "classic" ? t("Classic interface") : t("Modern interface")}</button>
                   ))}
                 </div>
               )}
             </div>
           )}
 
-          {step === 4 && (
+          {step === PREFS_STEP && (
             <div className="stagger">
-              <h2 className="text-2xl font-semibold">A few preferences</h2>
-              <p className="mt-1.5 text-sm text-white/55">{lowPower ? "This device looks low-power, so Optimize is already on." : "Pick what feels right."}</p>
+              <h2 className="text-2xl font-semibold">{t("A few preferences")}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{lowPower ? t("This device looks low-power, so Optimize is already on.") : t("Pick what feels right.")}</p>
               <div className="mt-5 space-y-2">
-                <Pref icon={Volume2} title="Interface sounds" sub="Soft clicks and hovers" on={uiSounds} set={setUiSounds} />
-                <Pref icon={Gauge} title="Optimize for speed" sub="Turns off blur and glow on slow PCs" on={lite} set={setLite} />
-                <Pref icon={Sparkles} title="Reduce motion" sub="Fewer animations" on={reduceMotion} set={setReduceMotion} />
+                <Pref icon={Volume2} title={t("Interface sounds")} sub={t("Soft clicks and hovers")} on={uiSounds} set={setUiSounds} />
+                <Pref icon={Gauge} title={t("Optimize for speed")} sub={t("Turns off blur and glow on slow PCs")} on={lite} set={setLite} />
+                <Pref icon={Sparkles} title={t("Reduce motion")} sub={t("Fewer animations")} on={reduceMotion} set={setReduceMotion} />
               </div>
             </div>
           )}
@@ -191,16 +221,16 @@ export function WelcomeSetup({ themes, novaThemes, onDone, lowPower }: { themes:
           {step === LAST && (
             <div className="py-4 text-center">
               <div className="welcome-ring mx-auto grid size-20 place-items-center rounded-full">{progress >= 100 ? <Check className="size-9 [animation:tile-pop_.3s_ease-out]" /> : <span className="text-sm font-semibold">{progress}%</span>}</div>
-              <h2 className="mt-5 text-2xl font-semibold">Hi {name.trim()}</h2>
-              <p className="mt-1.5 text-sm text-white/55">{progress < 40 ? (nova ? "Building NOVA OS for you…" : "Setting things up for you…") : progress < 80 ? "Applying your theme…" : progress < 100 ? "Almost there…" : "All set"}</p>
+              <h2 className="mt-5 text-2xl font-semibold">{t("Hi {name}", { name: name.trim() })}</h2>
+              <p className="mt-1.5 text-sm text-white/55">{progress < 40 ? (nova ? t("Building NOVA OS for you…") : t("Setting things up for you…")) : progress < 80 ? t("Applying your theme…") : progress < 100 ? `${t("Almost there")}…` : t("All set")}</p>
               <div className="mx-auto mt-5 h-1 w-48 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-[var(--wa)] transition-[width] duration-100" style={{ width: `${progress}%` }} /></div>
             </div>
           )}
 
           {step < LAST && (
             <div className="mt-7 flex items-center justify-between">
-              <button type="button" onClick={back} className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/60 hover:bg-white/10 hover:text-white"><ArrowLeft className="size-3.5" />Back</button>
-              <button type="button" onClick={next} aria-disabled={!canNext} className={`welcome-cta flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold transition-opacity ${canNext ? "" : "opacity-40"}`}>{step === 4 ? "Finish" : "Next"}<ArrowRight className="size-3.5" /></button>
+              <button type="button" onClick={back} className="flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-white/60 hover:bg-white/10 hover:text-white"><ArrowLeft className="size-3.5 rtl:rotate-180" />{t("Back")}</button>
+              <button type="button" onClick={next} aria-disabled={!canNext} className={`welcome-cta flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold transition-opacity ${canNext ? "" : "opacity-40"}`}>{step === PREFS_STEP ? t("Finish") : t("Next")}<ArrowRight className="size-3.5 rtl:rotate-180" /></button>
             </div>
           )}
         </div>
@@ -237,7 +267,7 @@ function Pref({ icon: Icon, title, sub, on, set }: { icon: typeof Gauge; title: 
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={title} onClick={() => set(!on)} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[.03] px-3.5 py-3 text-left transition-colors hover:bg-white/[.07]">
       <Icon className="size-5 shrink-0 text-[var(--wa)]" />
-      <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{title}</span><span className="block text-[11px] text-white/50">{sub}</span></span>
+      <span className="min-w-0 flex-1 text-start"><span className="block text-sm font-semibold">{title}</span><span className="block text-[11px] text-white/50">{sub}</span></span>
       <span className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${on ? "bg-[var(--wa)]" : "bg-white/15"}`}><span className={`absolute top-0.5 size-5 rounded-full bg-white shadow transition-[left] duration-200 ${on ? "left-[22px]" : "left-0.5"}`} /></span>
     </button>
   );

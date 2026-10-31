@@ -7,7 +7,7 @@ import type { NovaTheme } from "@/components/nova-shell";
 
 export type NovaWall = { id: string; name: string; sub: string };
 export const NOVA_WALLS: NovaWall[] = [
-  { id: "prestige", name: "Prestige", sub: "Indigo glow on midnight" },
+  { id: "eclipse", name: "Eclipse", sub: "Indigo glow on midnight" },
   { id: "aurora", name: "Aurora", sub: "Northern lights over the ridge" },
   { id: "fluid", name: "Fluid", sub: "Slow liquid colour" },
   { id: "dunes", name: "Dunes", sub: "Desert at sunset" },
@@ -503,9 +503,9 @@ function Bloom({ pal }: { pal: Pal }) {
 }
 
 // Midnight navy with two slow, breathing indigo glows, a fine grid and a passing glint. Pure CSS, so it is light.
-function Prestige({ pal }: { pal: Pal }) {
+function Eclipse({ pal }: { pal: Pal }) {
   return (
-    <div className="nw-prestige absolute inset-0" style={{ "--pa": pal.a, "--pb": pal.b, "--pc": pal.c, background: `radial-gradient(120% 90% at 50% 0%, ${mix(pal.base, pal.a, 0.12)}, ${pal.base} 62%)` } as CSSProperties}>
+    <div className="nw-eclipse absolute inset-0" style={{ "--pa": pal.a, "--pb": pal.b, "--pc": pal.c, background: `radial-gradient(120% 90% at 50% 0%, ${mix(pal.base, pal.a, 0.12)}, ${pal.base} 62%)` } as CSSProperties}>
       <span className="nw-pg nw-pg-a" />
       <span className="nw-pg nw-pg-b" />
       <span className="nw-pg nw-pg-c" />
@@ -529,8 +529,8 @@ export function NovaWallpaper({ theme, wall = "aurora", photo, video, still = fa
             <SceneCanvas id={scene} pal={pal} still={still} />
             {scene === "aurora" && <Ridges pal={pal} />}
           </>
-        ) : scene === "prestige" ? (
-          <Prestige pal={pal} />
+        ) : scene === "eclipse" ? (
+          <Eclipse pal={pal} />
         ) : scene === "dunes" ? (
           <Dunes pal={pal} />
         ) : scene === "planet" ? (

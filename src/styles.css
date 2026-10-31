@@ -869,7 +869,7 @@ main[data-nova]:is([data-lite], [data-reduce]) .nova-saver-clock { animation: no
 @media (prefers-reduced-motion: reduce) { .chat-bubble { animation: none; } }
 
 /* ======================================================================
-   NOVA OS 4.0 "Prestige": DM Sans and DM Serif Display, navy glass with indigo
+   NOVA OS 4.0 "Eclipse": DM Sans and DM Serif Display, navy glass with indigo
    hairlines, expo-out motion (cubic-bezier(.16, 1, .3, 1)), letter-by-letter
    headings, rising fades, glints on primary buttons and breathing glows.
    ====================================================================== */
@@ -1040,7 +1040,7 @@ main[data-nova][data-lite] .nova-dock4[data-style="float"], main[data-nova][data
 .nsx-mini-dock.is-left .nsx-mini-app, .nsx-mini-dock.is-left .nsx-mini-tool { width: 70%; height: auto; }
 .nsx-mini-dock.is-left.is-bar { top: 0; bottom: 0; left: 0; justify-content: center; border-radius: 0; transform: none; }
 
-/* NOVA Settings app in the Prestige style */
+/* NOVA Settings app in the Eclipse style */
 .nsx-root { --line: color-mix(in oklab, var(--primary) 20%, transparent); }
 .nsx-pane, .nsx-tile { border-color: var(--line); transition: border-color .45s var(--ease), transform .45s var(--ease), box-shadow .45s var(--ease); }
 .nsx-pane:hover { border-color: color-mix(in oklab, var(--primary) 34%, transparent); }
@@ -1051,8 +1051,8 @@ main[data-nova][data-lite] .nova-dock4[data-style="float"], main[data-nova][data
 .nsx-chip.is-on { color: #07091a; }
 .nsx-toggle > span { transition: transform .5s var(--ease), width .3s var(--ease); }
 
-/* The Prestige wallpaper */
-.nw-prestige { overflow: hidden; }
+/* The Eclipse wallpaper */
+.nw-eclipse { overflow: hidden; }
 .nw-pg { position: absolute; border-radius: 50%; filter: blur(60px); mix-blend-mode: screen; will-change: transform; }
 .nw-pg-a { width: 62vmax; height: 62vmax; left: -14vmax; top: -24vmax; background: radial-gradient(circle, color-mix(in oklab, var(--pa) 85%, transparent), transparent 62%); animation: nova-glow-breathe 8s ease-in-out infinite; }
 .nw-pg-b { width: 54vmax; height: 54vmax; right: -16vmax; bottom: -26vmax; background: radial-gradient(circle, color-mix(in oklab, var(--pb) 90%, transparent), transparent 62%); animation: nova-glow-breathe 11s ease-in-out infinite reverse; }

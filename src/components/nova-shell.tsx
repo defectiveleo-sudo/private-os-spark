@@ -1,6 +1,7 @@
 import { NOVA_WALLS, NovaWallpaper, novaWallName } from "@/components/nova-walls";
 import { AlphaBadge, AlphaWatermark } from "@/components/release";
 import { NovaDock, type DockItem } from "@/components/nova-dock";
+import { comma, locale, t, textDir, tx, upper, windowsCount, type Lang, type TKey } from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
 import {
   BatteryFull,
@@ -52,7 +53,9 @@ import {
 // Nova Search, Control Center, Overview with live windows, and its own lock and boot screens.
 
 type Icon = ComponentType<{ className?: string }>;
-export type NovaApp = { id: string; label: string; icon: Icon };
+// `label` is in the interface language; `en` keeps the English name so search finds both.
+export type NovaApp = { id: string; label: string; icon: Icon; en?: string };
+const appFind = (app: NovaApp, query: string) => `${app.label} ${app.en ?? ""}`.toLowerCase().includes(query);
 export type NovaTheme = { id: string; name: string; sub: string; accent: string; base: string; colors: [string, string, string] };
 export type NovaSettings = {
   novaTheme: string;
@@ -86,10 +89,11 @@ export type NovaSettings = {
   lite: boolean;
   uiSounds: boolean;
   soundVolume: number;
+  language: Lang;
 };
 
 export const NOVA_THEMES: NovaTheme[] = [
-  { id: "prestige", name: "Prestige", sub: "Indigo on midnight", accent: "#8b80ff", base: "#060818", colors: ["#6352ff", "#1e2a78", "#a78bfa"] },
+  { id: "eclipse", name: "Eclipse", sub: "Indigo on midnight", accent: "#8b80ff", base: "#060818", colors: ["#6352ff", "#1e2a78", "#a78bfa"] },
   { id: "aurora", name: "Aurora", sub: "Northern lights", accent: "#5eead4", base: "#04060e", colors: ["#10b981", "#3b82f6", "#a855f7"] },
   { id: "nebula", name: "Nebula", sub: "Deep space violet", accent: "#c4b5fd", base: "#07040f", colors: ["#7c3aed", "#db2777", "#1d4ed8"] },
   { id: "ember", name: "Ember", sub: "Glowing coals", accent: "#fdba74", base: "#0c0503", colors: ["#ea580c", "#be123c", "#f59e0b"] },
@@ -160,7 +164,7 @@ export function novaVars(theme: NovaTheme): CSSProperties {
   } as CSSProperties;
 }
 
-const CATEGORIES: { id: string; label: string; icon: Icon; ids: string[] }[] = [
+const CATEGORIES: { id: string; label: TKey; icon: Icon; ids: string[] }[] = [
   { id: "work", label: "Work", icon: Briefcase, ids: ["writer", "sheets", "slides", "pdfreader", "notes", "mail", "todo", "calendar", "files", "contacts", "sticky", "messages", "chat"] },
   { id: "create", label: "Create", icon: Brush, ids: ["paint", "recorder", "camera", "photos", "media", "soundscapes"] },
   { id: "web", label: "Web", icon: Globe2, ids: ["browser", "figure", "beez", "youtube", "cherrion", "maps", "weather"] },
@@ -189,11 +193,11 @@ export function NovaMark({ className = "size-5" }: { className?: string }) {
 
 export { NovaWallpaper };
 
-function greetingFor(hour: number) {
-  if (hour < 5) return "Good night";
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+export function greetingFor(hour: number) {
+  if (hour < 5) return t("Good night");
+  if (hour < 12) return t("Good morning");
+  if (hour < 18) return t("Good afternoon");
+  return t("Good evening");
 }
 
 function chime() {
@@ -346,7 +350,7 @@ export function NovaShell(p: NovaShellProps) {
 
   const wasLocked = useRef(p.locked);
   useEffect(() => {
-    if (wasLocked.current && !p.locked) notify(settings.userName ? `Welcome back, ${settings.userName}` : "Welcome to Nova", "Press Ctrl+K to search anything");
+    if (wasLocked.current && !p.locked) notify(settings.userName ? t("Welcome back, {name}", { name: settings.userName }) : t("Welcome to Nova"), t("Press Ctrl+K to search anything"));
     wasLocked.current = p.locked;
   }, [p.locked, notify, settings.userName]);
 
@@ -358,7 +362,7 @@ export function NovaShell(p: NovaShellProps) {
       if (at >= timer.end) {
         setTimer(null);
         chime();
-        notify("Focus session complete", "Nice work. Take a short break.");
+        notify(t("Focus session complete"), t("Nice work. Take a short break."));
       }
     }, 500);
     return () => window.clearInterval(interval);
@@ -367,7 +371,7 @@ export function NovaShell(p: NovaShellProps) {
   const startTimer = (minutes: number) => {
     setTimer({ end: Date.now() + minutes * 60000, total: minutes * 60000 });
     setNow(Date.now());
-    notify(`Focus for ${minutes} minutes`, "The island counts down. Notifications stay quiet if Focus is on.");
+    notify(t("Focus for {n} minutes", { n: minutes }), t("The island counts down. Notifications stay quiet if Focus is on."));
   };
 
   // Wallpaper shuffle: moves to the next live scene every few minutes.
@@ -589,8 +593,8 @@ export function NovaShell(p: NovaShellProps) {
   // ---- Clock and dates ----
   const hour12 = !settings.clock24;
   const clock = time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12, timeZone: zone });
-  const shortDate = time.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", timeZone: zone });
-  const longDate = time.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long", timeZone: zone });
+  const shortDate = time.toLocaleDateString(locale(), { weekday: "short", day: "numeric", month: "short", timeZone: zone });
+  const longDate = time.toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long", timeZone: zone });
   const hourNow = Number(time.toLocaleTimeString("en-GB", { hour: "2-digit", hour12: false, timeZone: zone }).slice(0, 2));
   const remaining = timer ? Math.max(0, timer.end - now) : 0;
   const mmss = `${String(Math.floor(remaining / 60000)).padStart(2, "0")}:${String(Math.floor((remaining % 60000) / 1000)).padStart(2, "0")}`;
@@ -598,12 +602,12 @@ export function NovaShell(p: NovaShellProps) {
   // ---- Dock ----
   const dockIds = [...settings.novaPins, ...p.openWins.filter((id) => !settings.novaPins.includes(id))];
   const appMenu = (id: string, running: boolean): MenuItem[] => [
-    { label: running ? "Show" : "Open", icon: AppWindowIcon, run: () => launch(id) },
-    ...(running ? [{ label: "Minimize", icon: SquareStack, run: () => p.minimize(id) }, { label: "Quit", icon: X, run: () => p.closeWindow(id), danger: true }] : []),
-    { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
-    { label: settings.novaIcons.includes(id) ? "Remove from desktop" : "Add to desktop", icon: LayoutDashboard, run: () => onDesktop(id) },
-    ...(running ? [{ label: (spaceOf[id] ?? 0) + 1 < spaceCount ? `Move to Space ${(spaceOf[id] ?? 0) + 2}` : "Move to a new Space", icon: Layers, run: () => moveToSpace(id, (spaceOf[id] ?? 0) + 1) }] : []),
-    { label: "Dock settings", icon: Settings, run: () => customize("dock") },
+    { label: running ? t("Show") : t("Open"), icon: AppWindowIcon, run: () => launch(id) },
+    ...(running ? [{ label: t("Minimize"), icon: SquareStack, run: () => p.minimize(id) }, { label: t("Quit"), icon: X, run: () => p.closeWindow(id), danger: true }] : []),
+    { label: settings.novaPins.includes(id) ? t("Remove from dock") : t("Keep in dock"), icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) },
+    { label: settings.novaIcons.includes(id) ? t("Remove from desktop") : t("Add to desktop"), icon: LayoutDashboard, run: () => onDesktop(id) },
+    ...(running ? [{ label: (spaceOf[id] ?? 0) + 1 < spaceCount ? t("Move to Space {n}", { n: (spaceOf[id] ?? 0) + 2 }) : t("Move to a new Space"), icon: Layers, run: () => moveToSpace(id, (spaceOf[id] ?? 0) + 1) }] : []),
+    { label: t("Dock settings"), icon: Settings, run: () => customize("dock") },
   ];
   const appItems: DockItem[] = dockIds.flatMap((id): DockItem[] => {
     const app = byId(id);
@@ -612,7 +616,7 @@ export function NovaShell(p: NovaShellProps) {
     const running = p.openWins.includes(id);
     const minimized = p.minWins.includes(id);
     const focused = topId === id;
-    const where = running && spaceCount > 1 ? ` · Space ${(spaceOf[id] ?? 0) + 1}` : "";
+    const where = running && spaceCount > 1 ? ` · ${t("Space {n}", { n: (spaceOf[id] ?? 0) + 1 })}` : "";
     return [{
       key: id,
       label: app.label,
@@ -621,11 +625,11 @@ export function NovaShell(p: NovaShellProps) {
       running,
       minimized,
       focused,
-      status: running ? `${minimized ? "Minimized" : focused ? "In front" : "Open"}${where}` : settings.novaPins.includes(id) ? "Kept in the dock" : "Not open",
+      status: running ? `${minimized ? t("Minimized") : focused ? t("In front") : t("Open (state)")}${where}` : settings.novaPins.includes(id) ? t("Kept in the dock") : t("Not open"),
       onClick: () => (focused ? p.minimize(id) : launch(id)),
       actions: running
-        ? [{ label: focused ? "Minimize" : "Show", run: () => (focused ? p.minimize(id) : launch(id)) }, { label: "Quit", run: () => p.closeWindow(id), danger: true }]
-        : [{ label: "Open", run: () => launch(id) }, { label: settings.novaPins.includes(id) ? "Unpin" : "Pin", run: () => pin(id) }],
+        ? [{ label: focused ? t("Minimize") : t("Show"), run: () => (focused ? p.minimize(id) : launch(id)) }, { label: t("Quit"), run: () => p.closeWindow(id), danger: true }]
+        : [{ label: t("Open"), run: () => launch(id) }, { label: settings.novaPins.includes(id) ? t("Unpin") : t("Pin"), run: () => pin(id) }],
       onContext: (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -636,9 +640,9 @@ export function NovaShell(p: NovaShellProps) {
   });
   const pinnedCount = appItems.filter((item) => item.pinned).length;
   const dockItems: DockItem[] = [
-    { key: "orbit", label: "All apps", icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => toggle("launcher"), tool: true },
+    { key: "orbit", label: t("All apps"), icon: <span className="nova-dock-tool"><LayoutGrid className="size-[46%]" /></span>, onClick: () => toggle("launcher"), tool: true },
     ...appItems,
-    { key: "overview", label: "Overview", icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => { setPanel(null); setOverview((value) => !value); }, tool: true },
+    { key: "overview", label: t("Overview"), icon: <span className="nova-dock-tool"><SquareStack className="size-[44%]" /></span>, onClick: () => { setPanel(null); setOverview((value) => !value); }, tool: true },
   ];
   const dockBreaks = [1, ...(pinnedCount < appItems.length && pinnedCount > 0 ? [1 + pinnedCount] : []), 1 + appItems.length];
   const reorderPins = (from: string, to: string) => {
@@ -652,26 +656,26 @@ export function NovaShell(p: NovaShellProps) {
 
   // ---- Search ----
   const actions: { label: string; hint: string; icon: Icon; keys: string; run: () => void }[] = useMemo(() => [
-    { label: "Overview", hint: "See every window", icon: SquareStack, keys: "overview windows mission alt tab", run: () => setOverview(true) },
-    { label: "Lock screen", hint: "Alt+L", icon: Lock, keys: "lock", run: () => p.setLocked(true) },
-    { label: settings.novaFocus ? "Turn off Focus" : "Turn on Focus", hint: "Silence notifications", icon: MoonStar, keys: "focus dnd do not disturb quiet", run: () => patch({ novaFocus: !settings.novaFocus }) },
-    { label: settings.novaNight ? "Turn off Night light" : "Turn on Night light", hint: "Warmer screen", icon: Moon, keys: "night light warm shift", run: () => patch({ novaNight: !settings.novaNight }) },
-    { label: "Control Center", hint: "Alt+C", icon: Zap, keys: "control center quick settings brightness volume", run: () => setPanel("control") },
-    { label: "Notifications and widgets", hint: "Alt+N", icon: Bell, keys: "notifications widgets center", run: () => setPanel("center") },
-    { label: "Show desktop", hint: "Minimize everything", icon: SquareStack, keys: "desktop minimize hide", run: p.minimizeAll },
-    { label: "Switch to PRIVATE OS", hint: "The classic desktop", icon: RotateCw, keys: "private os classic switch windows taskbar", run: p.switchToPrivate },
-    { label: "Keyboard shortcuts", hint: "Ctrl+/", icon: Keyboard, keys: "keyboard shortcuts keys help hotkeys", run: () => setPanel("keys") },
-    { label: "New Space", hint: "Another desktop", icon: Layers, keys: "space spaces desktop virtual new add", run: () => { addSpace(); setOverview(true); } },
-    { label: "Start screensaver", hint: "Floating clock", icon: Sparkles, keys: "screensaver saver clock ambient idle", run: () => window.setTimeout(() => setSaver(true), 300) },
-    { label: "Optimize Nova", hint: "Make everything faster", icon: Gauge, keys: "optimize optimise speed fast slow lag performance lite", run: optimize },
-    { label: "Customize desktop", hint: "Greeting, icons, widgets, dock", icon: LayoutDashboard, keys: "customize customise desktop widgets icons greeting clock dock", run: () => customize() },
-    { label: settings.novaDockHide ? "Always show the dock" : "Auto-hide the dock", hint: "Dock", icon: LayoutGrid, keys: "dock hide auto show", run: () => patch({ novaDockHide: !settings.novaDockHide }) },
-    { label: "Next wallpaper", hint: "Live scenes", icon: ImageIcon, keys: "wallpaper background next change scene", run: () => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); } },
-    { label: "Sleep", hint: "Press any key to wake", icon: Moon, keys: "sleep", run: () => p.setPower("sleep") },
-    { label: "Restart", hint: "Reload Nova", icon: RotateCw, keys: "restart reload reboot", run: () => window.location.reload() },
-    ...NOVA_THEMES.map((item) => ({ label: `Theme: ${item.name}`, hint: item.sub, icon: Palette, keys: `theme wallpaper color ${item.name.toLowerCase()}`, run: () => { patch({ novaTheme: item.id }); notify(`${item.name} theme`, item.sub); } })),
+    { label: t("Overview"), hint: t("See every window"), icon: SquareStack, keys: "overview windows mission alt tab", run: () => setOverview(true) },
+    { label: t("Lock screen"), hint: "Alt+L", icon: Lock, keys: "lock", run: () => p.setLocked(true) },
+    { label: settings.novaFocus ? t("Turn off Focus") : t("Turn on Focus"), hint: t("Silence notifications"), icon: MoonStar, keys: "focus dnd do not disturb quiet", run: () => patch({ novaFocus: !settings.novaFocus }) },
+    { label: settings.novaNight ? t("Turn off Night light") : t("Turn on Night light"), hint: t("Warmer screen"), icon: Moon, keys: "night light warm shift", run: () => patch({ novaNight: !settings.novaNight }) },
+    { label: t("Control Center"), hint: "Alt+C", icon: Zap, keys: "control center quick settings brightness volume", run: () => setPanel("control") },
+    { label: t("Notifications and widgets"), hint: "Alt+N", icon: Bell, keys: "notifications widgets center", run: () => setPanel("center") },
+    { label: t("Show desktop"), hint: t("Minimize everything"), icon: SquareStack, keys: "desktop minimize hide", run: p.minimizeAll },
+    { label: t("Switch to PRIVATE OS"), hint: t("The classic desktop"), icon: RotateCw, keys: "private os classic switch windows taskbar", run: p.switchToPrivate },
+    { label: t("Keyboard shortcuts"), hint: "Ctrl+/", icon: Keyboard, keys: "keyboard shortcuts keys help hotkeys", run: () => setPanel("keys") },
+    { label: t("New Space"), hint: t("Another desktop"), icon: Layers, keys: "space spaces desktop virtual new add", run: () => { addSpace(); setOverview(true); } },
+    { label: t("Start screensaver"), hint: t("Floating clock"), icon: Sparkles, keys: "screensaver saver clock ambient idle", run: () => window.setTimeout(() => setSaver(true), 300) },
+    { label: t("Optimize Nova"), hint: t("Make everything faster"), icon: Gauge, keys: "optimize optimise speed fast slow lag performance lite", run: optimize },
+    { label: t("Customize desktop"), hint: t("Greeting, icons, widgets, dock"), icon: LayoutDashboard, keys: "customize customise desktop widgets icons greeting clock dock", run: () => customize() },
+    { label: settings.novaDockHide ? t("Always show the dock") : t("Auto-hide the dock"), hint: t("Dock"), icon: LayoutGrid, keys: "dock hide auto show", run: () => patch({ novaDockHide: !settings.novaDockHide }) },
+    { label: t("Next wallpaper"), hint: t("Live scenes"), icon: ImageIcon, keys: "wallpaper background next change scene", run: () => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(t("{name} wallpaper", { name: next.name }), next.sub); } },
+    { label: t("Sleep"), hint: t("Press any key to wake"), icon: Moon, keys: "sleep", run: () => p.setPower("sleep") },
+    { label: t("Restart"), hint: t("Reload Nova"), icon: RotateCw, keys: "restart reload reboot", run: () => window.location.reload() },
+    ...NOVA_THEMES.map((item) => ({ label: t("Theme: {name}", { name: item.name }), hint: item.sub, icon: Palette, keys: `theme wallpaper color ${item.name.toLowerCase()}`, run: () => { patch({ novaTheme: item.id }); notify(`${item.name} theme`, item.sub); } })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [settings.novaFocus, settings.novaNight, settings.novaDockHide, settings.novaWall]);
+  ], [settings.novaFocus, settings.novaNight, settings.novaDockHide, settings.novaWall, settings.language]);
 
   const overlayOpen = panel !== null || ctx !== null;
   const greeting = greetingFor(hourNow);
@@ -696,15 +700,15 @@ export function NovaShell(p: NovaShellProps) {
           x: event.clientX,
           y: event.clientY,
           items: [
-            { label: "Search everything", icon: Search, run: () => setPanel("search") },
-            { label: "All apps", icon: LayoutGrid, run: () => setPanel("launcher") },
-            { label: "Overview", icon: SquareStack, run: () => setOverview(true) },
-            { label: "Change theme", icon: Palette, run: () => setPanel("control") },
-            { label: "Customize desktop", icon: LayoutDashboard, run: () => customize() },
-            { label: "Change wallpaper", icon: ImageIcon, run: () => customize("wallpaper") },
-            { label: "Optimize", icon: Gauge, run: optimize },
-            { label: "Settings", icon: Settings, run: () => launch("settings") },
-            { label: "Switch to PRIVATE OS", icon: RotateCw, run: p.switchToPrivate },
+            { label: t("Search everything"), icon: Search, run: () => setPanel("search") },
+            { label: t("All apps"), icon: LayoutGrid, run: () => setPanel("launcher") },
+            { label: t("Overview"), icon: SquareStack, run: () => setOverview(true) },
+            { label: t("Change theme"), icon: Palette, run: () => setPanel("control") },
+            { label: t("Customize desktop"), icon: LayoutDashboard, run: () => customize() },
+            { label: t("Change wallpaper"), icon: ImageIcon, run: () => customize("wallpaper") },
+            { label: t("Optimize"), icon: Gauge, run: optimize },
+            { label: t("Settings"), icon: Settings, run: () => launch("settings") },
+            { label: t("Switch to PRIVATE OS"), icon: RotateCw, run: p.switchToPrivate },
           ],
         });
       }}
@@ -718,22 +722,22 @@ export function NovaShell(p: NovaShellProps) {
 
       {/* Greeting, clock and widgets on the desktop */}
       {(settings.novaGreet !== "off" || settings.novaWidgets.length > 0) && (
-        <div className={`nova-greet pointer-events-none absolute z-[2] select-none ${settings.novaGreetPos === "center" ? "inset-x-0 top-[16dvh] flex flex-col items-center px-4 text-center" : "left-[6vw] top-[15dvh] max-w-[80vw]"}`}>
+        <div dir={textDir()} className={`nova-greet pointer-events-none absolute z-[2] select-none ${settings.novaGreetPos === "center" ? "inset-x-0 top-[16dvh] flex flex-col items-center px-4 text-center" : "left-[6vw] top-[15dvh] max-w-[80vw]"}`}>
           {settings.novaGreet === "hello" && (
             <>
               <p className="nova-kicker"><span className="nova-live-dot" />{longDate}</p>
               <p className="nova-hello">
-                <Letters text={`${greeting},`} />
+                <Letters text={`${greeting}${comma()}`} />
                 <br />
-                <em className="nova-gradient-text nova-name" style={{ animationDelay: `${0.3 + greeting.length * 0.035}s` }}>{settings.userName || "friend"}</em>
+                <em className="nova-gradient-text nova-name" style={{ animationDelay: `${0.3 + greeting.length * 0.035}s` }}>{settings.userName || t("friend")}</em>
               </p>
-              <p className="nova-sub">{p.openWins.length ? `${p.openWins.length} ${p.openWins.length === 1 ? "window" : "windows"} open · Ctrl+K to search` : "Press Ctrl+K to search everything"}</p>
+              <p className="nova-sub">{p.openWins.length ? t("{count} open · Ctrl+K to search", { count: windowsCount(p.openWins.length) }) : t("Press Ctrl+K to search everything")}</p>
             </>
           )}
           {settings.novaGreet === "clock" && (
             <>
               <p className="nova-big-clock nova-gradient-text nova-name">{clock}</p>
-              <p className="nova-sub">{longDate}{settings.userName ? ` · Hi, ${settings.userName}` : ""}</p>
+              <p className="nova-sub">{longDate}{settings.userName ? ` · ${t("Hi, {name}", { name: settings.userName })}` : ""}</p>
             </>
           )}
           {settings.novaWidgets.length > 0 && (
@@ -745,7 +749,7 @@ export function NovaShell(p: NovaShellProps) {
                   onContextMenu={(event) => {
                     event.preventDefault();
                     setPanel(null);
-                    setCtx({ x: event.clientX, y: event.clientY, items: [{ label: "Remove widget", icon: X, run: () => patch({ novaWidgets: settings.novaWidgets.filter((item) => item !== id) }) }, { label: "Customize desktop", icon: LayoutDashboard, run: () => customize() }] });
+                    setCtx({ x: event.clientX, y: event.clientY, items: [{ label: t("Remove widget"), icon: X, run: () => patch({ novaWidgets: settings.novaWidgets.filter((item) => item !== id) }) }, { label: t("Customize desktop"), icon: LayoutDashboard, run: () => customize() }] });
                   }}
                   className="nova-glass nova-widget nova-desk-widget w-64 rounded-[22px] p-3.5 text-left"
                 >
@@ -772,7 +776,7 @@ export function NovaShell(p: NovaShellProps) {
                 onContextMenu={(event) => {
                   event.preventDefault();
                   setPanel(null);
-                  setCtx({ x: event.clientX, y: event.clientY, items: [{ label: "Open", icon: AppWindowIcon, run: () => launch(id) }, { label: "Remove from desktop", icon: X, run: () => onDesktop(id) }, { label: settings.novaPins.includes(id) ? "Remove from dock" : "Keep in dock", icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) }] });
+                  setCtx({ x: event.clientX, y: event.clientY, items: [{ label: t("Open"), icon: AppWindowIcon, run: () => launch(id) }, { label: t("Remove from desktop"), icon: X, run: () => onDesktop(id) }, { label: settings.novaPins.includes(id) ? t("Remove from dock") : t("Keep in dock"), icon: settings.novaPins.includes(id) ? PinOff : Pin, run: () => pin(id) }] });
                 }}
                 className="nova-desk-icon flex w-[84px] flex-col items-center gap-1.5 rounded-2xl p-2 text-center"
               >
@@ -794,8 +798,8 @@ export function NovaShell(p: NovaShellProps) {
                 return (
                   <div key={index} className="relative shrink-0">
                     <button type="button" aria-pressed={index === space} onClick={() => goSpace(index, true)} className={`nova-space-chip ${index === space ? "is-on" : ""}`}>
-                      <span className="text-[12px] font-semibold">Space {index + 1}</span>
-                      <span className="text-[10.5px] opacity-60">{count} {count === 1 ? "window" : "windows"}</span>
+                      <span className="text-[12px] font-semibold">{t("Space {n}", { n: index + 1 })}</span>
+                      <span className="text-[10.5px] opacity-60">{windowsCount(count)}</span>
                     </button>
                     {spaceCount > 1 && <button type="button" aria-label={`Remove Space ${index + 1}`} onClick={() => removeSpace(index)} className="nova-ov-close absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-black/80 ring-1 ring-white/20"><X className="size-3" /></button>}
                   </div>
@@ -803,7 +807,7 @@ export function NovaShell(p: NovaShellProps) {
               })}
               {spaceCount < 6 && <button type="button" aria-label="Add a Space" onClick={addSpace} className="nova-space-chip !w-12 shrink-0 items-center"><Plus className="size-4" /></button>}
             </div>
-            <p className="text-[10.5px] font-semibold uppercase tracking-[.28em] text-white/45">{visible.length ? "Click a window · the layers button moves it to the next Space" : "No windows in this space"}</p>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[.28em] text-white/45">{visible.length ? t("Click a window · the layers button moves it to the next Space") : t("No windows in this space")}</p>
           </div>
         </div>
       )}
@@ -844,7 +848,7 @@ export function NovaShell(p: NovaShellProps) {
                 const AppIcon = app?.icon;
                 return (
                   <button key={id} type="button" onClick={() => launch(id)} className="nova-glass flex items-center gap-2 rounded-full px-3 py-1.5 text-xs">
-                    {AppIcon && <AppIcon className="size-5" />}{app?.label ?? id}<span className="text-white/45">minimized</span>
+                    {AppIcon && <AppIcon className="size-5" />}{app?.label ?? id}<span className="text-white/45">{t("minimized")}</span>
                   </button>
                 );
               })}
@@ -922,13 +926,13 @@ export function NovaShell(p: NovaShellProps) {
             x: event.clientX,
             y: event.clientY,
             items: [
-              { label: "Floating dock", icon: settings.novaDockStyle === "float" ? Check : undefined, run: () => patch({ novaDockStyle: "float" }) },
-              { label: "Edge bar", icon: settings.novaDockStyle === "bar" ? Check : undefined, run: () => patch({ novaDockStyle: "bar" }) },
-              { label: "Icons only", icon: settings.novaDockStyle === "bare" ? Check : undefined, run: () => patch({ novaDockStyle: "bare" }) },
-              { label: settings.novaDockPos === "left" ? "Move to the bottom" : "Move to the left", icon: ArrowRightLeft, run: () => patch({ novaDockPos: settings.novaDockPos === "left" ? "bottom" : "left" }) },
-              { label: settings.novaDockLabels ? "Hide app names" : "Show app names", icon: Keyboard, run: () => patch({ novaDockLabels: !settings.novaDockLabels }) },
-              { label: settings.novaDockHide ? "Always show" : "Auto-hide", icon: LayoutGrid, run: () => patch({ novaDockHide: !settings.novaDockHide }) },
-              { label: "Dock settings", icon: Settings, run: () => customize("dock") },
+              { label: t("Floating dock"), icon: settings.novaDockStyle === "float" ? Check : undefined, run: () => patch({ novaDockStyle: "float" }) },
+              { label: t("Edge bar"), icon: settings.novaDockStyle === "bar" ? Check : undefined, run: () => patch({ novaDockStyle: "bar" }) },
+              { label: t("Icons only"), icon: settings.novaDockStyle === "bare" ? Check : undefined, run: () => patch({ novaDockStyle: "bare" }) },
+              { label: settings.novaDockPos === "left" ? t("Move to the bottom") : t("Move to the left"), icon: ArrowRightLeft, run: () => patch({ novaDockPos: settings.novaDockPos === "left" ? "bottom" : "left" }) },
+              { label: settings.novaDockLabels ? t("Hide app names") : t("Show app names"), icon: Keyboard, run: () => patch({ novaDockLabels: !settings.novaDockLabels }) },
+              { label: settings.novaDockHide ? t("Always show") : t("Auto-hide"), icon: LayoutGrid, run: () => patch({ novaDockHide: !settings.novaDockHide }) },
+              { label: t("Dock settings"), icon: Settings, run: () => customize("dock") },
             ],
           });
         }}
@@ -956,17 +960,17 @@ export function NovaShell(p: NovaShellProps) {
         <ControlCenter settings={settings} patch={patch} battery={p.battery} timer={timer ? mmss : null} startTimer={startTimer} stopTimer={() => setTimer(null)} openSettings={() => launch("settings")} customize={() => customize()} optimize={optimize} switchOS={p.switchToPrivate} notify={notify} />
       )}
       {panel === "center" && (
-        <aside data-nova-panel className="nova-glass nova-panel-right absolute bottom-[100px] right-3 top-14 z-[62] flex w-[min(23rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-[28px]">
+        <aside data-nova-panel dir={textDir()} className="nova-glass nova-panel-right absolute bottom-[100px] right-3 top-14 z-[62] flex w-[min(23rem,calc(100%-1.5rem))] flex-col overflow-hidden rounded-[28px]">
           <div className="border-b border-white/10 px-5 pb-4 pt-5">
-            <p className="text-[12px] font-semibold uppercase tracking-[.2em] text-[var(--primary)]">{time.toLocaleDateString(undefined, { weekday: "long", timeZone: zone })}</p>
-            <p className="mt-1 text-3xl font-extralight">{time.toLocaleDateString(undefined, { day: "numeric", month: "long", timeZone: zone })}</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[.2em] text-[var(--primary)]">{time.toLocaleDateString(locale(), { weekday: "long", timeZone: zone })}</p>
+            <p className="mt-1 text-3xl font-extralight">{time.toLocaleDateString(locale(), { day: "numeric", month: "long", timeZone: zone })}</p>
           </div>
           <div className="nova-scroll min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
             <div className="flex items-center justify-between px-1">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">Notifications</p>
-              {notices.length > 0 && <button type="button" onClick={() => setNotices([])} className="text-[11px] text-white/60 hover:text-white">Clear all</button>}
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/50">{t("Notifications")}</p>
+              {notices.length > 0 && <button type="button" onClick={() => setNotices([])} className="text-[11px] text-white/60 hover:text-white">{t("Clear all")}</button>}
             </div>
-            {notices.length === 0 && <p className="rounded-2xl bg-white/[.04] px-4 py-5 text-center text-xs text-white/50">You're all caught up.</p>}
+            {notices.length === 0 && <p className="rounded-2xl bg-white/[.04] px-4 py-5 text-center text-xs text-white/50">{t("You're all caught up.")}</p>}
             {notices.slice(0, 6).map((item) => (
               <div key={item.id} className="nova-notice flex gap-3 rounded-2xl bg-white/[.06] p-3">
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[var(--primary)]/20 text-[var(--primary)]"><Sparkles className="size-4" /></span>
@@ -976,16 +980,16 @@ export function NovaShell(p: NovaShellProps) {
                 </span>
               </div>
             ))}
-            <p className="px-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">Widgets</p>
+            <p className="px-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-white/50">{t("Widgets")}</p>
             {["calendar", "music", "notes"].map((id) => <div key={id} className="nova-widget rounded-2xl bg-white/[.05] p-3">{p.renderWidget(id)}</div>)}
           </div>
         </aside>
       )}
       {panel === "menu" && (
-        <aside data-nova-panel className="nova-glass nova-panel-left absolute left-3 top-14 z-[62] w-64 rounded-[24px] p-2 text-[13px]">
+        <aside data-nova-panel dir={textDir()} className="nova-glass nova-panel-left absolute left-3 top-14 z-[62] w-64 rounded-[24px] p-2 text-[13px]">
           <div className="flex items-center gap-3 rounded-2xl p-2.5">
             <span className="grid size-11 place-items-center rounded-full text-lg font-semibold text-black" style={{ background: `linear-gradient(135deg, ${theme.colors[0]}, ${theme.accent})` }}>{(settings.userName || "N").slice(0, 1).toUpperCase()}</span>
-            <span className="min-w-0"><span className="block truncate font-semibold">{settings.userName || "Guest"}</span><span className="block text-[11px] text-white/50">NOVA OS · {theme.name}</span></span>
+            <span className="min-w-0"><span className="block truncate font-semibold">{settings.userName || t("Guest")}</span><span className="block text-[11px] text-white/50">NOVA OS · {theme.name}</span></span>
           </div>
           <div className="my-1 h-px bg-white/10" />
           {([
@@ -999,20 +1003,20 @@ export function NovaShell(p: NovaShellProps) {
             ["Sleep", Moon, () => { setPanel(null); p.setPower("sleep"); }],
             ["Restart", RotateCw, () => window.location.reload()],
             ["Shut down", Power, () => { setPanel(null); p.shutdown(); }],
-          ] as [string, Icon, () => void][]).map(([label, ItemIcon, run]) => (
-            <button key={label} type="button" onClick={run} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left hover:bg-white/10"><ItemIcon className="size-4 text-white/70" />{label}</button>
+          ] as [TKey, Icon, () => void][]).map(([label, ItemIcon, run]) => (
+            <button key={label} type="button" onClick={run} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-start hover:bg-white/10"><ItemIcon className="size-4 text-white/70" />{t(label)}</button>
           ))}
           <div className="my-1 h-px bg-white/10" />
-          <button type="button" onClick={p.switchToPrivate} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-[var(--primary)] hover:bg-white/10"><RotateCw className="size-4" />Switch to PRIVATE OS</button>
+          <button type="button" onClick={p.switchToPrivate} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-start text-[var(--primary)] hover:bg-white/10"><RotateCw className="size-4" />{t("Switch to PRIVATE OS")}</button>
         </aside>
       )}
 
       {ctx && (
-        <div data-nova-ui role="menu" onClick={(event) => event.stopPropagation()} style={{ left: Math.min(ctx.x, window.innerWidth - 220), top: Math.min(ctx.y, window.innerHeight - ctx.items.length * 38 - 16) }} className="nova-glass nova-pop fixed z-[70] w-52 rounded-2xl p-1.5 text-[13px]">
+        <div data-nova-ui role="menu" dir={textDir()} onClick={(event) => event.stopPropagation()} style={{ left: Math.min(ctx.x, window.innerWidth - 220), top: Math.min(ctx.y, window.innerHeight - ctx.items.length * 38 - 16) }} className="nova-glass nova-pop fixed z-[70] w-52 rounded-2xl p-1.5 text-[13px]">
           {ctx.items.map((item) => {
             const ItemIcon = item.icon;
             return (
-              <button key={item.label} type="button" role="menuitem" onClick={() => { setCtx(null); item.run(); }} className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-white/10 ${item.danger ? "text-red-300" : ""}`}>
+              <button key={item.label} type="button" role="menuitem" onClick={() => { setCtx(null); item.run(); }} className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start hover:bg-white/10 ${item.danger ? "text-red-300" : ""}`}>
                 {ItemIcon ? <ItemIcon className="size-4 shrink-0 opacity-70" /> : <span aria-hidden className="size-4 shrink-0" />}{item.label}
               </button>
             );
@@ -1024,17 +1028,17 @@ export function NovaShell(p: NovaShellProps) {
         <div key={spaceHud.at} aria-live="polite" className="nova-space-hud pointer-events-none fixed left-1/2 top-[38%] z-[66] -translate-x-1/2">
           <div className="nova-glass flex items-center gap-3 rounded-[22px] px-5 py-3.5">
             {Array.from({ length: spaceCount }, (_, index) => <span key={index} className={`h-2 rounded-full transition-all ${index === space ? "w-7 bg-[var(--primary)]" : "w-2 bg-white/30"}`} />)}
-            <span className="ml-1 text-[14px] font-semibold">Space {space + 1}</span>
+            <span className="ml-1 text-[14px] font-semibold">{t("Space {n}", { n: space + 1 })}</span>
           </div>
         </div>
       )}
       {space > 0 && !overview && (
-        <button data-nova-ui type="button" onClick={() => setOverview(true)} className="nova-glass absolute left-3 top-14 z-[56] flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white/80"><Layers className="size-3.5" />Space {space + 1}</button>
+        <button data-nova-ui type="button" onClick={() => setOverview(true)} className="nova-glass absolute left-3 top-14 z-[56] flex h-7 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-white/80"><Layers className="size-3.5" />{t("Space {n}", { n: space + 1 })}</button>
       )}
 
       {panel === "keys" && <ShortcutSheet close={() => setPanel(null)} />}
 
-      <AlphaWatermark name="NOVA OS" version="4.0" className="absolute bottom-[100px] right-4 z-[1] text-white/35" />
+      <AlphaWatermark name="NOVA OS" version="4.1" className="absolute bottom-[100px] right-4 z-[1] text-white/35" />
 
       {saver && (
         <div role="button" tabIndex={0} aria-label="Screensaver, press any key" onClick={() => setSaver(false)} className="nova-saver fixed inset-0 z-[84] cursor-none overflow-hidden">
@@ -1054,7 +1058,7 @@ export function NovaShell(p: NovaShellProps) {
 
       {p.power !== "on" && (
         <div role="button" tabIndex={0} aria-label="Wake" onClick={() => { p.setPower("on"); p.setLocked(true); }} className="fixed inset-0 z-[85] grid cursor-pointer place-items-center bg-black text-[11px] tracking-[.3em] text-white/40">
-          {p.power === "off" ? <span className="flex flex-col items-center gap-4"><NovaMark className="size-10 text-white/60" />PRESS ANY KEY TO POWER ON</span> : ""}
+          {p.power === "off" ? <span className="flex flex-col items-center gap-4"><NovaMark className="size-10 text-white/60" />{upper(t("Press any key to power on"))}</span> : ""}
         </div>
       )}
       {p.extra}
@@ -1065,11 +1069,13 @@ export function NovaShell(p: NovaShellProps) {
 const AppWindowIcon: Icon = ({ className }) => <Sparkles className={className} />;
 
 // Text that arrives one letter at a time, each rising and fading in.
+// Arabic letters join to their neighbours, so Arabic text rises word by word instead.
 function Letters({ text, from = 0 }: { text: string; from?: number }) {
+  const parts = /[\u0600-\u06ff]/.test(text) ? text.split(/(\s+)/).filter(Boolean) : Array.from(text);
   return (
     <span aria-label={text} className="nova-letters">
-      {Array.from(text).map((char, index) => (
-        <span key={`${index}-${char}`} aria-hidden style={{ animationDelay: `${0.25 + (from + index) * 0.035}s` }}>{char === " " ? "\u00a0" : char}</span>
+      {parts.map((char, index) => (
+        <span key={`${index}-${char}`} aria-hidden style={{ animationDelay: `${0.25 + (from + index) * 0.035}s` }}>{/^\s+$/.test(char) ? "\u00a0" : char}</span>
       ))}
     </span>
   );
@@ -1077,13 +1083,13 @@ function Letters({ text, from = 0 }: { text: string; from?: number }) {
 
 function NovaLock({ locked, unlock, clock, date, name, theme, battery }: { locked: boolean; unlock: () => void; clock: string; date: string; name: string; theme: NovaTheme; battery: number }) {
   return (
-    <div role="button" tabIndex={locked ? 0 : -1} aria-hidden={!locked} aria-label="Unlock Nova" onClick={unlock} className={`nova-lock fixed inset-0 z-[80] flex cursor-pointer select-none flex-col items-center text-white ${locked ? "" : "is-open"}`}>
+    <div role="button" tabIndex={locked ? 0 : -1} aria-hidden={!locked} aria-label="Unlock Nova" dir={textDir()} onClick={unlock} className={`nova-lock fixed inset-0 z-[80] flex cursor-pointer select-none flex-col items-center text-white ${locked ? "" : "is-open"}`}>
       <p className="relative mt-[12dvh] text-[15px] font-medium text-white/75">{date}</p>
       <p className="nova-lock-time relative">{clock}</p>
       <div className="relative mb-[11dvh] mt-auto flex flex-col items-center">
         <span className="nova-avatar grid size-[72px] place-items-center rounded-full text-[28px] font-semibold text-black" style={{ background: `linear-gradient(135deg, ${theme.colors[0]}, ${theme.accent} 60%, ${theme.colors[2]})` }}>{(name || "N").slice(0, 1).toUpperCase()}</span>
-        <p className="mt-3 text-lg font-semibold">{name || "Guest"}</p>
-        <p className="nova-shimmer mt-5 text-[12px] font-medium tracking-wide">Click or press any key to unlock</p>
+        <p className="mt-3 text-lg font-semibold">{name || t("Guest")}</p>
+        <p className="nova-shimmer mt-5 text-[12px] font-medium tracking-wide">{t("Click or press any key to unlock")}</p>
       </div>
       <div className="absolute bottom-5 right-6 flex items-center gap-3 text-xs text-white/65"><Wifi className="size-4" /><BatteryFull className="size-4" />{battery}%</div>
       <div className="absolute bottom-5 left-6 flex items-center gap-2 text-xs font-semibold tracking-[.25em] text-white/50"><NovaMark className="size-4 text-white/60" />NOVA</div>
@@ -1095,19 +1101,19 @@ function OrbitLauncher({ apps, launch, pins, pin, close }: { apps: NovaApp[]; la
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("all");
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
-  const list = apps.filter((app) => (cat === "all" || categoryOf(app.id) === cat) && app.label.toLowerCase().includes(query.toLowerCase()));
+  const list = apps.filter((app) => (cat === "all" || categoryOf(app.id) === cat) && appFind(app, query.trim().toLowerCase()));
   return (
-    <div data-nova-panel onClick={() => (menu ? setMenu(null) : close())} className="nova-orbit fixed inset-0 z-[62] flex flex-col items-center px-4 pb-14 pt-[9dvh]">
+    <div data-nova-panel dir={textDir()} onClick={() => (menu ? setMenu(null) : close())} className="nova-orbit fixed inset-0 z-[62] flex flex-col items-center px-4 pb-14 pt-[9dvh]">
       <div onClick={(event) => event.stopPropagation()} className="flex w-[min(38rem,100%)] flex-col items-center">
         <label className="nova-glass flex h-12 w-full items-center gap-3 rounded-2xl px-4">
           <Search className="size-4 text-white/60" />
-          <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && list[0]) launch(list[0].id); }} placeholder="Search apps" aria-label="Search apps" className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-white/40" />
+          <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && list[0]) launch(list[0].id); }} placeholder={t("Search apps")} aria-label={t("Search apps")} className="h-full w-full bg-transparent text-[15px] outline-none placeholder:text-white/40" />
         </label>
         <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-          {[{ id: "all", label: "All", icon: Orbit }, ...CATEGORIES].map((item) => {
+          {[{ id: "all", label: "All" as TKey, icon: Orbit }, ...CATEGORIES].map((item) => {
             const CatIcon = item.icon;
             return (
-              <button key={item.id} type="button" onClick={() => setCat(item.id)} className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${cat === item.id ? "bg-white text-black" : "bg-white/10 text-white/80 hover:bg-white/15"}`}><CatIcon className="size-3.5" />{item.label}</button>
+              <button key={item.id} type="button" onClick={() => setCat(item.id)} className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-semibold transition-colors ${cat === item.id ? "bg-white text-black" : "bg-white/10 text-white/80 hover:bg-white/15"}`}><CatIcon className="size-3.5" />{t(item.label)}</button>
             );
           })}
         </div>
@@ -1129,15 +1135,15 @@ function OrbitLauncher({ apps, launch, pins, pin, close }: { apps: NovaApp[]; la
             </button>
           );
         })}
-        {list.length === 0 && <p className="col-span-full pt-10 text-center text-sm text-white/50">No apps match “{query}”.</p>}
+        {list.length === 0 && <p className="col-span-full pt-10 text-center text-sm text-white/50">{t("No apps match “{q}”.", { q: query })}</p>}
       </div>
       {menu && (
         <div onClick={(event) => event.stopPropagation()} style={{ left: Math.min(menu.x, window.innerWidth - 200), top: menu.y }} className="nova-glass nova-pop fixed z-[70] w-48 rounded-2xl p-1.5 text-[13px]">
-          <button type="button" onClick={() => launch(menu.id)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-white/10">Open</button>
-          <button type="button" onClick={() => { pin(menu.id); setMenu(null); }} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover:bg-white/10">{pins.includes(menu.id) ? <><PinOff className="size-4 opacity-70" />Remove from dock</> : <><Pin className="size-4 opacity-70" />Keep in dock</>}</button>
+          <button type="button" onClick={() => launch(menu.id)} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start hover:bg-white/10">{t("Open")}</button>
+          <button type="button" onClick={() => { pin(menu.id); setMenu(null); }} className="flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-start hover:bg-white/10">{pins.includes(menu.id) ? <><PinOff className="size-4 opacity-70" />{t("Remove from dock")}</> : <><Pin className="size-4 opacity-70" />{t("Keep in dock")}</>}</button>
         </div>
       )}
-      <p className="pointer-events-none absolute bottom-6 text-[11px] text-white/40">Right-click an app to keep it in the dock · Esc to close</p>
+      <p className="pointer-events-none absolute bottom-6 text-[11px] text-white/40">{t("Right-click an app to keep it in the dock · Esc to close")}</p>
     </div>
   );
 }
@@ -1151,27 +1157,27 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   const math = calc(text);
   const unit = convert(text);
   const focusMatch = /^(?:focus|timer)\s*(\d{1,3})/.exec(query);
-  const groups: { title: string; hits: Hit[] }[] = [];
-  if (math !== null) groups.push({ title: "Calculator", hits: [{ key: "math", label: `${text.trim()} = ${math}`, hint: "Copy", icon: Calculator, run: () => { void navigator.clipboard?.writeText(math).catch(() => {}); } }] });
+  const groups: { id: string; title: string; hits: Hit[] }[] = [];
+  if (math !== null) groups.push({ id: "math", title: tx("Calculator"), hits: [{ key: "math", label: `${text.trim()} = ${math}`, hint: t("Copy"), icon: Calculator, run: () => { void navigator.clipboard?.writeText(math).catch(() => {}); } }] });
   const hex = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(text.trim())?.[1];
   if (hex) {
     const full = `#${(hex.length === 3 ? hex.split("").map((ch) => ch + ch).join("") : hex).toLowerCase()}`;
     const [r, g, b] = hexRgb(full);
-    groups.push({ title: "Colour", hits: [{ key: "hex", label: `${full.toUpperCase()} · rgb(${r}, ${g}, ${b})`, hint: "Copy", node: <span className="size-6 rounded-lg ring-1 ring-white/25" style={{ background: full }} />, run: () => { void navigator.clipboard?.writeText(full).catch(() => {}); } }] });
+    groups.push({ id: "hex", title: t("Colour"), hits: [{ key: "hex", label: `${full.toUpperCase()} · rgb(${r}, ${g}, ${b})`, hint: t("Copy"), node: <span className="size-6 rounded-lg ring-1 ring-white/25" style={{ background: full }} />, run: () => { void navigator.clipboard?.writeText(full).catch(() => {}); } }] });
   }
-  if (unit !== null) groups.push({ title: "Convert", hits: [{ key: "unit", label: `${text.trim()} = ${unit}`, hint: "Copy", icon: ArrowRightLeft, run: () => { void navigator.clipboard?.writeText(unit).catch(() => {}); } }] });
+  if (unit !== null) groups.push({ id: "unit", title: t("Convert"), hits: [{ key: "unit", label: `${text.trim()} = ${unit}`, hint: t("Copy"), icon: ArrowRightLeft, run: () => { void navigator.clipboard?.writeText(unit).catch(() => {}); } }] });
   if (focusMatch) {
     const minutes = Math.max(1, Math.min(180, Number(focusMatch[1])));
-    groups.push({ title: "Focus", hits: [{ key: "focus", label: `Start a ${minutes}-minute focus session`, hint: "Island timer", icon: Timer, run: () => startTimer(minutes) }] });
+    groups.push({ id: "focus", title: t("Focus"), hits: [{ key: "focus", label: t("Start a {n}-minute focus session", { n: minutes }), hint: t("Island timer"), icon: Timer, run: () => startTimer(minutes) }] });
   }
-  const appHits = apps.filter((app) => !query || app.label.toLowerCase().includes(query)).slice(0, query ? 6 : 8);
-  if (appHits.length) groups.push({ title: query ? "Apps" : "Suggested", hits: appHits.map((app) => ({ key: `app-${app.id}`, label: app.label, hint: "Open", node: <app.icon className="size-7" />, run: () => launch(app.id) })) });
+  const appHits = apps.filter((app) => !query || appFind(app, query)).slice(0, query ? 6 : 8);
+  if (appHits.length) groups.push({ id: query ? "apps" : "suggested", title: query ? t("Apps") : t("Suggested"), hits: appHits.map((app) => ({ key: `app-${app.id}`, label: app.label, hint: t("Open"), node: <app.icon className="size-7" />, run: () => launch(app.id) })) });
   if (query) {
     const actionHits = actions.filter((action) => action.label.toLowerCase().includes(query) || action.keys.includes(query)).slice(0, 5);
-    if (actionHits.length) groups.push({ title: "Actions", hits: actionHits.map((action) => ({ key: `act-${action.label}`, label: action.label, hint: action.hint, icon: action.icon, run: action.run })) });
+    if (actionHits.length) groups.push({ id: "actions", title: t("Actions"), hits: actionHits.map((action) => ({ key: `act-${action.label}`, label: action.label, hint: action.hint, icon: action.icon, run: action.run })) });
     const fileHits = query.length >= 2 ? files(query).slice(0, 5) : [];
-    if (fileHits.length) groups.push({ title: "Files", hits: fileHits.map((file) => ({ ...file, hint: "File", icon: ImageIcon })) });
-    groups.push({ title: "Web", hits: [{ key: "web", label: `Search the web for “${text.trim()}”`, hint: "Comet", icon: Globe2, run: () => web(text.trim()) }] });
+    if (fileHits.length) groups.push({ id: "files", title: t("Files"), hits: fileHits.map((file) => ({ ...file, hint: t("File"), icon: ImageIcon })) });
+    groups.push({ id: "web", title: t("Web"), hits: [{ key: "web", label: t("Search the web for “{q}”", { q: text.trim() }), hint: "Comet", icon: Globe2, run: () => web(text.trim()) }] });
   }
   const flat = groups.flatMap((group) => group.hits);
   const run = (hit: Hit | undefined) => {
@@ -1181,7 +1187,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   };
   let n = -1;
   return (
-    <div data-nova-panel onClick={close} className="fixed inset-0 z-[64] flex items-start justify-center bg-black/30 px-3 pt-[13dvh] backdrop-blur-[6px]">
+    <div data-nova-panel dir={textDir()} onClick={close} className="fixed inset-0 z-[64] flex items-start justify-center bg-black/30 px-3 pt-[13dvh] backdrop-blur-[6px]">
       <div onClick={(event) => event.stopPropagation()} className="nova-glass nova-search nova-pop w-[min(40rem,100%)] overflow-hidden rounded-[26px]">
         <div className="flex items-center gap-3 px-5">
           <NovaMark className="size-6 shrink-0 text-white/80" />
@@ -1189,7 +1195,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
             autoFocus
             value={text}
             aria-label="Nova Search"
-            placeholder="Search apps, files, actions, or try 12*8, 10 km in miles, #6352ff…"
+            placeholder={t("Search apps, files, actions, or try 12*8, 10 km in miles, #6352ff…")}
             onChange={(event) => { setText(event.target.value); setIndex(0); }}
             onKeyDown={(event) => {
               if (event.key === "ArrowDown") { event.preventDefault(); setIndex((value) => Math.min(value + 1, flat.length - 1)); }
@@ -1203,9 +1209,9 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
         {flat.length > 0 && (
           <div className="nova-scroll max-h-[52dvh] overflow-y-auto border-t border-white/10 p-2">
             {groups.map((group) => (
-              <div key={group.title} className="mb-1">
+              <div key={group.id} className="mb-1">
                 <p className="px-3 pb-1 pt-2 text-[10.5px] font-semibold uppercase tracking-wider text-white/40">{group.title}</p>
-                {group.title === "Suggested" ? (
+                {group.id === "suggested" ? (
                   <div className="grid grid-cols-4 gap-1 sm:grid-cols-8">
                     {group.hits.map((hit) => {
                       n += 1;
@@ -1224,7 +1230,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
                     const at = n;
                     const HitIcon = hit.icon;
                     return (
-                      <button key={hit.key} type="button" onMouseEnter={() => setIndex(at)} onClick={() => run(hit)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13.5px] ${at === index ? "bg-[var(--primary)]/20" : ""}`}>
+                      <button key={hit.key} type="button" onMouseEnter={() => setIndex(at)} onClick={() => run(hit)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-start text-[13.5px] ${at === index ? "bg-[var(--primary)]/20" : ""}`}>
                         <span className="grid size-7 shrink-0 place-items-center">{hit.node ?? (HitIcon ? <HitIcon className="size-[18px] text-white/75" /> : null)}</span>
                         <span className="min-w-0 flex-1 truncate">{hit.label}</span>
                         <span className="shrink-0 text-[11px] text-white/40">{hit.hint}</span>
@@ -1241,7 +1247,7 @@ function NovaSearch({ apps, actions, launch, files, web, startTimer, close }: { 
   );
 }
 
-const SHORTCUTS: [string, string][] = [
+const SHORTCUTS: [string, TKey][] = [
   ["Ctrl+K", "Nova Search"],
   ["Ctrl+Space", "Orbit, all apps"],
   ["F3 or Alt+Tab", "Overview"],
@@ -1257,14 +1263,14 @@ const SHORTCUTS: [string, string][] = [
 ];
 function ShortcutSheet({ close }: { close: () => void }) {
   return (
-    <div data-nova-panel onClick={close} className="fixed inset-0 z-[64] grid place-items-center bg-black/35 p-4 backdrop-blur-[6px]">
+    <div data-nova-panel dir={textDir()} onClick={close} className="fixed inset-0 z-[64] grid place-items-center bg-black/35 p-4 backdrop-blur-[6px]">
       <div onClick={(event) => event.stopPropagation()} className="nova-glass nova-pop w-[min(34rem,100%)] rounded-[28px] p-6">
-        <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[var(--primary)]"><Keyboard className="size-4" />Keyboard shortcuts</p>
+        <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[.22em] text-[var(--primary)]"><Keyboard className="size-4" />{t("Keyboard shortcuts")}</p>
         <div className="mt-4 grid gap-1.5">
           {SHORTCUTS.map(([keys, label]) => (
             <div key={keys} className="flex items-center justify-between gap-4 rounded-xl bg-white/[.04] px-3.5 py-2.5 text-[13px]">
-              <span className="text-white/80">{label}</span>
-              <span className="flex flex-wrap justify-end gap-1">{keys.split(" or ").map((part) => <kbd key={part} className="rounded-md border border-white/15 bg-white/[.06] px-2 py-0.5 text-[11px] font-semibold">{part}</kbd>)}</span>
+              <span className="text-white/80">{t(label)}</span>
+              <span dir="ltr" className="flex flex-wrap justify-end gap-1">{keys.split(" or ").map((part) => <kbd key={part} className="rounded-md border border-white/15 bg-white/[.06] px-2 py-0.5 text-[11px] font-semibold">{part}</kbd>)}</span>
             </div>
           ))}
         </div>
@@ -1276,25 +1282,25 @@ function ShortcutSheet({ close }: { close: () => void }) {
 function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer, openSettings, customize, optimize, switchOS, notify }: { settings: NovaSettings; patch: (patch: Partial<NovaSettings>) => void; battery: number; timer: string | null; startTimer: (minutes: number) => void; stopTimer: () => void; openSettings: () => void; customize: () => void; optimize: () => void; switchOS: () => void; notify: (title: string, body?: string) => void }) {
   const theme = novaTheme(settings.novaTheme);
   const tiles: { label: string; sub: string; icon: Icon; on: boolean; flip: () => void }[] = [
-    { label: "Focus", sub: settings.novaFocus ? "On" : "Off", icon: MoonStar, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
-    { label: "Night light", sub: settings.novaNight ? "Warm" : "Off", icon: Sun, on: settings.novaNight, flip: () => patch({ novaNight: !settings.novaNight }) },
-    { label: "Parallax", sub: "Wallpaper depth", icon: Move3d, on: settings.novaParallax, flip: () => patch({ novaParallax: !settings.novaParallax }) },
-    { label: "Magnify", sub: "Dock zoom", icon: Magnet, on: settings.novaMagnify, flip: () => patch({ novaMagnify: !settings.novaMagnify }) },
-    { label: "Hot corner", sub: "Top-left = Overview", icon: MousePointer2, on: settings.novaHotCorner, flip: () => patch({ novaHotCorner: !settings.novaHotCorner }) },
-    { label: "Sounds", sub: "Clicks and hovers", icon: Volume2, on: settings.uiSounds, flip: () => patch({ uiSounds: !settings.uiSounds }) },
+    { label: t("Focus"), sub: settings.novaFocus ? t("On") : t("Off"), icon: MoonStar, on: settings.novaFocus, flip: () => patch({ novaFocus: !settings.novaFocus }) },
+    { label: t("Night light"), sub: settings.novaNight ? t("Warm") : t("Off"), icon: Sun, on: settings.novaNight, flip: () => patch({ novaNight: !settings.novaNight }) },
+    { label: t("Parallax"), sub: t("Wallpaper depth"), icon: Move3d, on: settings.novaParallax, flip: () => patch({ novaParallax: !settings.novaParallax }) },
+    { label: t("Magnify"), sub: t("Dock zoom"), icon: Magnet, on: settings.novaMagnify, flip: () => patch({ novaMagnify: !settings.novaMagnify }) },
+    { label: t("Hot corner"), sub: t("Top-left = Overview"), icon: MousePointer2, on: settings.novaHotCorner, flip: () => patch({ novaHotCorner: !settings.novaHotCorner }) },
+    { label: t("Sounds"), sub: t("Clicks and hovers"), icon: Volume2, on: settings.uiSounds, flip: () => patch({ uiSounds: !settings.uiSounds }) },
   ];
   return (
-    <aside data-nova-panel className="nova-glass nova-panel-right nova-scroll absolute right-3 top-14 z-[62] max-h-[calc(100dvh-170px)] w-[min(23rem,calc(100%-1.5rem))] overflow-y-auto rounded-[28px] p-4">
+    <aside data-nova-panel dir={textDir()} className="nova-glass nova-panel-right nova-scroll absolute right-3 top-14 z-[62] max-h-[calc(100dvh-170px)] w-[min(23rem,calc(100%-1.5rem))] overflow-y-auto rounded-[28px] p-4">
       <div className="grid grid-cols-2 gap-2">
         <div className="col-span-2 flex items-center gap-3 rounded-2xl bg-white/[.06] p-3">
           <span className="grid size-10 place-items-center rounded-full bg-[var(--primary)] text-black"><Wifi className="size-5" /></span>
-          <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">Connected</span><span className="block text-[11px] text-white/50">Private network</span></span>
+          <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">{t("Connected")}</span><span className="block text-[11px] text-white/50">{t("Private network")}</span></span>
           <span className="flex items-center gap-1 text-[12px] font-semibold tabular-nums text-white/70"><BatteryFull className="size-4" />{battery}%</span>
         </div>
         {tiles.map((tile) => {
           const TileIcon = tile.icon;
           return (
-            <button key={tile.label} type="button" role="switch" aria-checked={tile.on} onClick={tile.flip} className={`nova-tile flex items-center gap-2.5 rounded-2xl p-3 text-left transition-all ${tile.on ? "bg-white text-black" : "bg-white/[.06] hover:bg-white/10"}`}>
+            <button key={tile.label} type="button" role="switch" aria-checked={tile.on} onClick={tile.flip} className={`nova-tile flex items-center gap-2.5 rounded-2xl p-3 text-start transition-all ${tile.on ? "bg-white text-black" : "bg-white/[.06] hover:bg-white/10"}`}>
               <TileIcon className={`size-[18px] shrink-0 ${tile.on ? "text-black" : "text-white/75"}`} />
               <span className="min-w-0"><span className="block truncate text-[12.5px] font-semibold">{tile.label}</span><span className={`block truncate text-[10.5px] ${tile.on ? "text-black/55" : "text-white/45"}`}>{tile.sub}</span></span>
             </button>
@@ -1302,21 +1308,21 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
         })}
       </div>
       <div className="mt-3 space-y-3 rounded-2xl bg-white/[.06] p-3.5">
-        <label className="flex items-center gap-3"><Sun className="size-4 shrink-0 text-white/70" /><input type="range" min={30} max={100} value={settings.novaBright} aria-label="Brightness" onChange={(event) => patch({ novaBright: Number(event.target.value) })} className="nova-range w-full" /></label>
-        <label className="flex items-center gap-3"><Volume2 className="size-4 shrink-0 text-white/70" /><input type="range" min={0} max={100} value={settings.soundVolume} aria-label="Volume" onChange={(event) => patch({ soundVolume: Number(event.target.value) })} className="nova-range w-full" /></label>
+        <label className="flex items-center gap-3"><Sun className="size-4 shrink-0 text-white/70" /><input type="range" min={30} max={100} value={settings.novaBright} aria-label={t("Brightness")} onChange={(event) => patch({ novaBright: Number(event.target.value) })} className="nova-range w-full" /></label>
+        <label className="flex items-center gap-3"><Volume2 className="size-4 shrink-0 text-white/70" /><input type="range" min={0} max={100} value={settings.soundVolume} aria-label={t("Volume")} onChange={(event) => patch({ soundVolume: Number(event.target.value) })} className="nova-range w-full" /></label>
       </div>
       <div className="mt-3 rounded-2xl bg-white/[.06] p-3.5">
-        <p className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><Timer className="size-4 text-[var(--primary)]" />Focus timer</span>{timer && <span className="tabular-nums text-[var(--primary)]">{timer}</span>}</p>
+        <p className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><Timer className="size-4 text-[var(--primary)]" />{t("Focus timer")}</span>{timer && <span className="tabular-nums text-[var(--primary)]">{timer}</span>}</p>
         <div className="mt-2.5 grid grid-cols-4 gap-1.5">
           {timer ? (
-            <button type="button" onClick={stopTimer} className="col-span-4 rounded-xl bg-white/10 py-2 text-[12px] font-semibold hover:bg-white/15">Stop</button>
+            <button type="button" onClick={stopTimer} className="col-span-4 rounded-xl bg-white/10 py-2 text-[12px] font-semibold hover:bg-white/15">{t("Stop")}</button>
           ) : (
             [5, 15, 25, 50].map((minutes) => <button key={minutes} type="button" onClick={() => startTimer(minutes)} className="rounded-xl bg-white/10 py-2 text-[12px] font-semibold hover:bg-[var(--primary)] hover:text-black">{minutes}m</button>)
           )}
         </div>
       </div>
       <div className="mt-3 rounded-2xl bg-white/[.06] p-3.5">
-        <p className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><Palette className="size-4 text-[var(--primary)]" />Theme</span><span className="text-white/60">{theme.name}</span></p>
+        <p className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><Palette className="size-4 text-[var(--primary)]" />{t("Theme")}</span><span className="text-white/60">{theme.name}</span></p>
         <div className="mt-3 grid grid-cols-5 gap-2 px-1">
           {NOVA_THEMES.map((item) => (
             <button key={item.id} type="button" aria-label={`${item.name} theme`} title={item.name} aria-pressed={item.id === theme.id} onClick={() => { patch({ novaTheme: item.id }); notify(`${item.name} theme`, item.sub); }} className={`nova-swatch aspect-square rounded-full ${item.id === theme.id ? "is-on" : ""}`} style={{ background: `conic-gradient(from 200deg, ${item.colors[0]}, ${item.colors[1]}, ${item.colors[2]}, ${item.colors[0]})` }}>
@@ -1325,18 +1331,18 @@ function ControlCenter({ settings, patch, battery, timer, startTimer, stopTimer,
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between gap-2 px-1 text-[12px]">
-          <span className="flex min-w-0 items-center gap-2"><ImageIcon className="size-4 shrink-0 text-white/70" /><span className="truncate">{settings.novaWall.startsWith("photo:") ? "Photo wallpaper" : `${novaWallName(settings.novaWall)} wallpaper`}</span></span>
-          <button type="button" onClick={() => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(`${next.name} wallpaper`, next.sub); }} className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-semibold hover:bg-[var(--primary)] hover:text-black">Next</button>
+          <span className="flex min-w-0 items-center gap-2"><ImageIcon className="size-4 shrink-0 text-white/70" /><span className="truncate">{settings.novaWall.startsWith("photo:") ? t("Photo wallpaper") : t("{name} wallpaper", { name: novaWallName(settings.novaWall) })}</span></span>
+          <button type="button" onClick={() => { const index = NOVA_WALLS.findIndex((item) => item.id === settings.novaWall); const next = NOVA_WALLS[(index + 1) % NOVA_WALLS.length]!; patch({ novaWall: next.id }); notify(t("{name} wallpaper", { name: next.name }), next.sub); }} className="shrink-0 rounded-full bg-white/10 px-3 py-1 font-semibold hover:bg-[var(--primary)] hover:text-black">{t("Next")}</button>
         </div>
       </div>
       <QuickNote />
-      <button type="button" onClick={optimize} className="nova-optimize-btn mt-3 flex w-full items-center gap-3 rounded-2xl p-3 text-left">
+      <button type="button" onClick={optimize} className="nova-optimize-btn mt-3 flex w-full items-center gap-3 rounded-2xl p-3 text-start">
         <span className="grid size-10 shrink-0 place-items-center rounded-full bg-black/25"><Gauge className="size-5" /></span>
-        <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">Optimize</span><span className="block truncate text-[11px] opacity-70">{settings.lite ? "Already optimized · run again" : "Make Nova faster on this device"}</span></span>
+        <span className="min-w-0 flex-1"><span className="block text-[13px] font-semibold">{t("Optimize")}</span><span className="block truncate text-[11px] opacity-70">{settings.lite ? t("Already optimized · run again") : t("Make Nova faster on this device")}</span></span>
       </button>
       <div className="mt-2 grid grid-cols-3 gap-2">
-        <button type="button" onClick={openSettings} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><Settings className="size-4" />Settings</button>
-        <button type="button" onClick={customize} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><LayoutDashboard className="size-4" />Desktop</button>
+        <button type="button" onClick={openSettings} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><Settings className="size-4" />{t("Settings")}</button>
+        <button type="button" onClick={customize} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><LayoutDashboard className="size-4" />{t("Desktop")}</button>
         <button type="button" onClick={switchOS} className="flex flex-col items-center justify-center gap-1 rounded-2xl bg-white/[.06] py-2.5 text-[11.5px] font-semibold hover:bg-white/10"><RotateCw className="size-4" />PRIVATE OS</button>
       </div>
     </aside>
@@ -1364,8 +1370,8 @@ function QuickNote() {
   }, [text]);
   return (
     <label className="mt-3 block rounded-2xl bg-white/[.06] p-3.5">
-      <span className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><StickyNote className="size-4 text-[var(--primary)]" />Quick note</span><span className="text-[10.5px] font-normal text-white/40">{text ? "Saved" : "Saved as you type"}</span></span>
-      <textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} rows={3} placeholder="Jot something down…" aria-label="Quick note" className="nova-note mt-2 w-full resize-none bg-transparent text-[13px] leading-relaxed outline-none placeholder:text-white/35" />
+      <span className="flex items-center justify-between text-[12px] font-semibold"><span className="flex items-center gap-2"><StickyNote className="size-4 text-[var(--primary)]" />{t("Quick note")}</span><span className="text-[10.5px] font-normal text-white/40">{text ? t("Saved") : t("Saved as you type")}</span></span>
+      <textarea value={text} onChange={(event) => setText(event.target.value.slice(0, 2000))} rows={3} placeholder={t("Jot something down…")} aria-label={t("Quick note")} className="nova-note mt-2 w-full resize-none bg-transparent text-[13px] leading-relaxed outline-none placeholder:text-white/35" />
     </label>
   );
 }
@@ -1378,16 +1384,16 @@ export function NovaStart({ theme, onStart }: { theme: NovaTheme; onStart: () =>
       <div className="relative flex flex-col items-center">
         <NovaOrb />
         <h1 className="nova-word mt-10">NOVA</h1>
-        <p className="mt-3 text-[11px] uppercase tracking-[.42em] text-white/50 [animation:nova-fade_1s_.9s_both]">Private OS, reimagined</p>
+        <p className="mt-3 text-[11px] uppercase tracking-[.42em] text-white/50 [animation:nova-fade_1s_.9s_both]">{t("Private OS, reimagined")}</p>
         <AlphaBadge className="mt-6 [animation:nova-fade_1s_1.1s_both]" />
-        <span className="nova-start-btn mt-12 [animation:nova-fade_1s_1.3s_both]">Click to start</span>
+        <span className="nova-start-btn mt-12 [animation:nova-fade_1s_1.3s_both]">{t("Click to start")}</span>
       </div>
-      <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">Press ENTER twice to skip</p>
+      <p className="absolute bottom-6 text-[10px] tracking-wide text-white/30">{t("Press ENTER twice to skip")}</p>
     </main>
   );
 }
 
-const BOOT_LINES = ["Waking the island", "Mixing the light", "Polishing glass", "Tuning animations", "Almost there"];
+const BOOT_LINES = ["Waking the island", "Mixing the light", "Polishing glass", "Tuning animations", "Almost there"] as const;
 export function NovaBoot({ theme }: { theme: NovaTheme }) {
   const [line, setLine] = useState(0);
   useEffect(() => {
@@ -1399,8 +1405,8 @@ export function NovaBoot({ theme }: { theme: NovaTheme }) {
       <div className="relative flex flex-col items-center">
         <NovaOrb fast />
         <div className="mt-14 h-[3px] w-48 overflow-hidden rounded-full bg-white/10"><div className="nova-boot-bar h-full rounded-full" /></div>
-        <p key={line} className="mt-4 text-[12px] text-white/55 [animation:nova-fade_.4s_both]">{BOOT_LINES[line]}…</p>
-        <p className="mt-10 text-[9.5px] font-bold tracking-[.28em] text-white/35">NOVA OS 4.0 · ALPHA RELEASE (STILL IN DEVELOPMENT)</p>
+        <p key={line} className="mt-4 text-[12px] text-white/55 [animation:nova-fade_.4s_both]">{t(BOOT_LINES[line]!)}…</p>
+        <p className="mt-10 text-[9.5px] font-bold tracking-[.28em] text-white/35">NOVA OS 4.1 · ALPHA RELEASE (STILL IN DEVELOPMENT)</p>
       </div>
     </main>
   );
@@ -1434,7 +1440,7 @@ export function NovaOptimize({ theme, onApply, onDone }: { theme: NovaTheme; onA
           </svg>
           {finished ? <Check className="size-14 text-[var(--primary)] [animation:nova-pop_.4s_both]" /> : <span className="text-[34px] font-extralight tabular-nums">{Math.round(pct * 100)}<span className="text-lg text-white/50">%</span></span>}
         </div>
-        <p className="mt-7 text-[22px] font-semibold">{finished ? "Nova is optimized" : "Optimizing Nova"}</p>
+        <p className="mt-7 text-[22px] font-semibold">{finished ? t("Nova is optimized") : t("Optimizing Nova")}</p>
         <p key={step} className="mt-1.5 h-5 text-[13px] text-white/60 [animation:nova-fade_.35s_both]">{finished ? "Lite mode is on. Turn it off any time in Settings › Speed." : `${OPTIMIZE_STEPS[step]}…`}</p>
         <p className="mt-6 text-[11px] uppercase tracking-[.25em] text-white/35">{cores ? `${cores} cores` : "This device"}</p>
       </div>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>PRIVATE OS Player</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{display:block;border:0;width:100%;height:100%}</style>
+</head>
+<body>
+<script>
+// PRIVATE OS opens this page through its own proxy so YouTube sees a normal embed on a real website.
+(function () {
+  var query = new URLSearchParams(location.search);
+  var id = (query.get("v") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 11);
+  var list = (query.get("list") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
+  var start = parseInt(query.get("t") || "0", 10) || 0;
+  var frame = document.createElement("iframe");
+  frame.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+  frame.allowFullscreen = true;
+  frame.referrerPolicy = "strict-origin-when-cross-origin";
+  var src = "https://www.youtube-nocookie.com/embed/" + (id || "videoseries") + "?autoplay=1&playsinline=1&rel=0&modestbranding=1";
+  if (list) src += "&list=" + list;
+  if (start > 0) src += "&start=" + start;
+  frame.src = src;
+  document.body.appendChild(frame);
+})();
+</script>
+</body>
+</html>

@@ -18,7 +18,6 @@ import {
   ArrowLeft,
   ArrowRight,
   BatteryFull,
-  Cherry,
   ChevronDown,
   CircleUserRound,
   Cloud,
@@ -47,7 +46,6 @@ import {
   Wifi,
   X,
   Calculator,
-  Hexagon,
   StickyNote,
   Terminal,
   Activity,
@@ -57,7 +55,6 @@ import {
   ListChecks,
   Paintbrush,
   Play,
-  Music,
   CalendarDays,
   Clock3,
   Bell,
@@ -177,31 +174,18 @@ function AppImage({ className, tone, src }: { className?: string | undefined; to
 }
 
 const CloudIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-300 to-blue-600" src="onedrive" className={className} />;
-const CherryIcon: IconComponent = ({ className }) => <Tile tone="from-rose-400 to-red-700" className={className}><Cherry /></Tile>;
+// Real app icons for apps that open a real service (public/icons/brands). They bring their own shape, so no tile.
+function BrandImage({ className, src }: { className?: string | undefined; src: string }) {
+  return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/brands/${src}`} alt="" draggable={false} decoding="async" className="size-[92%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
+}
+const brandIcon = (src: string): IconComponent => ({ className }) => <BrandImage src={src} className={className} />;
+const CherryIcon: IconComponent = brandIcon("cherrion.svg");
 const FolderIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 to-blue-600" src="files" className={className} />;
 const SettingsIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-400 to-zinc-700" src="settings" className={className} />;
-const BeeZIcon: IconComponent = ({ className }) => <Tile tone="from-amber-300 to-yellow-600" glyph="[&>svg]:size-[62%] [&>svg]:text-zinc-900" className={className}><Hexagon className="fill-zinc-900/25" /></Tile>;
+const BeeZIcon: IconComponent = brandIcon("beez.webp");
 const NotesIcon: IconComponent = ({ className }) => <AppImage tone="from-yellow-300 to-orange-500" src="onenote" className={className} />;
 const CalcIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-500 to-zinc-800" src="calc" className={className} />;
 const TerminalIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-black" src="terminal" className={className} />;
-
-function GrassBlock() {
-  return (
-    <svg viewBox="0 0 32 32" aria-hidden="true">
-      <polygon points="16,3 28,9.5 16,16 4,9.5" fill="#6cb04a" />
-      <polygon points="4,9.5 16,16 16,29.5 4,23" fill="#8a5a33" />
-      <polygon points="16,16 28,9.5 28,23 16,29.5" fill="#6e4526" />
-      <polygon points="4,9.5 16,16 16,19.5 4,13" fill="#5a9a3a" />
-      <polygon points="16,16 28,9.5 28,13 16,19.5" fill="#478a2c" />
-      <polygon points="16,6 18.2,7.2 16,8.4 13.8,7.2" fill="#82c25a" />
-      <polygon points="20,10 22.2,11.2 20,12.4 17.8,11.2" fill="#5a9a3a" />
-      <polygon points="11,10.4 13.2,11.6 11,12.8 8.8,11.6" fill="#82c25a" />
-      <polygon points="6.5,19 9,20.3 9,23 6.5,21.7" fill="#6e4526" />
-      <polygon points="23,20.3 25.5,19 25.5,21.7 23,23" fill="#5a381f" />
-      <path d="M16 3L28 9.5V23L16 29.5 4 23V9.5Z" fill="none" stroke="#1e1e1e" strokeOpacity=".55" strokeWidth=".6" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 // Uses /minecraft-icon.png when you add one to the public folder, otherwise the grass-block icon.
 function MinecraftIcon({ className }: { className?: string }) {
@@ -212,7 +196,7 @@ function MinecraftIcon({ className }: { className?: string }) {
     probe.src = "/minecraft-icon.png";
   }, []);
   if (custom) return <img src="/minecraft-icon.png" alt="" draggable={false} className={`rounded-[22.5%] object-cover ${className ?? ""}`} />;
-  return <Tile tone="from-zinc-600 to-zinc-900" glyph="[&>svg]:size-[76%]" className={className}><GrassBlock /></Tile>;
+  return <BrandImage src="minecraft.svg" className={className} />;
 }
 
 const TaskIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-400 to-teal-700" src="taskmgr" className={className} />;
@@ -221,24 +205,25 @@ const WeatherIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-4
 const PaintIcon: IconComponent = ({ className }) => <AppImage tone="from-pink-400 to-purple-700" src="paint" className={className} />;
 const TodoIcon: IconComponent = ({ className }) => <AppImage tone="from-lime-400 to-green-700" src="todo" className={className} />;
 
-const YouTubeIcon: IconComponent = ({ className }) => <Tile tone="from-red-500 to-red-800" glyph="[&>svg]:size-[52%] [&>svg]:text-white" className={className}><Play className="fill-white" /></Tile>;
+const YouTubeIcon: IconComponent = brandIcon("youtube.svg");
 
 const CalendarIcon: IconComponent = ({ className }) => <AppImage tone="from-white to-zinc-200" src="calendar" className={className} />;
 const ClockIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-zinc-900" src="clock" className={className} />;
 const PhotosIcon: IconComponent = ({ className }) => <AppImage tone="from-white to-zinc-200" src="photos" className={className} />;
 
 
+// Apps that open a site in the browser.
 const LINK_APPS = [
-  { id: "spotify", label: "Spotify", url: "https://open.spotify.com/", tone: "from-green-400 to-green-700", icon: Music },
+  { id: "netflix", label: "Netflix", url: "https://www.netflix.com/", icon: "netflix.svg" },
+  { id: "spotify", label: "Spotify", url: "https://open.spotify.com/", icon: "spotify.svg" },
+  { id: "playstation", label: "PlayStation", url: "https://www.playstation.com/", icon: "playstation.svg" },
+  { id: "discord", label: "Discord", url: "https://discord.com/app", icon: "discord.svg" },
 ];
-const linkLauncher = LINK_APPS.map((app) => ({
-  id: app.id,
-  label: app.label,
-  icon: (({ className }) => <Tile tone={app.tone} glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><app.icon /></Tile>) as IconComponent,
-}));
+const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.1";
+const OS_VERSION = "4.2";
 const CHANGELOG = [
+  { v: "4.2", date: "2 Nov 2026", items: ["New PRIVATE OS dock, made after the Figure OS video: a slim, nearly clear black strip with Start and All apps on the left, colourful app icons with no tiles and wide spacing, and a small white dash under open apps. Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't", "The browser now runs on Scramjet 2, the new version of the proxy engine. It runs in the page instead of the background worker, works on browsers without shared workers, and YouTube pages load through it again", "Fixed YouTube's \"Video player configuration error 153\" inside the proxy"] },
   { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
   { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Eclipse\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Eclipse theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Eclipse (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
   { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
@@ -295,7 +280,10 @@ const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 
 const ContactsIcon: IconComponent = ({ className }) => <AppImage tone="from-stone-300 to-stone-500" src="contacts" className={className} />;
 const MapsIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-300 to-teal-600" src="maps" className={className} />;
 
+const TaskViewIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-300 to-zinc-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><PanelsTopLeft /></Tile>;
+
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
+  { id: "taskview", label: "Task view", icon: TaskViewIcon },
   { id: "browser", label: "PRIVATE Browser", icon: PrivateBrowserIcon },
   { id: "files", label: "Files", icon: FolderIcon },
   { id: "notes", label: "Private OneNote", icon: NotesIcon },
@@ -540,6 +528,8 @@ function PrivateOS() {
         if (saved.theme === "liquid") { saved.theme = "clay"; saved.accent = "#d97757"; }
         // NOVA OS 2.3 has a shorter dock; docks still on the old default get the new one.
         if (saved.novaPins && saved.novaPins.join() === OLD_NOVA_PINS.join()) saved.novaPins = NOVA_PINS;
+        // PRIVATE OS 4.2 has a new dock; docks still on the old default pins get the new set.
+        if (saved.dockPins && saved.dockPins.join() === OLD_DOCK_PINS.join()) saved.dockPins = DOCK_PINS;
         // NOVA OS 2.4 has its own wallpaper choice; the old "use my photo" switch becomes that photo.
         if (saved.novaPhoto && !saved.novaWall) saved.novaWall = `photo:${Number(localStorage.getItem("pos-wallpaper")) || 0}`;
         // NOVA OS 4.0 brings the Eclipse look; people still on the old default theme move to it once.
@@ -682,6 +672,12 @@ function PrivateOS() {
   const raise = (id: string) => setZOrder((list) => (list[list.length - 1] === id ? list : [...list.filter((item) => item !== id), id]));
 
   const openApp = (id: string): void => {
+    if (id === "taskview") {
+      setTaskView((value) => !value);
+      setStartMenu(false);
+      setLauncher(false);
+      return;
+    }
     const link = LINK_APPS.find((app) => app.id === id);
     if (link) {
       setBrowserStart(link.url);
@@ -956,31 +952,30 @@ function PrivateOS() {
         onMouseLeave={() => setDockShown(false)}
         onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }}
         style={{ ...dockSurface, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? (settings.dockPos === "top" ? "translateY(-110%)" : "translateY(110%)") : undefined }}
-        className={`taskbar ${settings.dockLiquid ? "taskbar-liquid" : ""} absolute inset-x-0 z-40 flex h-12 items-center px-2 text-white ${settings.dockPos === "top" ? "top-0 border-b" : "bottom-0 border-t"}`}
+        className={`taskbar taskbar-strip ${settings.dockLiquid ? "taskbar-liquid" : ""} absolute inset-x-0 z-40 flex h-11 items-center px-2 text-white ${settings.dockPos === "top" ? "top-0" : "bottom-0"}`}
       >
-        <div className="hidden w-48 shrink-0 md:block" aria-hidden />
-        <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center justify-center gap-1 overflow-x-auto">
+        <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pl-2 sm:gap-2.5">
           <span data-start id="start-anchor" className="inline-flex">
-            <OsButton label={t("Start")} onClick={openStartMenu} className={`taskbar-btn ${startMenu ? "is-on" : ""}`}><StartGlyph /></OsButton>
+            <OsButton label={t("Start")} onClick={openStartMenu} className={`strip-btn ${startMenu ? "is-on" : ""}`}><StripLogo /></OsButton>
           </span>
-          <OsButton label={t("Search")} onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`taskbar-btn ${launcher ? "is-on" : ""}`}><Search className="size-[18px]" /></OsButton>
-          <OsButton label={t("Task view")} onClick={() => { setTaskView((value) => !value); setStartMenu(false); setLauncher(false); }} className={`taskbar-btn ${taskView ? "is-on" : ""}`}><PanelsTopLeft className="size-[18px]" /></OsButton>
+          <OsButton label={t("All apps")} onClick={() => { setLauncher((value) => !value); setStartMenu(false); }} className={`strip-btn ${launcher ? "is-on" : ""}`}><StripGrid /></OsButton>
+          <span className="w-1 shrink-0 sm:w-2" aria-hidden />
           {dockList.map(({ id, app }) => {
             const Icon = app.icon;
-            const open = openWins.includes(id);
+            const open = openWins.includes(id) || (id === "taskview" && taskView);
             const focused = open && !minWins.includes(id) && zOrder[zOrder.length - 1] === id;
             return (
               <span key={id} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setBarMenu(null); setDockMenu({ id, x: event.clientX, y: event.clientY }); }} className="contents">
-                <OsButton label={appLabel(app)} onClick={() => (focused ? setMinWins((list) => [...list, id]) : openApp(id))} className={`taskbar-btn group ${focused ? "is-on" : ""}`}>
-                  <Icon className={settings.bigIcons ? "size-7" : "size-6"} />
+                <OsButton label={appLabel(app)} onClick={() => (focused && id !== "taskview" ? setMinWins((list) => [...list, id]) : openApp(id))} className={`strip-btn strip-app group ${focused ? "is-on" : ""}`}>
+                  <Icon className={settings.bigIcons ? "size-7" : "size-[22px]"} />
                   <span className="taskbar-tip">{appLabel(app)}</span>
-                  {open && <span className={`taskbar-dot ${focused ? "is-focused" : ""}`} />}
+                  {open && <span className={`strip-dash ${focused ? "is-focused" : ""}`} />}
                 </OsButton>
               </span>
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center gap-0.5 md:w-48 md:justify-end">
+        <div className="flex shrink-0 items-center gap-0.5 pl-2 md:justify-end">
           <OsButton label="Show hidden icons" onClick={() => setLauncher((value) => !value)} className="taskbar-btn hidden w-7 sm:inline-flex"><ChevronUp className="size-4" /></OsButton>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label={t("Quick settings")} className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
             <span className="hidden text-[11px] font-medium leading-tight sm:block">{LANGUAGES.find((item) => item.id === settings.language)?.abbr ?? "ENG"}</span>
@@ -1320,6 +1315,24 @@ function Wallpaper({ index, options }: { index: number; options: WallpaperOption
 }
 
 // Four rounded panes in the theme colour: the Start button.
+// Start button of the PRIVATE OS dock: two offset white squares.
+function StripLogo() {
+  return (
+    <span aria-hidden className="relative block size-[18px]">
+      <span className="absolute left-0 top-[6px] size-[9px] rounded-[2px] bg-white" />
+      <span className="absolute left-[7px] top-[1px] size-[9px] rounded-[2px] bg-white/85" />
+    </span>
+  );
+}
+// All-apps button: a 2 by 2 grid.
+function StripGrid() {
+  return (
+    <span aria-hidden className="grid size-[17px] grid-cols-2 gap-[3px]">
+      {[0, 1, 2, 3].map((i) => <span key={i} className="rounded-[2.5px] bg-white/80" />)}
+    </span>
+  );
+}
+
 function StartGlyph() {
   return (
     <span aria-hidden className="grid size-[18px] grid-cols-2 gap-[2px]">
@@ -1652,7 +1665,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   );
 }
 
-// ---- Proxy engine: Scramjet (page rewriting) + Epoxy (encrypted transport through Wisp servers) ----
+// ---- Proxy engine: Scramjet 2 (page rewriting) + Epoxy and libcurl (encrypted transport through Wisp servers) ----
 // Public Wisp servers. Each one blocks some sites, so the relay transport (/relay.mjs) sends a request
 // that fails on one server through the next, and remembers which server works for each site.
 const WISP_SERVERS = ["wss://anura.pro/", "wss://wisp.mercurywork.shop/wisp/"];
@@ -1751,15 +1764,38 @@ type EngineFrame = {
   addEventListener: (type: string, listener: (event: { url?: string | URL }) => void) => void;
 };
 type EngineController = { init: () => Promise<void>; createFrame: (frame?: HTMLIFrameElement) => EngineFrame; encodeUrl: (url: string) => string };
+
+// Scramjet 2: the engine runs in this page (a Controller with one Frame per iframe) and the service
+// worker only routes /~/sj/ requests to it. Pages are fetched through the relay transport.
+type ProxyTransport = { init: () => Promise<void> };
+type TransferResponse = { body: string; headers: [string, string][]; status: number; statusText: string };
+type ErrorHook = { context: { rawrequest: { rawUrl: string; destination: string; method: string }; error: unknown }; props: { setResponse?: TransferResponse; suppressError?: boolean } };
+type SjFrame = { prefix: string; go: (url: string) => void; hooks: { error: { request: ErrorHook } } };
+type SjController = {
+  wait: () => Promise<void>;
+  createFrame: (element: HTMLIFrameElement) => SjFrame;
+  setTransport: (transport: ProxyTransport) => void;
+  persistCookies: () => Promise<void>;
+  cookieJar: { clear: () => void };
+  config: { codec: { encode: (url: string) => string; decode: (url: string) => string } };
+};
 type EngineWindow = {
-  BareMux?: { BareMuxConnection: new (workerPath: string) => { setTransport: (path: string, args: unknown[]) => Promise<void> } };
-  $scramjetLoadController?: () => { ScramjetController: new (config: Record<string, unknown>) => EngineController };
+  $scramjetController?: { Controller: new (init: { serviceworker: ServiceWorker; transport: ProxyTransport }) => SjController };
+  $scramjet?: { Tap: { tap: (hook: ErrorHook, callback: (context: ErrorHook["context"], props: ErrorHook["props"]) => void) => void } };
 };
 
 let engineStart: Promise<EngineController> | null = null;
-// The live transport link, so the browser can move to another Wisp server when one drops connections.
-let engineLink: { connection: { setTransport: (path: string, args: unknown[]) => Promise<void> }; wisp: string } | null = null;
+// The live engine and its server, so the browser can move to another Wisp server when one drops connections.
+let engineLink: { controller: SjController; wisp: string } | null = null;
 let rotating: Promise<boolean> | null = null;
+
+async function makeRelay(first: string) {
+  const path = "/relay.mjs";
+  const { default: Relay } = (await import(/* @vite-ignore */ path)) as { default: new (options: { servers: string[] }) => ProxyTransport };
+  const transport = new Relay({ servers: relayServers(first) });
+  await transport.init();
+  return transport;
+}
 
 // Moves the proxy to the next Wisp server that answers. Skipped when the person picked a server.
 function rotateWisp() {
@@ -1775,7 +1811,7 @@ function rotateWisp() {
     for (const url of WISP_SERVERS.filter((item) => item !== link.wisp)) {
       if (!(await probeWisp(url, 3000))) continue;
       try {
-        await withTimeout(link.connection.setTransport("/relay.mjs", [{ servers: relayServers(url) }]), 8000, "switch timed out");
+        link.controller.setTransport(await withTimeout(makeRelay(url), 8000, "switch timed out"));
       } catch {
         continue;
       }
@@ -1841,62 +1877,128 @@ function workerActivated(worker: ServiceWorker | null) {
   });
 }
 
-// Scramjet keeps its settings in an IndexedDB database. The previous proxy worker opened that database
-// before the page had set it up, which left it empty and stopped every page from loading.
-// An empty database is deleted here so the engine can rebuild it.
-function repairEngineStore() {
-  return new Promise<void>((resolve) => {
-    let request: IDBOpenDBRequest;
+// The first proxy engine kept its settings and cookies in a "$scramjet" database that Scramjet 2 no longer reads.
+function dropOldEngineStore() {
+  try {
+    if (localStorage.getItem("pos-engine") === "2") return;
+    indexedDB.deleteDatabase("$scramjet");
+    localStorage.setItem("pos-engine", "2");
+  } catch {
+    // nothing to clean up
+  }
+}
+
+const escapeHtml = (value: string) => value.replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char] ?? char);
+
+// Shown inside the browser when the proxy server can't reach a page.
+function proxyErrorPage(target: string, details: string): TransferResponse {
+  let host = target;
+  try {
+    host = new URL(target).hostname.replace(/^www\./, "");
+  } catch {
+    // keep the raw address
+  }
+  const body = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Couldn't open ${escapeHtml(host)}</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b0d12;color:#e8eaf0;font:14px/1.5 system-ui,sans-serif}main{max-width:460px;padding:28px;text-align:center}h1{font-size:20px;margin:14px 0 6px}p{color:#a3a9b8;margin:0 0 18px}button{border:0;border-radius:999px;padding:10px 20px;font:600 13px system-ui;background:#7c9cff;color:#0b0d12;cursor:pointer}details{margin-top:22px;text-align:left;color:#7d8394;font-size:11px}pre{white-space:pre-wrap;word-break:break-all}.dot{width:44px;height:44px;margin:auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#a5b8ff,#4f63d6);box-shadow:0 0 40px #4f63d680}</style>
+<main><div class="dot"></div><h1>Couldn't open ${escapeHtml(host)}</h1><p>The proxy server dropped the connection, so the browser switched to another server. Try again in a moment.</p><button onclick="location.reload()">Try again</button><details><summary>Details</summary><pre>${escapeHtml(details.slice(0, 1500))}</pre></details></main>`;
+  return { body, status: 502, statusText: "Bad Gateway", headers: [["content-type", "text/html; charset=utf-8"]] };
+}
+
+// Wraps the Scramjet 2 controller in the small interface the apps use: frames that report the real
+// address of the page they show (read from the frame's own address), and an address encoder.
+function engineInterface(controller: SjController, scope: EngineWindow): EngineController {
+  const { codec } = controller.config;
+  const realAddress = (href: string, prefix: string) => {
+    const at = href.indexOf(prefix);
+    if (at < 0) return "";
+    const rest = href.slice(at + prefix.length);
+    const hash = rest.indexOf("#");
     try {
-      request = indexedDB.open("$scramjet");
+      return codec.decode(hash < 0 ? rest : rest.slice(0, hash)) + (hash < 0 ? "" : rest.slice(hash));
     } catch {
-      return resolve();
+      return "";
     }
-    request.onerror = () => resolve();
-    request.onsuccess = () => {
-      const database = request.result;
-      const ready = database.objectStoreNames.contains("config");
-      database.close();
-      if (ready) return resolve();
-      const removal = indexedDB.deleteDatabase("$scramjet");
-      const timer = window.setTimeout(resolve, 8000);
-      removal.onsuccess = removal.onerror = () => {
-        window.clearTimeout(timer);
-        resolve();
+  };
+  const makeFrame = (element: HTMLIFrameElement) => {
+    const frame = controller.createFrame(element);
+    // A page the proxy server couldn't reach gets a readable error page, and the browser is told so it can switch servers.
+    scope.$scramjet?.Tap.tap(frame.hooks.error.request, (context, props) => {
+      const { rawrequest } = context;
+      if (rawrequest.method !== "GET" || !["document", "iframe"].includes(rawrequest.destination)) return;
+      const target = realAddress(rawrequest.rawUrl, frame.prefix) || rawrequest.rawUrl;
+      props.setResponse = proxyErrorPage(target, String(context.error));
+      props.suppressError = true;
+      window.dispatchEvent(new CustomEvent("pos-proxy-failed", { detail: { url: target } }));
+    });
+    return frame;
+  };
+  let encoder: SjFrame | null = null;
+  return {
+    init: async () => undefined,
+    createFrame: (element = document.createElement("iframe")) => {
+      const frame = makeFrame(element);
+      const listeners: ((event: { url?: string }) => void)[] = [];
+      let last = "";
+      let seen = false;
+      const check = () => {
+        let href = "";
+        try {
+          href = element.contentWindow?.location.href ?? "";
+        } catch {
+          return;
+        }
+        const url = realAddress(href, frame.prefix);
+        if (!url || url === last) return;
+        last = url;
+        for (const listener of listeners) listener({ url });
       };
-    };
-  });
+      element.addEventListener("load", check);
+      const timer = window.setInterval(() => {
+        if (element.isConnected) seen = true;
+        else if (seen) return window.clearInterval(timer);
+        check();
+      }, 600);
+      return {
+        go: (url: string) => {
+          last = "";
+          frame.go(url);
+        },
+        addEventListener: (type, listener) => {
+          if (type === "urlchange") listeners.push(listener);
+        },
+      };
+    },
+    encodeUrl: (url: string) => {
+      encoder ??= makeFrame(document.createElement("iframe"));
+      return encoder.prefix + codec.encode(url);
+    },
+  };
 }
 
 function startProxyEngine() {
   if (!engineStart) {
     engineStart = withTimeout((async () => {
-      if (!("serviceWorker" in navigator) || typeof SharedWorker === "undefined" || typeof WebAssembly === "undefined" || typeof indexedDB === "undefined") {
+      if (!("serviceWorker" in navigator) || typeof WebAssembly === "undefined" || typeof indexedDB === "undefined") {
         throw new Error("This browser can't run the proxy engine");
       }
       const scope = window as unknown as EngineWindow;
-      // The proxy server is chosen while the engine files load, instead of after.
-      const wisp = pickWisp();
-      await Promise.all([loadScript("/baremux.js"), loadScript("/scramjet.all.js")]);
-      if (!scope.BareMux || !scope.$scramjetLoadController) throw new Error("Proxy engine files are missing");
+      dropOldEngineStore();
+      // The proxy server is chosen and the transport loaded while the engine files load, instead of after.
+      const relay = pickWisp().then(async (server) => ({ server, transport: await withTimeout(makeRelay(server), 12000, "Could not reach a proxy server") }));
+      relay.catch(() => undefined);
+      await loadScript("/scramjet/scramjet.js");
+      await loadScript("/controller/controller.api.js");
+      if (!scope.$scramjetController) throw new Error("Proxy engine files are missing");
       const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
       await workerActivated(registration.installing ?? registration.waiting);
-      await withTimeout(navigator.serviceWorker.ready, 8000, "The proxy worker did not start");
-      if (!navigator.serviceWorker.controller) {
-        await new Promise<void>((resolve) => {
-          navigator.serviceWorker.addEventListener("controllerchange", () => resolve(), { once: true });
-          window.setTimeout(resolve, 2500);
-        });
-      }
-      await repairEngineStore();
-      const { ScramjetController } = scope.$scramjetLoadController();
-      const controller = new ScramjetController({ prefix: "/scramjet/" });
-      await withTimeout(controller.init(), 10000, "The proxy engine did not initialise");
-      const connection = new scope.BareMux.BareMuxConnection("/baremux-worker.js");
-      const server = await wisp;
-      await withTimeout(connection.setTransport("/relay.mjs", [{ servers: relayServers(server) }]), 12000, "Could not reach a proxy server");
-      engineLink = { connection, wisp: server };
-      return controller;
+      const ready = await withTimeout(navigator.serviceWorker.ready, 8000, "The proxy worker did not start");
+      const worker = ready.active ?? registration.active;
+      if (!worker) throw new Error("The proxy worker did not start");
+      const { server, transport } = await relay;
+      const controller = new scope.$scramjetController.Controller({ serviceworker: worker, transport });
+      await withTimeout(controller.wait(), 10000, "The proxy engine did not initialise");
+      engineLink = { controller, wisp: server };
+      return engineInterface(controller, scope);
     })(), 30000, "The proxy engine took too long to start").catch((error) => {
       engineStart = null;
       void resetProxyWorker();
@@ -2082,79 +2184,239 @@ function BeeZApp({ close }: { close: () => void }) {
   );
 }
 
-function YouTubeApp({ close }: { close: () => void }) {
-  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
-  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const controllerRef = useRef<EngineController | null>(null);
+type YouTubeVideo = { id: string; title: string; channel: string; views: string; length: string; published: string; live: boolean };
+const YT_TOPICS = ["Trending music", "Gaming", "Minecraft", "Lofi", "Football", "Comedy", "Science", "News"];
+const YT_ID = /^[A-Za-z0-9_-]{11}$/;
 
-  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
+// Reads a YouTube link (watch, youtu.be, shorts, embed, live) or a bare video id.
+function youTubeId(input: string) {
+  const value = input.trim();
+  if (YT_ID.test(value)) return value;
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
+    const host = url.hostname.replace(/^(www|m|music)\./, "");
+    if (host === "youtu.be") return YT_ID.test(url.pathname.slice(1, 12)) ? url.pathname.slice(1, 12) : null;
+    if (host !== "youtube.com" && host !== "youtube-nocookie.com") return null;
+    const fromQuery = url.searchParams.get("v") ?? "";
+    if (YT_ID.test(fromQuery)) return fromQuery;
+    const fromPath = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([A-Za-z0-9_-]{11})/)?.[1];
+    return fromPath ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// Can this connection reach YouTube's player itself? Then videos play straight from YouTube, which is
+// the fastest way and never meets the "confirm you're not a bot" wall that proxy servers get.
+let youTubeReach: Promise<boolean> | null = null;
+function canReachYouTube() {
+  youTubeReach ??= new Promise<boolean>((resolve) => {
+    const image = new Image();
+    const timer = window.setTimeout(() => resolve(false), 4000);
+    image.onload = () => {
+      window.clearTimeout(timer);
+      resolve(true);
+    };
+    image.onerror = () => {
+      window.clearTimeout(timer);
+      resolve(false);
+    };
+    image.src = `https://www.youtube-nocookie.com/favicon.ico?pos=${Date.now()}`;
+  });
+  return youTubeReach;
+}
+
+function YouTubeThumb({ id, className }: { id: string; className?: string }) {
+  return (
+    <img
+      src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+      onError={(event) => {
+        const image = event.currentTarget;
+        if (image.dataset["server"]) return;
+        image.dataset["server"] = "1";
+        image.src = `/api/youtube?thumb=${id}`;
+      }}
+      className={`aspect-video w-full bg-white/5 object-cover ${className ?? ""}`}
+    />
+  );
+}
+
+// Plays one video: straight from YouTube when this connection can reach it, otherwise through the
+// proxy, inside a small player page on this site so YouTube sees a normal embedded player.
+function YouTubePlayer({ id }: { id: string }) {
+  const [route, setRoute] = useState<"checking" | "direct" | "proxy" | "failed">("checking");
+  const frameRef = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
     let cancelled = false;
-    (async () => {
-      try {
-        controllerRef.current = await startProxyEngine();
-        if (!cancelled) setMode("engine");
-      } catch {
-        let direct = true;
-        try {
-          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(YOUTUBE_URL)}`);
-          const info = (await response.json()) as { frameable?: boolean | null };
-          if (info.frameable === false) direct = false;
-        } catch {
-          // assume the site can be opened directly
-        }
-        if (cancelled) return;
-        setFallbackSrc(direct ? YOUTUBE_URL : `/api/proxy?url=${encodeURIComponent(YOUTUBE_URL)}`);
-        setMode("fallback");
-      }
-    })();
+    void canReachYouTube().then((ok) => {
+      if (!cancelled) setRoute(ok ? "direct" : "proxy");
+    });
     return () => {
       cancelled = true;
     };
   }, []);
+  useEffect(() => {
+    if (route !== "proxy") return;
+    let cancelled = false;
+    startProxyEngine()
+      .then((engine) => {
+        const element = frameRef.current;
+        if (!cancelled && element) engine.createFrame(element).go(`${window.location.origin}/yt.html?v=${id}`);
+      })
+      .catch(() => {
+        if (!cancelled) setRoute("failed");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [route, id]);
+  return (
+    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+      {route === "direct" && (
+        <iframe
+          key={`direct-${id}`}
+          title="YouTube player"
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+          className="absolute inset-0 size-full border-0"
+        />
+      )}
+      {route === "proxy" && <iframe key={`proxy-${id}`} ref={frameRef} title="YouTube player" allow={`${ENGINE_FRAME_PERMISSIONS}; encrypted-media; picture-in-picture`} allowFullScreen className="absolute inset-0 size-full border-0" />}
+      {route === "checking" && <div className="absolute inset-0 grid place-items-center"><span className="size-8 animate-spin rounded-full border-2 border-white/20 border-t-white" /></div>}
+      {route === "failed" && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/70">This network blocks YouTube and the proxy couldn't start in this browser.</div>}
+      {route === "proxy" && <p className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-[10px] text-white/55">Playing through the proxy because this network blocks YouTube. If YouTube asks you to sign in, its servers are refusing the proxy right now.</p>}
+    </div>
+  );
+}
+
+function YouTubeApp({ close }: { close: () => void }) {
+  const [query, setQuery] = useState("");
+  const [shown, setShown] = useState<{ query: string; videos: YouTubeVideo[] | null; error: string }>({ query: "", videos: null, error: "" });
+  const [playing, setPlaying] = useState<YouTubeVideo | null>(null);
+  const request = useRef(0);
+
+  const search = (text: string) => {
+    const value = text.trim();
+    if (!value) return;
+    const linked = youTubeId(value);
+    if (linked) {
+      setPlaying({ id: linked, title: "", channel: "", views: "", length: "", published: "", live: false });
+      return;
+    }
+    const ticket = ++request.current;
+    setPlaying(null);
+    setShown({ query: value, videos: null, error: "" });
+    try {
+      localStorage.setItem("pos-yt-last", value);
+    } catch {
+      // storage unavailable
+    }
+    fetch(`/api/youtube?q=${encodeURIComponent(value)}`)
+      .then(async (response) => (await response.json()) as { videos?: YouTubeVideo[]; error?: string })
+      .then((data) => {
+        if (ticket !== request.current) return;
+        setShown({ query: value, videos: data.videos ?? [], error: data.videos?.length ? "" : data.error || "No videos found." });
+      })
+      .catch(() => {
+        if (ticket === request.current) setShown({ query: value, videos: [], error: "YouTube couldn't be reached. Try again in a moment." });
+      });
+  };
 
   useEffect(() => {
-    if (mode !== "engine") return;
-    const element = frameRef.current;
-    const controller = controllerRef.current;
-    if (element && controller) controller.createFrame(element).go(YOUTUBE_URL);
-  }, [mode]);
+    let start = YT_TOPICS[0]!;
+    try {
+      start = localStorage.getItem("pos-yt-last") || start;
+    } catch {
+      // storage unavailable
+    }
+    search(start);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const list = shown.videos ?? [];
+  const upNext = playing ? list.filter((video) => video.id !== playing.id) : [];
+  const card = (video: YouTubeVideo, compact = false) => (
+    <button key={video.id} type="button" onClick={() => setPlaying(video)} className={`group text-left outline-none ${compact ? "flex gap-2.5" : "flex flex-col gap-2.5"}`}>
+      <span className={`relative block shrink-0 overflow-hidden rounded-xl ${compact ? "w-40" : "w-full"}`}>
+        <YouTubeThumb id={video.id} className="transition-transform duration-300 group-hover:scale-[1.04]" />
+        {(video.length || video.live) && <span className={`absolute bottom-1.5 right-1.5 rounded px-1 py-px text-[10px] font-semibold ${video.live ? "bg-red-600" : "bg-black/80"}`}>{video.live ? "LIVE" : video.length}</span>}
+      </span>
+      <span className="min-w-0">
+        <span className={`line-clamp-2 font-semibold leading-snug text-white ${compact ? "text-[12px]" : "text-[13px]"}`}>{video.title}</span>
+        <span className="mt-1 block truncate text-[11px] text-white/55">{video.channel}</span>
+        <span className="block truncate text-[11px] text-white/45">{[video.views, video.published].filter(Boolean).join(" • ")}</span>
+      </span>
+    </button>
+  );
 
   const openOutside = (
-    <button type="button" aria-label="Open YouTube in a new tab" onClick={() => window.open(YOUTUBE_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+    <button type="button" aria-label="Open YouTube in a new tab" onClick={() => window.open(playing ? `https://www.youtube.com/watch?v=${playing.id}` : YOUTUBE_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
       <ExternalLink className="size-3.5" />
     </button>
   );
 
   return (
     <WindowFrame title="YouTube" icon={YouTubeIcon} close={close} app startMaximized actions={openOutside}>
-      <div className="relative flex-1 overflow-hidden bg-black">
-        {loading && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
-            <div className="text-center">
-              <YouTubeIcon className="mx-auto size-20" />
-              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">YOUTUBE</p>
-              <p className="mt-1 text-[11px] text-white/50">Loading…</p>
-              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#ff2d2d] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+      <div className="flex min-h-0 flex-1 flex-col bg-[#0f0f0f] text-white">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            search(query);
+          }}
+          className="flex shrink-0 items-center gap-3 px-4 py-2.5"
+        >
+          <button type="button" onClick={() => setPlaying(null)} className="flex shrink-0 items-center gap-1.5 outline-none" aria-label="YouTube home">
+            <YouTubeIcon className="h-5 w-7" />
+            <span className="text-[17px] font-bold tracking-tight">YouTube</span>
+          </button>
+          <label className="mx-auto flex h-9 w-full max-w-xl items-center overflow-hidden rounded-full border border-white/15 bg-[#121212] focus-within:border-[#3ea6ff]">
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or paste a YouTube link" aria-label="Search YouTube" className="h-full min-w-0 flex-1 bg-transparent px-4 text-[13px] outline-none placeholder:text-white/40" />
+            <button type="submit" aria-label="Search" className="grid h-full w-14 place-items-center border-l border-white/15 bg-white/[.08] hover:bg-white/15"><Search className="size-4" /></button>
+          </label>
+          <span className="hidden w-28 shrink-0 sm:block" aria-hidden />
+        </form>
+        <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-3">
+          {YT_TOPICS.map((topic) => (
+            <button key={topic} type="button" onClick={() => { setQuery(""); search(topic); }} className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${!playing && shown.query === topic ? "bg-white text-black" : "bg-white/10 hover:bg-white/20"}`}>{topic}</button>
+          ))}
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
+          {playing ? (
+            <div className="flex flex-col gap-5 lg:flex-row">
+              <div className="min-w-0 flex-1">
+                <YouTubePlayer key={playing.id} id={playing.id} />
+                {playing.title && <h2 className="mt-3 text-[17px] font-bold leading-snug">{playing.title}</h2>}
+                {playing.channel && <p className="mt-1 text-[12px] text-white/60">{[playing.channel, playing.views, playing.published].filter(Boolean).join(" • ")}</p>}
+              </div>
+              {upNext.length > 0 && (
+                <aside className="flex w-full shrink-0 flex-col gap-3 lg:w-[22rem]">
+                  <p className="text-[13px] font-semibold text-white/80">Up next</p>
+                  {upNext.slice(0, 18).map((video) => card(video, true))}
+                </aside>
+              )}
             </div>
-          </div>
-        )}
-        {mode === "engine" && (
-          <iframe ref={frameRef} key="engine" title="YouTube" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
-        )}
-        {mode === "fallback" && fallbackSrc && (
-          <iframe
-            key="fallback"
-            title="YouTube"
-            src={fallbackSrc}
-            onLoad={() => setLoading(false)}
-            className="size-full border-0 bg-black"
-            allow={ENGINE_FRAME_PERMISSIONS}
-            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
-          />
-        )}
+          ) : shown.videos === null ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-7">
+              {Array.from({ length: 12 }, (_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="aspect-video rounded-xl bg-white/10" />
+                  <div className="mt-2.5 h-3 w-4/5 rounded bg-white/10" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
+                </div>
+              ))}
+            </div>
+          ) : shown.error ? (
+            <p className="py-16 text-center text-sm text-white/60">{shown.error}</p>
+          ) : (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-7">{list.map((video) => card(video))}</div>
+          )}
+        </div>
       </div>
     </WindowFrame>
   );
@@ -2239,19 +2501,14 @@ function useHistoryList() {
 }
 // Forgets every site cookie the proxy saved, which signs you out of sites opened in the browser.
 function clearSiteCookies() {
-  try {
-    navigator.serviceWorker?.controller?.postMessage({ posProxy: "clear-cookies" });
-  } catch {
-    // no proxy worker running
+  const link = engineLink;
+  if (link) {
+    link.controller.cookieJar.clear();
+    void link.controller.persistCookies().catch(() => undefined);
+    return;
   }
   try {
-    const request = indexedDB.open("$scramjet");
-    request.onupgradeneeded = () => request.transaction?.abort();
-    request.onsuccess = () => {
-      const database = request.result;
-      if (database.objectStoreNames.contains("cookies")) database.transaction("cookies", "readwrite").objectStore("cookies").put({}, "cookies");
-      database.close();
-    };
+    indexedDB.deleteDatabase("__scramjet_controller");
   } catch {
     // nothing stored
   }
@@ -2512,20 +2769,19 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
       .catch(() => setEngine("failed"));
   }, [needsEngine, engine]);
 
-  // The proxy worker gave up on a page: move to another proxy server and try the page once more.
+  // The proxy server couldn't reach a page: move to another proxy server and try the page once more.
   useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    const onWorker = (event: MessageEvent) => {
-      const data = event.data as { posProxy?: string; url?: string } | null;
-      if (data?.posProxy !== "failed" || !active || retried.current || !frameTarget) return;
-      if (data.url && hostOf(data.url) !== hostOf(frameTarget)) return;
+    const onFailed = (event: Event) => {
+      const url = (event as CustomEvent<{ url?: string }>).detail?.url;
+      if (!active || retried.current || !frameTarget) return;
+      if (url && hostOf(url) !== hostOf(frameTarget)) return;
       retried.current = true;
       void rotateWisp().then((moved) => {
         if (moved) engineFrame.current?.frame.go(frameTarget);
       });
     };
-    navigator.serviceWorker.addEventListener("message", onWorker);
-    return () => navigator.serviceWorker.removeEventListener("message", onWorker);
+    window.addEventListener("pos-proxy-failed", onFailed);
+    return () => window.removeEventListener("pos-proxy-failed", onFailed);
   }, [active, frameTarget]);
 
   // Send the current page through the engine.
@@ -2726,7 +2982,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
             <div className="stagger mt-8 grid w-full max-w-xl grid-cols-4 gap-2 sm:grid-cols-4">
               {NTP_SHORTCUTS.map((item) => (
                 <button key={item.url} type="button" aria-label={`Open ${item.title}`} onClick={() => navigateTo(item.url)} className="chrome-tile flex flex-col items-center gap-2 rounded-2xl p-3 hover:bg-white/[.07]">
-                  <span className="grid size-12 place-items-center rounded-full bg-white/10">{item.url === CHERRION_URL ? <Cherry className="size-5 text-rose-300" /> : <SiteIcon host={hostOf(item.url)} className="size-6" />}</span>
+                  <span className="grid size-12 place-items-center rounded-full bg-white/10">{item.url === CHERRION_URL ? <CherryIcon className="size-7" /> : <SiteIcon host={hostOf(item.url)} className="size-6" />}</span>
                   <span className="w-full truncate text-[11px] text-foreground/80">{item.title}</span>
                 </button>
               ))}
@@ -4011,8 +4267,11 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
   );
 }
 
+// 4.2: the PRIVATE OS dock follows the Figure OS video: brand apps first, Minecraft at the end.
+const DOCK_PINS = ["netflix", "spotify", "playstation", "discord", "messages", "settings", "browser", "games", "taskview", "minecraft"];
+const OLD_DOCK_PINS = ["browser", "files", "notes", "calc", "figure", "settings"];
 type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: ["browser", "files", "notes", "calc", "figure", "settings"], dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en" };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: DOCK_PINS, dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en" };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },

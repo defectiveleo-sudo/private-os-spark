@@ -11,7 +11,7 @@
 <script>
 // PRIVATE OS opens this page through its own proxy so YouTube sees a normal embed on a real website.
 (function () {
-  var query = new URLSearchParams(location.search);
+  var query = new URLSearchParams(location.search + "&" + location.hash.slice(1));
   var id = (query.get("v") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 11);
   var list = (query.get("list") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 64);
   var start = parseInt(query.get("t") || "0", 10) || 0;

@@ -1,10 +1,10 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { Clapperboard, Globe2, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
-// Release labels and the one-time "Welcome to 4.1" tour.
+// Release labels and the one-time "Welcome to 4.2" tour.
 
 export const RELEASE_LABEL = "ALPHA RELEASE (STILL IN DEVELOPMENT)";
-export const BUILD = "4100.30";
+export const BUILD = "4200.02";
 const SEEN_KEY = "pos-seen-release";
 
 /** The ALPHA pill used on start and boot screens. */
@@ -29,6 +29,8 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
+  { icon: Layers, kicker: "Version 4.2", title: "A new dock", body: "PRIVATE OS has a slim, nearly clear dock with real app icons, Start and All apps on the left, and a small dash under open apps.", points: ["Netflix, Spotify, PlayStation and Discord apps", "Real icons for YouTube, Minecraft, BeeZ and Cherrion", "Right-click the dock to pin or unpin apps"], hue: ["#e50914", "#1db954"] },
+  { icon: Clapperboard, kicker: "Version 4.2", title: "A real YouTube app", body: "Search YouTube and watch right here. Videos play straight from YouTube when your network allows it, or through the proxy when it doesn't.", points: ["Search, topics and an Up next list", "Paste any YouTube link to play it", "The browser now runs on Scramjet 2"], hue: ["#ff0033", "#7c3aed"] },
   { icon: Clapperboard, kicker: "Version 4.1", title: "Watch anything", body: "The new Video Engine plays videos right in the browser and the Media Player, and converts formats that browsers can't play.", points: ["MKV, AVI, MOV, WMV, FLV and more, converted with ffmpeg", "Live streams (.m3u8) and direct video links", "Subtitles, speed, loop, picture in picture and snapshots", "Save the converted video as MP4"], hue: ["#6352ff", "#22d3ee"] },
   { icon: Globe2, kicker: "Version 4.1", title: "Your language, a working proxy", body: "Pick your language when you set up. The browser's proxy is back after one of its servers moved.", points: ["8 languages, also in Settings", "Proxy servers fixed and checked before use", "Roblox: play it in the cloud from the browser"], hue: ["#22c55e", "#0ea5e9"] },
   { icon: Rocket, kicker: "Version 4.0", title: "NOVA, rebuilt", body: "Every part of NOVA OS got a new look: new fonts, navy glass, and animations that rise into place.", points: ["The Eclipse theme and wallpaper", "A brand-new dock", "Four sound packs", "A browser that switches servers by itself"], hue: ["#6352ff", "#a78bfa"] },

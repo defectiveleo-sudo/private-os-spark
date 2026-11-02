@@ -223,7 +223,7 @@ const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, ico
 
 const OS_VERSION = "4.2";
 const CHANGELOG = [
-  { v: "4.2", date: "2 Nov 2026", items: ["New PRIVATE OS dock, made after the Figure OS video: a slim, nearly clear black strip with Start and All apps on the left, colourful app icons with no tiles and wide spacing, and a small white dash under open apps. Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't", "The browser now runs on Scramjet 2, the new version of the proxy engine. It runs in the page instead of the background worker, works on browsers without shared workers, and YouTube pages load through it again", "Fixed YouTube's \"Video player configuration error 153\" inside the proxy"] },
+  { v: "4.2", date: "2 Nov 2026", items: ["New PRIVATE OS dock, made after the Figure OS video: a slim, nearly clear black strip with Start and All apps on the left, colourful app icons with no tiles and wide spacing, and a small white dash under open apps. Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
   { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
   { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Eclipse\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Eclipse theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Eclipse (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
   { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
@@ -1914,9 +1914,23 @@ function engineInterface(controller: SjController, scope: EngineWindow): EngineC
     const rest = href.slice(at + prefix.length);
     const hash = rest.indexOf("#");
     try {
-      return codec.decode(hash < 0 ? rest : rest.slice(0, hash)) + (hash < 0 ? "" : rest.slice(hash));
+      return withoutEngineParams(codec.decode(hash < 0 ? rest : rest.slice(0, hash))) + (hash < 0 ? "" : rest.slice(hash));
     } catch {
       return "";
+    }
+  };
+  // Scramjet 2 tags some page loads with its own query values ($io, $tf, ...). They mean nothing to the
+  // site, so the address bar and history leave them out.
+  const withoutEngineParams = (address: string) => {
+    if (!address.includes("$")) return address;
+    try {
+      const url = new URL(address);
+      const own = [...url.searchParams.keys()].filter((key) => key.startsWith("$"));
+      if (own.length === 0) return address;
+      for (const key of own) url.searchParams.delete(key);
+      return url.href;
+    } catch {
+      return address;
     }
   };
   const makeFrame = (element: HTMLIFrameElement) => {
@@ -2247,9 +2261,35 @@ function YouTubeThumb({ id, className }: { id: string; className?: string }) {
 
 // Plays one video: straight from YouTube when this connection can reach it, otherwise through the
 // proxy, inside a small player page on this site so YouTube sees a normal embedded player.
-function YouTubePlayer({ id }: { id: string }) {
+// YouTube's own player error codes for "the owner doesn't allow this video on other websites" (and the
+// related "video not found" ones). The embed reports them by postMessage once we say we're listening.
+const YT_EMBED_BLOCKED = new Set([2, 5, 100, 101, 150, 152, 153]);
+
+function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | undefined }) {
   const [route, setRoute] = useState<"checking" | "direct" | "proxy" | "failed">("checking");
+  const [blocked, setBlocked] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const directRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (route !== "direct") return;
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== directRef.current?.contentWindow || typeof event.data !== "string") return;
+      try {
+        const data = JSON.parse(event.data) as { event?: string; info?: unknown };
+        if (data.event === "onError" && typeof data.info === "number" && YT_EMBED_BLOCKED.has(data.info)) setBlocked(true);
+      } catch {
+        // not a player message
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [route]);
+  const listen = () => {
+    const target = directRef.current?.contentWindow;
+    if (!target) return;
+    // The embed only starts sending events after it hears this, so say it a few times while it boots.
+    for (const delay of [0, 600, 1500, 3000]) window.setTimeout(() => target.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "https://www.youtube-nocookie.com"), delay);
+  };
   useEffect(() => {
     let cancelled = false;
     void canReachYouTube().then((ok) => {
@@ -2279,8 +2319,10 @@ function YouTubePlayer({ id }: { id: string }) {
       {route === "direct" && (
         <iframe
           key={`direct-${id}`}
+          ref={directRef}
+          onLoad={listen}
           title="YouTube player"
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`}
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
@@ -2289,6 +2331,19 @@ function YouTubePlayer({ id }: { id: string }) {
       )}
       {route === "proxy" && <iframe key={`proxy-${id}`} ref={frameRef} title="YouTube player" allow={`${ENGINE_FRAME_PERMISSIONS}; encrypted-media; picture-in-picture`} allowFullScreen className="absolute inset-0 size-full border-0" />}
       {route === "checking" && <div className="absolute inset-0 grid place-items-center"><span className="size-8 animate-spin rounded-full border-2 border-white/20 border-t-white" /></div>}
+      {blocked && (
+        <div className="absolute inset-0 grid place-items-center bg-black p-6 text-center">
+          <div className="max-w-sm">
+            <YouTubeIcon className="mx-auto h-8 w-11" />
+            <p className="mt-3 text-[15px] font-semibold text-white">This video only plays on YouTube</p>
+            <p className="mt-1 text-[12px] text-white/60">Its owner turned off playing it on other websites, which is common for music videos.</p>
+            <div className="mt-4 flex justify-center gap-2">
+              <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${id}`, "_blank", "noopener,noreferrer")} className="rounded-full bg-white px-4 py-1.5 text-[12px] font-semibold text-black hover:bg-white/85">Open on YouTube</button>
+              {onNext && <button type="button" onClick={onNext} className="rounded-full bg-white/15 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-white/25">Next video</button>}
+            </div>
+          </div>
+        </div>
+      )}
       {route === "failed" && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/70">This network blocks YouTube and the proxy couldn't start in this browser.</div>}
       {route === "proxy" && <p className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 text-[10px] text-white/55">Playing through the proxy because this network blocks YouTube. If YouTube asks you to sign in, its servers are refusing the proxy right now.</p>}
     </div>
@@ -2390,7 +2445,7 @@ function YouTubeApp({ close }: { close: () => void }) {
           {playing ? (
             <div className="flex flex-col gap-5 lg:flex-row">
               <div className="min-w-0 flex-1">
-                <YouTubePlayer key={playing.id} id={playing.id} />
+                <YouTubePlayer key={playing.id} id={playing.id} onNext={upNext[0] ? () => setPlaying(upNext[0]!) : undefined} />
                 {playing.title && <h2 className="mt-3 text-[17px] font-bold leading-snug">{playing.title}</h2>}
                 {playing.channel && <p className="mt-1 text-[12px] text-white/60">{[playing.channel, playing.views, playing.published].filter(Boolean).join(" • ")}</p>}
               </div>
@@ -2835,7 +2890,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const navigateTo = (value: string) => {
     const clean = value.trim();
     if (!clean) return;
-    const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|[\w-]+\.[a-z]{2,})([/:?#]|$)/i.test(clean);
+    const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|(?:[\w-]+\.)+[a-z]{2,})([/:?#]|$)/i.test(clean);
     if (!isUrl) return runSearch(clean);
     const destination = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
     setNav((current) => ({ list: [...current.list.slice(0, current.index + 1), destination], index: current.index + 1 }));

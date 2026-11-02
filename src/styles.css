@@ -464,7 +464,7 @@ main[data-taskbar="bottom"] section.os-window.rounded-none { bottom: 44px !impor
 main[data-taskbar="top"] section.os-window.rounded-none { top: 44px !important; bottom: 0 !important; }
 /* PRIVATE OS 4.2 dock (after the Figure OS video): a slim, nearly clear black strip with the start
    buttons on the left, colourful app icons with no tiles and wide spacing, and a small white dash under open apps. */
-.taskbar-strip { background: color-mix(in oklab, black calc(var(--dock-alpha, 70%) * .55), transparent); border: 0; box-shadow: none; backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); }
+.taskbar-strip { background: color-mix(in oklab, black calc(var(--dock-alpha, 70%) * .42), transparent); border: 0; box-shadow: none; backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); }
 .strip-btn { position: relative; display: inline-flex; height: 40px; width: 40px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 8px; transition: transform .18s cubic-bezier(.22, 1, .36, 1), opacity .15s ease; }
 .strip-btn > :first-child { transition: transform .2s cubic-bezier(.22, 1, .36, 1), filter .2s ease; }
 .strip-btn:hover > :first-child { transform: translateY(-2px) scale(1.12); filter: brightness(1.08); }

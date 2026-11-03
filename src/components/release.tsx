@@ -1,10 +1,10 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { Clapperboard, Globe2, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
-// Release labels and the one-time "Welcome to 4.3" tour.
+// Release labels and the one-time "Welcome to 4.4" tour.
 
 export const RELEASE_LABEL = "ALPHA RELEASE (STILL IN DEVELOPMENT)";
-export const BUILD = "4300.01";
+export const BUILD = "4400.01";
 const SEEN_KEY = "pos-seen-release";
 
 /** The ALPHA pill used on start and boot screens. */
@@ -29,6 +29,7 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
+  { icon: Palette, kicker: "Version 4.4", title: "New icons, a new forest", body: "Apps that only had drawn icons now have real desktop app icons, and there is a green forest wallpaper.", points: ["Task Manager, Focus Timer, Converter, PDF Reader", "System Info, Activity, Chat and Task view", "Green Forest in Settings › Wallpaper"], hue: ["#22c55e", "#0f766e"] },
   { icon: Sparkles, kicker: "Version 4.3", title: "Notes on the desktop", body: "Quick Note cards sit on the PRIVATE OS desktop. Drag them anywhere, or right-click one to move or delete it.", points: ["A minimal view from the menu button at the top left", "A clock card with a seconds ring under the side cards", "Settings > Widgets turns each part of the desktop on or off"], hue: ["#f6ec8a", "#a9d8f5"] },
   { icon: Layers, kicker: "Version 4.2", title: "A floating dock", body: "PRIVATE OS has a floating, nearly clear dock with real app icons, the day name at the top of the desktop, and Media and Console cards.", points: ["Netflix, Spotify, PlayStation and Discord apps", "Real icons for YouTube, Minecraft, BeeZ and Cherrion", "Right-click the dock to pin or unpin apps"], hue: ["#e50914", "#1db954"] },
   { icon: Clapperboard, kicker: "Version 4.2", title: "A real YouTube app", body: "Search YouTube and watch right here. Videos play straight from YouTube when your network allows it, or through the proxy when it doesn't.", points: ["Search, topics and an Up next list", "Paste any YouTube link to play it", "The browser now runs on Scramjet 2"], hue: ["#ff0033", "#7c3aed"] },

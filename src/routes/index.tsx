@@ -146,8 +146,14 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
 // Icons cut from the Windows 11 icon sheet (public/icons/apps/win); they bring their own shape, so no tile.
 const WIN_ICONS = new Set(["word", "powerpoint", "excel", "outlook", "onenote", "onedrive", "calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
 
+// Desktop-style app icons for apps that had only a drawn icon (public/icons/apps/mac, Fluent icon theme by vinceliuice, GPL-3).
+const MAC_ICONS = new Set(["taskmgr", "focus", "convert", "pdf", "about", "activity", "chat", "taskview"]);
+
 // App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
 function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
+  if (MAC_ICONS.has(src)) {
+    return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/apps/mac/${src}.svg`} alt="" draggable={false} decoding="async" className="size-[96%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
+  }
   if (WIN_ICONS.has(src)) {
     return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/apps/win/${src}.webp`} alt="" draggable={false} decoding="async" className="size-[94%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
   }
@@ -202,8 +208,9 @@ const LINK_APPS = [
 ];
 const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.3";
+const OS_VERSION = "4.4";
 const CHANGELOG = [
+  { v: "4.4", date: "3 Nov 2026", items: ["New desktop-style app icons for Task Manager, Focus Timer, Converter, PDF Reader, System Info, Activity, Chat and Task view, which only had drawn icons before", "New Green Forest wallpaper in Settings › Wallpaper"] },
   { v: "4.3", date: "3 Nov 2026", items: ["Quick Note sticky cards on the desktop, made after the Figure OS video. Type straight in and drag them by the top, or right-click one for Move Widget and Delete Widget. New notes take turns in yellow, blue, pink and green", "A minimal view like the video: press the menu button at the top left for a black screen with the day, the date, the time, four app shortcuts and a clock widget. Click anywhere to go back", "The top corners now show a menu button and the time on the left, and your battery and avatar on the right", "The browser has the Brave lion as its icon", "The Media, Console and clock cards now start out, and the tab on the right edge still hides them", "Right-click the desktop and pick New sticky note to add one", "A clock card under the Media and Console cards, with the time, the day and date, and a ring that fills with the seconds", "New Desktop look settings in Settings > Widgets: turn the day name, the side cards, the clock card and the sticky notes on or off, add notes or clear them all"] },
   { v: "4.2", date: "2 Nov 2026", items: ["New floating PRIVATE OS dock, made after the Figure OS videos: a rounded, nearly clear pill that floats above the bottom edge, with Start and All apps first, colourful app icons with no tiles and a small white dash under open apps. The clock and quick settings sit in their own pill on the right", "The desktop shows the day name at the top in The Last Shuriken font, like the video, and Media and Console Emulator cards that open Spotify and PlayStation. The cards hide behind a small tab on the right edge: point at it to peek, click it to keep them out", "Drag the small line above the dock to move it to the top, bottom or right edge, with a preview of where it will land", "Maximized windows now stop under the day name and above the floating dock", "Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
   { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
@@ -262,7 +269,9 @@ const MailIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-400 
 const ContactsIcon: IconComponent = ({ className }) => <AppImage tone="from-stone-300 to-stone-500" src="contacts" className={className} />;
 const MapsIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-300 to-teal-600" src="maps" className={className} />;
 
-const TaskViewIcon: IconComponent = ({ className }) => <Tile tone="from-zinc-300 to-zinc-600" glyph="[&>svg]:size-[56%] [&>svg]:text-white" className={className}><PanelsTopLeft /></Tile>;
+const TaskViewIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-300 to-zinc-600" src="taskview" className={className} />;
+const PrivateActivityIcon: IconComponent = ({ className }) => <AppImage tone="from-emerald-400 to-sky-600" src="activity" className={className} />;
+const PrivateChatIcon: IconComponent = ({ className }) => <AppImage tone="from-violet-500 to-pink-500" src="chat" className={className} />;
 
 const dockApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "taskview", label: "Task view", icon: TaskViewIcon },
@@ -294,7 +303,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: ActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: ChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: PrivateActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: PrivateChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 // App names in the interface language. Generic apps (Calculator, Photos...) are translated, brands are not.
 const appLabel = (app: { label: string }) => tx(app.label);
@@ -302,7 +311,7 @@ const appLabel = (app: { label: string }) => tx(app.label);
 const appMatches = (app: { label: string }, query: string) => `${tx(app.label)} ${app.label}`.toLowerCase().includes(query.trim().toLowerCase());
 
 // NOVA OS gets every app plus its own Soundscapes and Pulse. Its browser is called Comet.
-const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps.map((app) => (app.id === "browser" ? { id: "browser", label: "Comet", icon: CometIcon } : app)), { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
+const NOVA_APPS: { id: string; label: string; icon: IconComponent }[] = [...launcherApps.map((app) => (app.id === "browser" ? { id: "browser", label: "Comet", icon: CometIcon } : app.id === "activity" ? { ...app, icon: ActivityIcon } : app.id === "chat" ? { ...app, icon: ChatIcon } : app)), { id: "soundscapes", label: "Soundscapes", icon: SoundscapesIcon }, { id: "pulse", label: "Pulse", icon: PulseIcon }];
 
 type WallpaperOption = { label: string; thumb: string; video?: string; src?: string };
 
@@ -313,6 +322,7 @@ const wallpaperOptions: WallpaperOption[] = [
   { label: "Ink Eye", thumb: inkEyeAsset.url, src: inkEyeAsset.url },
   { label: "Snow Fisher", thumb: wukongSnowAsset.url, src: wukongSnowAsset.url },
   { label: "Moonlit Tree", thumb: moonlitTreeAsset.url, src: moonlitTreeAsset.url },
+  { label: "Green Forest", thumb: "/wallpaper-forest.webp", src: "/wallpaper-forest.webp" },
 ];
 
 // Morocco moved to permanent GMT (UTC+0) on 20 Sep 2026. Some browsers still carry the old

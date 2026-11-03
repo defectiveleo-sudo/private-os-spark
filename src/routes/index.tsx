@@ -95,6 +95,7 @@ import cherryAsset from "@/assets/private-os-cherry.jpg.asset.json";
 import inkEyeAsset from "@/assets/ink-eye.jpg.asset.json";
 import wukongSnowAsset from "@/assets/wukong-snow.jpg.asset.json";
 import moonlitTreeAsset from "@/assets/moonlit-tree.jpg.asset.json";
+import { ClockCard, DEFAULT_STICKIES, StickyNotes, newSticky, type StickyNote as StickyData } from "@/components/sticky-notes";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -221,8 +222,9 @@ const LINK_APPS = [
 ];
 const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.2";
+const OS_VERSION = "4.3";
 const CHANGELOG = [
+  { v: "4.3", date: "3 Nov 2026", items: ["Quick Note sticky cards on the desktop, made after the Figure OS video. Drag them by the top, type straight in, and right-click one to edit it, change its colour (yellow, blue, pink or green), add another or remove it", "Right-click the desktop and pick New sticky note to add one", "A clock card under the Media and Console cards, with the time, the day and date, and a ring that fills with the seconds", "New Desktop look settings in Settings > Widgets: turn the day name, the side cards, the clock card and the sticky notes on or off, add notes or clear them all"] },
   { v: "4.2", date: "2 Nov 2026", items: ["New floating PRIVATE OS dock, made after the Figure OS videos: a rounded, nearly clear pill that floats above the bottom edge, with Start and All apps first, colourful app icons with no tiles and a small white dash under open apps. The clock and quick settings sit in their own pill on the right", "The desktop shows the day name at the top in The Last Shuriken font, like the video, and Media and Console Emulator cards that open Spotify and PlayStation. The cards hide behind a small tab on the right edge: point at it to peek, click it to keep them out", "Drag the small line above the dock to move it to the top, bottom or right edge, with a preview of where it will land", "Maximized windows now stop under the day name and above the floating dock", "Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
   { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
   { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Eclipse\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Eclipse theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Eclipse (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
@@ -791,6 +793,7 @@ function PrivateOS() {
     { label: t("Standard Icons"), action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
     { label: t("Search… (Ctrl+K)"), action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
     { label: t("Reload"), action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
+    { label: tx("New sticky note"), action: () => patchSettings((current) => ({ showStickies: true, stickies: [...current.stickies, newSticky(current.stickies)] })), icon: <StickyNote className="size-3" /> },
   ];
 
   useEffect(() => {
@@ -1079,11 +1082,12 @@ function PrivateOS() {
 
       </>)}
 
+      {settings.showStickies && <StickyNotes notes={settings.stickies} onChange={(stickies) => patchSettings({ stickies })} />}
       {dockDrag && <div aria-hidden className={`dock-drop is-${dockDrag}`} />}
       {taskbarMode ? (
         <>
-          <div className="desktop-day">{dateLabel}</div>
-          <DesktopWidgets openApp={openApp} openWins={openWins} />
+          {settings.dayName && <div className="desktop-day">{dateLabel}</div>}
+          {settings.sideCards && <DesktopWidgets openApp={openApp} openWins={openWins} clock={settings.clockCard ? <ClockCard clock24={settings.clock24} locale={dateLocale} /> : null} />}
         </>
       ) : (
         <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</span></div>
@@ -4350,7 +4354,7 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
 const dockEdgeAt = (x: number, y: number): "top" | "bottom" | "right" => (x > window.innerWidth * 0.8 ? "right" : y < window.innerHeight * 0.4 ? "top" : "bottom");
 
 // Top-right desktop cards: what's playing, and the console emulator.
-function DesktopWidgets({ openApp, openWins }: { openApp: (id: string) => void; openWins: string[] }) {
+function DesktopWidgets({ openApp, openWins, clock }: { openApp: (id: string) => void; openWins: string[]; clock: ReactNode }) {
   const cards = [
     { section: "Media", id: "spotify", icon: "spotify.svg", title: openWins.includes("spotify") ? "Spotify is open" : "Not Playing", sub: "Spotify" },
     { section: "Console Emulator", id: "playstation", icon: "playstation.svg", title: openWins.includes("playstation") ? "PlayStation is open" : "No Active Game", sub: "PlayStation Emulator" },
@@ -4398,6 +4402,7 @@ function DesktopWidgets({ openApp, openWins }: { openApp: (id: string) => void; 
           </button>
         </div>
       ))}
+      {clock}
     </div>
     </>
   );
@@ -4405,8 +4410,8 @@ function DesktopWidgets({ openApp, openWins }: { openApp: (id: string) => void; 
 
 const DOCK_PINS = ["netflix", "spotify", "playstation", "discord", "messages", "settings", "browser", "games", "taskview", "minecraft"];
 const OLD_DOCK_PINS = ["browser", "files", "notes", "calc", "figure", "settings"];
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: DOCK_PINS, dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en" };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang; stickies: StickyData[]; showStickies: boolean; sideCards: boolean; clockCard: boolean; dayName: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: DOCK_PINS, dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en", stickies: DEFAULT_STICKIES, showStickies: true, sideCards: true, clockCard: true, dayName: true };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -5327,6 +5332,27 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
           )}
 
           {page === "widgets" && (
+            <div className="stagger space-y-4">
+            <CfgCard title={tx("Desktop look")}>
+              <CfgRow title={tx("Day name")} sub={tx("The day at the top of the desktop, in The Last Shuriken font")}>
+                <Switch on={settings.dayName} label="Day name" onChange={(value) => { patch({ dayName: value }); log(`Day name ${value ? "shown" : "hidden"}`); }} />
+              </CfgRow>
+              <CfgRow title={tx("Side cards")} sub={tx("Media and Console Emulator cards behind the tab on the right edge")}>
+                <Switch on={settings.sideCards} label="Side cards" onChange={(value) => { patch({ sideCards: value }); log(`Side cards ${value ? "shown" : "hidden"}`); }} />
+              </CfgRow>
+              <CfgRow title={tx("Clock card")} sub={tx("Big time with the date and a seconds ring, under the side cards")}>
+                <Switch on={settings.clockCard} label="Clock card" onChange={(value) => { patch({ clockCard: value }); log(`Clock card ${value ? "shown" : "hidden"}`); }} />
+              </CfgRow>
+              <CfgRow title={tx("Sticky notes")} sub={tx("Quick notes you can drag anywhere. Right-click one to edit, recolour or remove it")}>
+                <Switch on={settings.showStickies} label="Sticky notes" onChange={(value) => { patch({ showStickies: value }); log(`Sticky notes ${value ? "shown" : "hidden"}`); }} />
+              </CfgRow>
+              <CfgRow title={tx("Notes on the desktop")} sub={`${settings.stickies.length} ${settings.stickies.length === 1 ? tx("note") : tx("notes")}`}>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => { patch({ showStickies: true, stickies: [...settings.stickies, newSticky(settings.stickies)] }); log("Sticky note added"); }} className={`${btn} bg-white/10`}>{tx("Add note")}</button>
+                  <button type="button" disabled={settings.stickies.length === 0} onClick={() => { patch({ stickies: [] }); log("Sticky notes cleared"); }} className={`${btn} bg-white/10 disabled:opacity-40`}>{tx("Clear all")}</button>
+                </div>
+              </CfgRow>
+            </CfgCard>
             <CfgCard title={t("Desktop widgets")}>
               {WIDGET_LIST.map((widget) => {
                 const on = settings.widgets.includes(widget.id);
@@ -5337,6 +5363,7 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
                 );
               })}
             </CfgCard>
+            </div>
           )}
 
           {page === "network" && <NetworkPrivacy />}

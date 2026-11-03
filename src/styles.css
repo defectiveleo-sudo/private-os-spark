@@ -1111,3 +1111,28 @@ main[data-nova]:is([data-lite], [data-reduce]) .nova-name { animation: none; }
 .nova-hello em.nova-gradient-text { background: linear-gradient(100deg, var(--primary), color-mix(in oklab, var(--nova-c) 65%, #fff) 70%, var(--primary)); -webkit-background-clip: text; background-clip: text; }
 main[data-taskbar="top"] .desktop-day { top: 68px; }
 main[data-taskbar="top"] .desktop-widgets { top: 112px; }
+
+/* Quick Note sticky cards and the clock card, like the video. */
+.sticky-note { position: absolute; display: flex; width: 178px; flex-direction: column; border-radius: 12px; padding: 8px 10px 9px; color: rgb(20 20 20 / .9); box-shadow: 0 10px 28px rgb(0 0 0 / .4), inset 0 0 0 1px rgb(255 255 255 / .35); animation: window-in .24s cubic-bezier(.22, 1, .36, 1); }
+.sticky-note.is-yellow { background: #f6ec8a; }
+.sticky-note.is-blue { background: #a9d8f5; }
+.sticky-note.is-pink { background: #f6b3cf; }
+.sticky-note.is-green { background: #b9e8a6; }
+.sticky-note-head { display: flex; cursor: grab; touch-action: none; align-items: center; justify-content: space-between; gap: 6px; padding-bottom: 4px; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; user-select: none; }
+.sticky-note-head:active { cursor: grabbing; }
+.sticky-note-hint { font-size: 8px; font-weight: 500; letter-spacing: 0; text-transform: none; opacity: .5; }
+.sticky-note-text { height: 64px; width: 100%; resize: none; border: 0; background: transparent; font-size: 11px; font-weight: 600; line-height: 1.35; color: inherit; outline: none; }
+.sticky-note-text::placeholder { color: rgb(20 20 20 / .4); }
+.sticky-menu { position: fixed; z-index: 60; display: flex; width: 172px; flex-direction: column; gap: 2px; border-radius: 14px; border: 1px solid rgb(255 255 255 / .1); background: rgb(18 18 22 / .88); padding: 6px; font-size: 11px; color: white; box-shadow: 0 18px 40px rgb(0 0 0 / .5); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); animation: window-in .18s cubic-bezier(.22, 1, .36, 1); }
+.sticky-menu > button { border-radius: 8px; padding: 7px 9px; text-align: left; }
+.sticky-menu > button:hover { background: rgb(255 255 255 / .1); }
+.sticky-menu > button.is-danger { color: #ff6b81; }
+.sticky-menu-colors { display: flex; gap: 8px; padding: 6px 9px; }
+.sticky-dot { width: 16px; height: 16px; border-radius: 9999px; box-shadow: inset 0 0 0 1px rgb(0 0 0 / .2); }
+.sticky-dot[aria-pressed="true"] { outline: 2px solid white; outline-offset: 2px; }
+.sticky-dot.is-yellow { background: #f6ec8a; }
+.sticky-dot.is-blue { background: #a9d8f5; }
+.sticky-dot.is-pink { background: #f6b3cf; }
+.sticky-dot.is-green { background: #b9e8a6; }
+.desktop-clock { display: flex; margin-left: auto; width: 150px; align-items: center; justify-content: space-between; gap: 10px; border-radius: 16px; border: 1px solid rgb(255 255 255 / .08); background: color-mix(in oklab, black 42%, transparent); padding: 11px 13px; backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3); }
+@media (max-width: 640px) { .sticky-note { display: none; } }

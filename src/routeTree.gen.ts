@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiProxyRouteImport } from './routes/api.proxy'
 import { Route as ApiRedditRouteImport } from './routes/api.reddit'
 import { Route as ApiSearchRouteImport } from './routes/api.search'
+import { Route as ApiYoutubeRouteImport } from './routes/api.youtube'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,18 +35,25 @@ const ApiSearchRoute = ApiSearchRouteImport.update({
   path: '/api/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiYoutubeRoute = ApiYoutubeRouteImport.update({
+  id: '/api/youtube',
+  path: '/api/youtube',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,20 @@ export interface FileRoutesById {
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
+  '/api/youtube': typeof ApiYoutubeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/proxy' | '/api/reddit' | '/api/search'
+  fullPaths: '/' | '/api/proxy' | '/api/reddit' | '/api/search' | '/api/youtube'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/proxy' | '/api/reddit' | '/api/search'
-  id: '__root__' | '/' | '/api/proxy' | '/api/reddit' | '/api/search'
+  to: '/' | '/api/proxy' | '/api/reddit' | '/api/search' | '/api/youtube'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/proxy'
+    | '/api/reddit'
+    | '/api/search'
+    | '/api/youtube'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +82,7 @@ export interface RootRouteChildren {
   ApiProxyRoute: typeof ApiProxyRoute
   ApiRedditRoute: typeof ApiRedditRoute
   ApiSearchRoute: typeof ApiSearchRoute
+  ApiYoutubeRoute: typeof ApiYoutubeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/youtube': {
+      id: '/api/youtube'
+      path: '/api/youtube'
+      fullPath: '/api/youtube'
+      preLoaderRoute: typeof ApiYoutubeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +130,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProxyRoute: ApiProxyRoute,
   ApiRedditRoute: ApiRedditRoute,
   ApiSearchRoute: ApiSearchRoute,
+  ApiYoutubeRoute: ApiYoutubeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

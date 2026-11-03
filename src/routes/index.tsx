@@ -223,7 +223,7 @@ const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, ico
 
 const OS_VERSION = "4.2";
 const CHANGELOG = [
-  { v: "4.2", date: "2 Nov 2026", items: ["New PRIVATE OS dock, made after the Figure OS video: a slim, nearly clear black strip with Start and All apps on the left, colourful app icons with no tiles and wide spacing, and a small white dash under open apps. Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
+  { v: "4.2", date: "2 Nov 2026", items: ["New floating PRIVATE OS dock, made after the Figure OS videos: a rounded, nearly clear pill that floats above the bottom edge, with Start and All apps first, colourful app icons with no tiles and a small white dash under open apps. The clock and quick settings sit in their own pill on the right", "The desktop shows the day name at the top, written in a kana style like the video, and Media and Console Emulator cards on the right that open Spotify and PlayStation", "Maximized windows now stop under the day name and above the floating dock", "Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
   { v: "4.1", date: "30 Oct 2026", items: ["New Video Engine: watch videos right in the browser and the Media Player. Paste a link, open a file or drop it in", "Videos that browsers can't play (MKV, AVI, MOV, WMV, FLV, MPG, TS, 3GP) are converted on your device with ffmpeg, then play like any other video. Save the converted MP4 if you want to keep it", "Live streams (.m3u8) play through the proxy, and direct video links open in the Video Engine instead of a blank page", "Video Engine extras: playlist, subtitles (.srt and .vtt), playback speed, loop, picture in picture and frame snapshots", "Fixed the browser proxy: one of its two servers moved to a new address, so pages stopped loading. A saved custom server that no longer answers now falls back to automatic", "The Prestige theme, wallpaper and sound pack are now called Eclipse. Your choice is kept", "Choose your language in setup and in Settings: English, Français, Español, Deutsch, Italiano, Português, العربية and Türkçe", "Roblox: the browser shows a button to play Roblox in the cloud, since roblox.com can't run through a proxy", "Start menu search now has the cursor ready, and Enter opens the first result"] },
   { v: "4.0", date: "21 Oct 2026", items: ["NOVA OS 4.0 \"Eclipse\": the whole NOVA interface was redesigned with new fonts (DM Sans and DM Serif Display), navy glass with indigo edges, and smooth expo animations: letters rise into place, panels fade up in sequence, important buttons shine", "New Eclipse theme and live wallpaper (indigo glows breathing on midnight blue), now the NOVA default", "New dock: a glowing marker slides to the app in front, resting on an app shows a preview card with Show, Minimize, Quit or Pin, and pinned apps can be dragged into a new order", "Three dock styles (Floating, Edge bar, Icons only), the dock can sit at the bottom or down the left side, and app names can be shown under the icons. Right-click the dock to change them", "The dock preview in Settings now is the real dock over your wallpaper, with the same size, style, magnify and drag to reorder", "Overview button at the end of the dock, and the dock shrinks its icons when there are too many to fit", "Four sound packs for hovers and clicks: Eclipse (new default), Glass, Bubble and Classic. Pick one in Settings > Sound, PRIVATE OS too", "Quick note in the Control Center, saved as you type", "Nova Search shows colours: type a hex code like #6352ff to see it and copy it", "Alt+D shows the desktop in NOVA", "Browser: the proxy now uses two servers at once. If one server blocks a site (TikTok, Instagram and others), the page goes through the other one by itself, and the browser remembers which server works for each site", "Browser: fixed scripts inside proxied pages not being rewritten, which broke parts of many sites", "Browser: the friendly error page now shows the real reason a page failed", "Browser: clicking the address bar selects the whole address, so typing a new one no longer adds to the old one"] },
   { v: "3.0", date: "21 Oct 2026", items: ["PRIVATE OS and NOVA OS are now an ALPHA RELEASE (STILL IN DEVELOPMENT), shown on the start, boot and desktop screens with the build number", "Welcome to 3.0: a tour of everything new shows once after the update", "NOVA Spaces: several desktops with their own windows. Ctrl+Alt+arrows switch, Ctrl+Alt+Shift+arrows move the front window, and Overview shows every Space with buttons to add, remove and move windows", "New Activity app in both systems: screen time today, a 7-day chart, most used and most opened apps, all kept in this browser", "Make your own NOVA theme: pick three colours and NOVA builds the accent, glow and live wallpapers from them", "NOVA screensaver: a floating clock drifts over your live wallpaper after 1, 3, 5 or 10 idle minutes", "Nova Search converts units and temperatures (10 km in miles, 72 f to c, 5 kg to lb, 2 gb in mb)", "Keyboard shortcuts sheet in NOVA (Ctrl+/ or the Nova menu)", "New NOVA boot and start screens with the alpha label", "System Info shows the release channel and build", "Activity is pinned in Orbit, Search and the PRIVATE OS start menu", "New Chat app: talk live with everyone on PRIVATE OS and NOVA OS in public rooms, or make a private room and share its code with friends", "Browser history: every page you visit is saved (Menu > History), with search, delete and a Recently visited list on the new tab page", "Cookies now stay saved, so you stay signed in to sites after closing the browser. Clear them from Menu > Clear cookies", "Gmail and Google sign-in open in their own window, since Google blocks signing in inside other browsers", "When a proxy server drops a page (\"tls handshake eof\"), the browser tries again and moves to another server by itself", "Gmail, Discord, Roblox and Spotify shortcuts on the new tab page"] },
@@ -952,9 +952,9 @@ function PrivateOS() {
         onMouseLeave={() => setDockShown(false)}
         onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); setMenu(null); setDockMenu(null); setBarMenu({ x: Math.min(event.clientX, window.innerWidth - 272), y: event.clientY }); }}
         style={{ ...dockSurface, transition: "transform .32s cubic-bezier(.22,1,.36,1)", transform: dockHidden ? (settings.dockPos === "top" ? "translateY(-110%)" : "translateY(110%)") : undefined }}
-        className={`taskbar taskbar-strip ${settings.dockLiquid ? "taskbar-liquid" : ""} absolute inset-x-0 z-40 flex h-11 items-center px-2 text-white ${settings.dockPos === "top" ? "top-0" : "bottom-0"}`}
+        className={`taskbar-float pointer-events-none absolute inset-x-0 z-40 flex justify-center px-2.5 text-white ${settings.dockPos === "top" ? "top-0 items-start pt-2.5" : "bottom-0 items-end pb-2.5"}`}
       >
-        <nav aria-label="PRIVATE OS taskbar" className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pl-2 sm:gap-2.5">
+        <nav aria-label="PRIVATE OS taskbar" className={`taskbar taskbar-strip taskbar-pill ${settings.dockLiquid ? "taskbar-liquid" : ""} ${settings.dockPos === "top" ? "top-0" : ""} pointer-events-auto flex h-12 min-w-0 max-w-[calc(100%-11rem)] items-center gap-1 overflow-x-auto px-2 sm:gap-2 max-sm:max-w-[calc(100%-6.5rem)]`}>
           <span data-start id="start-anchor" className="inline-flex">
             <OsButton label={t("Start")} onClick={openStartMenu} className={`strip-btn ${startMenu ? "is-on" : ""}`}><StripLogo /></OsButton>
           </span>
@@ -975,7 +975,7 @@ function PrivateOS() {
             );
           })}
         </nav>
-        <div className="flex shrink-0 items-center gap-0.5 pl-2 md:justify-end">
+        <div className={`taskbar taskbar-strip taskbar-pill ${settings.dockLiquid ? "taskbar-liquid" : ""} ${settings.dockPos === "top" ? "top-0 top-2.5" : "bottom-2.5"} pointer-events-auto absolute right-2.5 flex h-12 shrink-0 items-center gap-0.5 px-1.5`}>
           <OsButton label="Show hidden icons" onClick={() => setLauncher((value) => !value)} className="taskbar-btn hidden w-7 sm:inline-flex"><ChevronUp className="size-4" /></OsButton>
           <button type="button" onClick={() => setQuickMenu((value) => !value)} aria-label={t("Quick settings")} className={`taskbar-btn w-auto gap-2 px-2.5 ${quickMenu ? "is-on" : ""}`}>
             <span className="hidden text-[11px] font-medium leading-tight sm:block">{LANGUAGES.find((item) => item.id === settings.language)?.abbr ?? "ENG"}</span>
@@ -1065,7 +1065,14 @@ function PrivateOS() {
 
       </>)}
 
-      {<div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</span></div>}
+      {taskbarMode ? (
+        <>
+          <div className="desktop-day" aria-label={dateLabel}><span aria-hidden>{settings.language === "en" ? styledDay(dateLabel) : dateLabel}</span></div>
+          <DesktopWidgets openApp={openApp} openWins={openWins} />
+        </>
+      ) : (
+        <div className="desktop-status"><span className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span>PRIVATE OS</span></span><span>{dateLabel.toLowerCase()} · {time.toLocaleDateString(dateLocale, { month: "short", day: "numeric" })}</span></div>
+      )}
 
       {quickMenu && (
         <aside className={`glass-panel quick-settings absolute right-3 z-50 bottom-20 w-[min(22rem,calc(100%-1.5rem))] rounded-lg p-5`}>
@@ -1790,7 +1797,8 @@ let engineLink: { controller: SjController; wisp: string } | null = null;
 let rotating: Promise<boolean> | null = null;
 
 async function makeRelay(first: string) {
-  const path = "/relay.mjs";
+  // A full address, so the dev server loads the file from public/ as is instead of trying to bundle it.
+  const path = new URL("/relay.mjs", window.location.origin).href;
   const { default: Relay } = (await import(/* @vite-ignore */ path)) as { default: new (options: { servers: string[] }) => ProxyTransport };
   const transport = new Relay({ servers: relayServers(first) });
   await transport.init();
@@ -4323,6 +4331,34 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
 }
 
 // 4.2: the PRIVATE OS dock follows the Figure OS video: brand apps first, Minecraft at the end.
+// The desktop's day name, written like the Figure OS video: a few letters swapped for look-alike kana.
+const DAY_GLYPHS: Record<string, string> = { D: "ワ", E: "ヨ", F: "チ", O: "ロ", Y: "ソ" };
+const styledDay = (day: string) => Array.from(day).map((letter) => DAY_GLYPHS[letter] ?? letter).join("");
+
+// Top-right desktop cards: what's playing, and the console emulator.
+function DesktopWidgets({ openApp, openWins }: { openApp: (id: string) => void; openWins: string[] }) {
+  const cards = [
+    { section: "Media", id: "spotify", icon: "spotify.svg", title: openWins.includes("spotify") ? "Spotify is open" : "Not Playing", sub: "Spotify" },
+    { section: "Console Emulator", id: "playstation", icon: "playstation.svg", title: openWins.includes("playstation") ? "PlayStation is open" : "No Active Game", sub: "PlayStation Emulator" },
+  ];
+  return (
+    <div className="desktop-widgets">
+      {cards.map((card) => (
+        <div key={card.id}>
+          <p className="desktop-widget-label">{card.section}</p>
+          <button type="button" onClick={() => openApp(card.id)} className="desktop-widget">
+            <img src={`/icons/brands/${card.icon}`} alt="" draggable={false} className="size-7 shrink-0 rounded-md" />
+            <span className="min-w-0 text-left">
+              <span className="block truncate text-[12px] font-bold leading-tight text-white">{card.title}</span>
+              <span className="block truncate text-[10px] leading-tight text-white/55">{card.sub}</span>
+            </span>
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const DOCK_PINS = ["netflix", "spotify", "playstation", "discord", "messages", "settings", "browser", "games", "taskview", "minecraft"];
 const OLD_DOCK_PINS = ["browser", "files", "notes", "calc", "figure", "settings"];
 type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang };

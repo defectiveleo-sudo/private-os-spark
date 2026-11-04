@@ -10,6 +10,7 @@ import { isRedditUrl } from "@/lib/reddit";
 import { NOVA_CUSTOM_DEFAULT, NOVA_PINS, NOVA_THEMES, OLD_NOVA_PINS, NovaBoot, NovaOptimize, NovaShell, NovaStart, applyCustomNovaTheme, convert as convertUnits, novaTheme } from "@/components/nova-shell";
 import { ActivityApp, ActivityIcon, trackOpen, trackTime } from "@/components/activity-app";
 import { ChatApp, ChatIcon } from "@/components/chat-app";
+import { PrivTube, type TubePlayerProps } from "@/components/priv-tube";
 import { AlphaBadge, AlphaWatermark, BUILD, RELEASE_LABEL, WhatsNewTour, releaseSeen } from "@/components/release";
 import { CometIcon, PulseIcon, PulseMonitor, Soundscapes, SoundscapesIcon } from "@/components/nova-apps";
 import { Component } from "react";
@@ -147,10 +148,16 @@ function Tile({ className = "", tone, glyph = GLYPH_WHITE, children }: { classNa
 const WIN_ICONS = new Set(["word", "powerpoint", "excel", "outlook", "onenote", "onedrive", "calc", "calendar", "camera", "clock", "contacts", "files", "games", "mail", "maps", "media", "messages", "notes", "paint", "passwords", "photos", "recorder", "settings", "sticky", "terminal", "todo", "weather"]);
 
 // Desktop-style app icons for apps that had only a drawn icon (public/icons/apps/mac, Fluent icon theme by vinceliuice, GPL-3).
+// Clean Microsoft app icons (public/icons/apps/ms, SVGs from Wikimedia Commons). They replace the cut-out
+// Windows 11 icons for these apps.
+const MS_ICONS = new Set(["word", "excel", "powerpoint", "outlook", "onenote", "onedrive", "media", "paint", "settings", "terminal", "todo"]);
 const MAC_ICONS = new Set(["taskmgr", "focus", "convert", "pdf", "about", "activity", "chat", "taskview"]);
 
 // App picture from public/icons/apps (Microsoft Fluent Emoji, MIT) on the glossy tile.
 function AppImage({ className, tone, src }: { className?: string | undefined; tone: string; src: string }) {
+  if (MS_ICONS.has(src)) {
+    return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/apps/ms/${src}.svg`} alt="" draggable={false} decoding="async" className="size-[90%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
+  }
   if (MAC_ICONS.has(src)) {
     return <span className={`relative grid shrink-0 place-items-center ${className ?? ""}`}><img src={`/icons/apps/mac/${src}.svg`} alt="" draggable={false} decoding="async" className="size-[96%] object-contain drop-shadow-[0_2px_3px_rgb(0_0_0/.35)]" /></span>;
   }
@@ -192,7 +199,7 @@ const WeatherIcon: IconComponent = ({ className }) => <AppImage tone="from-sky-4
 const PaintIcon: IconComponent = ({ className }) => <AppImage tone="from-pink-400 to-purple-700" src="paint" className={className} />;
 const TodoIcon: IconComponent = ({ className }) => <AppImage tone="from-lime-400 to-green-700" src="todo" className={className} />;
 
-const YouTubeIcon: IconComponent = brandIcon("youtube.svg");
+const PrivTubeIcon: IconComponent = brandIcon("privtube.svg");
 
 const CalendarIcon: IconComponent = ({ className }) => <AppImage tone="from-white to-zinc-200" src="calendar" className={className} />;
 const ClockIcon: IconComponent = ({ className }) => <AppImage tone="from-zinc-700 to-zinc-900" src="clock" className={className} />;
@@ -208,8 +215,11 @@ const LINK_APPS = [
 ];
 const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.4";
+const OS_VERSION = "4.5";
+// NOVA OS stopped getting updates after 4.1; new features only come to PRIVATE OS.
+const NOVA_FINAL_VERSION = "4.1";
 const CHANGELOG = [
+  { v: "4.5", date: "4 Nov 2026", items: ["The YouTube app is now Priv-Tube, our own YouTube with no account: a Home feed with topics and a Shorts shelf, a Shorts player you scroll through, Live streams, search with suggestions and filters, channel pages, and a watch page with the description, comments and an Up next list that can autoplay", "The Priv-Tube feeds (Home, Shorts, Live and Subscriptions) refresh by themselves every 39 minutes with new videos", "Subscribe to channels, like videos, keep a Watch later list and a History, all saved on this device", "Save a video and it stays in your Priv-Tube library on this device, with its picture, even after you reload. Playing it still needs internet, because YouTube doesn't allow downloading the video file", "Cherrion is now a standalone app like BeeZ. Both open straight away in their own window instead of going through the browser's proxy", "NOVA OS no longer gets updates: it stays on version 4.1 and says so in its Settings. New features now come only to PRIVATE OS", "Cleaner icons for Private Word, Excel, PowerPoint, Outlook, OneNote, Figure Cloud, Media Player, Paint, Settings, Terminal and To Do, and the other Windows-style icons lost their white edges"] },
   { v: "4.4", date: "3 Nov 2026", items: ["New desktop-style app icons for Task Manager, Focus Timer, Converter, PDF Reader, System Info, Activity, Chat and Task view, which only had drawn icons before", "New Green Forest wallpaper in Settings › Wallpaper"] },
   { v: "4.3", date: "3 Nov 2026", items: ["Quick Note sticky cards on the desktop, made after the Figure OS video. Type straight in and drag them by the top, or right-click one for Move Widget and Delete Widget. New notes take turns in yellow, blue, pink and green", "A minimal view like the video: press the menu button at the top left for a black screen with the day, the date, the time, four app shortcuts and a clock widget. Click anywhere to go back", "The top corners now show a menu button and the time on the left, and your battery and avatar on the right", "The browser has the Brave lion as its icon", "The Media, Console and clock cards now start out, and the tab on the right edge still hides them", "Right-click the desktop and pick New sticky note to add one", "A clock card under the Media and Console cards, with the time, the day and date, and a ring that fills with the seconds", "New Desktop look settings in Settings > Widgets: turn the day name, the side cards, the clock card and the sticky notes on or off, add notes or clear them all"] },
   { v: "4.2", date: "2 Nov 2026", items: ["New floating PRIVATE OS dock, made after the Figure OS videos: a rounded, nearly clear pill that floats above the bottom edge, with Start and All apps first, colourful app icons with no tiles and a small white dash under open apps. The clock and quick settings sit in their own pill on the right", "The desktop shows the day name at the top in The Last Shuriken font, like the video, and Media and Console Emulator cards that open Spotify and PlayStation. The cards hide behind a small tab on the right edge: point at it to peek, click it to keep them out", "Drag the small line above the dock to move it to the top, bottom or right edge, with a preview of where it will land", "Maximized windows now stop under the day name and above the floating dock", "Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
@@ -287,7 +297,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "browser", label: "Private Browser", icon: PrivateBrowserIcon },
   { id: "figure", label: "Figure Cloud", icon: CloudIcon },
   { id: "beez", label: "BeeZ", icon: BeeZIcon },
-  { id: "youtube", label: "YouTube", icon: YouTubeIcon },
+  { id: "youtube", label: "Priv-Tube", icon: PrivTubeIcon },
   { id: "cherrion", label: "Cherrion", icon: CherryIcon },
   { id: "minecraft", label: "Minecraft", icon: MinecraftIcon },
   { id: "files", label: "Private Files", icon: FolderIcon },
@@ -414,12 +424,13 @@ function PrivateOS() {
     return () => window.clearInterval(interval);
   }, [phase, locked, power]);
 
-  // The 3.0 tour shows once, after the desktop unlocks.
+  // The tour of what's new shows once, after the desktop unlocks. NOVA OS no longer gets updates, so it
+  // waits until PRIVATE OS is in use.
   useEffect(() => {
-    if (phase !== "desktop" || locked || !settingsReady || !settings.onboarded || releaseSeen(OS_VERSION)) return;
+    if (phase !== "desktop" || locked || !settingsReady || !settings.onboarded || settings.edition === "nova" || releaseSeen(OS_VERSION)) return;
     const timer = window.setTimeout(() => setTour(true), 900);
     return () => window.clearTimeout(timer);
-  }, [phase, locked, settingsReady, settings.onboarded]);
+  }, [phase, locked, settingsReady, settings.onboarded, settings.edition]);
 
   // Start the browser's proxy engine in the background once the desktop is up.
   useEffect(() => {
@@ -680,8 +691,7 @@ function PrivateOS() {
     }
     setLauncher(false);
     setQuickMenu(false);
-    const key = id === "cherrion" ? "browser" : id;
-    if (id === "cherrion") setBrowserStart(CHERRION_URL);
+    const key = id;
     setMinWins((list) => list.filter((item) => item !== key));
     setOpenWins((list) => (list.includes(key) ? list : [...list, key]));
     raise(key);
@@ -831,11 +841,12 @@ function PrivateOS() {
       case "browser": return <PrivateBrowser key={browserStart ?? "home"} initialUrl={browserStart} close={close} nova={nova} />;
       case "figure": return <FigureCloudApp close={close} />;
       case "beez": return <BeeZApp close={close} />;
+      case "cherrion": return <CherrionApp close={close} />;
       case "youtube": return <YouTubeApp close={close} />;
       case "minecraft": return <MinecraftApp close={close} />;
       case "settings": return nova ? (
         <WindowFrame title="Settings" icon={SettingsIcon} close={close} nova>
-          <NovaSettingsApp settings={settings} patch={patchSettings} apps={novaApps} version={OS_VERSION} changelog={CHANGELOG} walls={allWalls} customFrom={wallpaperOptions.length} customIds={customWalls.map((wall) => wall.id)} addWall={(file) => addWall(file, false)} removeWall={removeWall} switchToPrivate={() => switchEdition("private")} optimize={() => setOptimizing(true)} restartSetup={() => patchSettings({ onboarded: false })} wisp={{ servers: WISP_SERVERS, probe: probeWisp }} />
+          <NovaSettingsApp settings={settings} patch={patchSettings} apps={novaApps} version={NOVA_FINAL_VERSION} changelog={CHANGELOG.filter((entry) => Number(entry.v) <= Number(NOVA_FINAL_VERSION))} discontinued walls={allWalls} customFrom={wallpaperOptions.length} customIds={customWalls.map((wall) => wall.id)} addWall={(file) => addWall(file, false)} removeWall={removeWall} switchToPrivate={() => switchEdition("private")} optimize={() => setOptimizing(true)} restartSetup={() => patchSettings({ onboarded: false })} wisp={{ servers: WISP_SERVERS, probe: probeWisp }} />
         </WindowFrame>
       ) : <WallpaperSettings wallpaper={wallpaper} setWallpaper={setWallpaper} walls={allWalls} custom={customWalls} addWall={addWall} removeWall={removeWall} settings={settings} patch={patchSettings} close={close} />;
       case "files": return <FilesWindow close={close} open={openApp} />;
@@ -2140,105 +2151,48 @@ function MinecraftApp({ close }: { close: () => void }) {
   );
 }
 
-function BeeZApp({ close }: { close: () => void }) {
-  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
-  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+// Sites that run as their own app: they allow being shown in a frame, so they open directly, without the
+// browser proxy (their own service workers and logins keep working).
+const SITE_FRAME_SANDBOX = "allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock allow-storage-access-by-user-activation";
+
+function SiteApp({ close, title, url, icon: Icon, accent }: { close: () => void; title: string; url: string; icon: IconComponent; accent: string }) {
   const [loading, setLoading] = useState(true);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const controllerRef = useRef<EngineController | null>(null);
-
-  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        controllerRef.current = await startProxyEngine();
-        if (!cancelled) setMode("engine");
-      } catch {
-        let direct = true;
-        try {
-          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(BEEZ_URL)}`);
-          const info = (await response.json()) as { frameable?: boolean | null };
-          if (info.frameable === false) direct = false;
-        } catch {
-          // assume the site can be opened directly
-        }
-        if (cancelled) return;
-        setFallbackSrc(direct ? BEEZ_URL : `/api/proxy?url=${encodeURIComponent(BEEZ_URL)}`);
-        setMode("fallback");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (mode !== "engine") return;
-    const element = frameRef.current;
-    const controller = controllerRef.current;
-    if (element && controller) controller.createFrame(element).go(BEEZ_URL);
-  }, [mode]);
-
-  const openOutside = (
-    <button type="button" aria-label="Open BeeZ in a new tab" onClick={() => window.open(BEEZ_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
-      <ExternalLink className="size-3.5" />
-    </button>
+  const [stamp, setStamp] = useState(0);
+  const reload = () => {
+    setLoading(true);
+    setStamp((value) => value + 1);
+  };
+  const actions = (
+    <>
+      <button type="button" aria-label={`Reload ${title}`} onClick={reload} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+        <RotateCw className="size-3.5" />
+      </button>
+      <button type="button" aria-label={`Open ${title} in a new tab`} onClick={() => window.open(url, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+        <ExternalLink className="size-3.5" />
+      </button>
+    </>
   );
-
   return (
-    <WindowFrame title="BeeZ" icon={BeeZIcon} close={close} app startMaximized actions={openOutside}>
+    <WindowFrame title={title} icon={Icon} close={close} app startMaximized actions={actions}>
       <div className="relative flex-1 overflow-hidden bg-black">
         {loading && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
             <div className="text-center">
-              <BeeZIcon className="mx-auto size-20" />
-              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">BEEZ</p>
+              <Icon className="mx-auto size-20" />
+              <p className="mt-5 text-sm font-bold uppercase tracking-[.3em] text-white">{title}</p>
               <p className="mt-1 text-[11px] text-white/50">Loading…</p>
-              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#f5b301] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left [animation:boot-bar_2.2s_ease-in-out_forwards]" style={{ background: accent }} /></div>
             </div>
           </div>
         )}
-        {mode === "engine" && (
-          <iframe ref={frameRef} key="engine" title="BeeZ" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
-        )}
-        {mode === "fallback" && fallbackSrc && (
-          <iframe
-            key="fallback"
-            title="BeeZ"
-            src={fallbackSrc}
-            onLoad={() => setLoading(false)}
-            className="size-full border-0 bg-black"
-            allow={ENGINE_FRAME_PERMISSIONS}
-            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
-          />
-        )}
+        <iframe key={stamp} title={title} src={url} onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} sandbox={SITE_FRAME_SANDBOX} />
       </div>
     </WindowFrame>
   );
 }
 
-type YouTubeVideo = { id: string; title: string; channel: string; views: string; length: string; published: string; live: boolean };
-const YT_TOPICS = ["Trending music", "Gaming", "Minecraft", "Lofi", "Football", "Comedy", "Science", "News"];
-const YT_ID = /^[A-Za-z0-9_-]{11}$/;
-
-// Reads a YouTube link (watch, youtu.be, shorts, embed, live) or a bare video id.
-function youTubeId(input: string) {
-  const value = input.trim();
-  if (YT_ID.test(value)) return value;
-  try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
-    const host = url.hostname.replace(/^(www|m|music)\./, "");
-    if (host === "youtu.be") return YT_ID.test(url.pathname.slice(1, 12)) ? url.pathname.slice(1, 12) : null;
-    if (host !== "youtube.com" && host !== "youtube-nocookie.com") return null;
-    const fromQuery = url.searchParams.get("v") ?? "";
-    if (YT_ID.test(fromQuery)) return fromQuery;
-    const fromPath = url.pathname.match(/^\/(?:shorts|embed|live|v)\/([A-Za-z0-9_-]{11})/)?.[1];
-    return fromPath ?? null;
-  } catch {
-    return null;
-  }
-}
+const BeeZApp = ({ close }: { close: () => void }) => <SiteApp close={close} title="BeeZ" url={BEEZ_URL} icon={BeeZIcon} accent="#f5b301" />;
+const CherrionApp = ({ close }: { close: () => void }) => <SiteApp close={close} title="Cherrion" url={CHERRION_URL} icon={CherryIcon} accent="#e8436f" />;
 
 // Can this connection reach YouTube's player itself? Then videos play straight from YouTube, which is
 // the fastest way and never meets the "confirm you're not a bot" wall that proxy servers get.
@@ -2260,32 +2214,15 @@ function canReachYouTube() {
   return youTubeReach;
 }
 
-function YouTubeThumb({ id, className }: { id: string; className?: string }) {
-  return (
-    <img
-      src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`}
-      alt=""
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-      onError={(event) => {
-        const image = event.currentTarget;
-        if (image.dataset["server"]) return;
-        image.dataset["server"] = "1";
-        image.src = `/api/youtube?thumb=${id}`;
-      }}
-      className={`aspect-video w-full bg-white/5 object-cover ${className ?? ""}`}
-    />
-  );
-}
-
 // Plays one video: straight from YouTube when this connection can reach it, otherwise through the
 // proxy, inside a small player page on this site so YouTube sees a normal embedded player.
 // YouTube's own player error codes for "the owner doesn't allow this video on other websites" (and the
 // related "video not found" ones). The embed reports them by postMessage once we say we're listening.
 const YT_EMBED_BLOCKED = new Set([2, 5, 100, 101, 150, 152, 153]);
 
-function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | undefined }) {
+function YouTubePlayer({ id, onNext, onEnded, short = false }: TubePlayerProps) {
+  const ended = useRef(onEnded);
+  ended.current = onEnded;
   const [route, setRoute] = useState<"checking" | "direct" | "proxy" | "failed">("checking");
   const [blocked, setBlocked] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -2297,6 +2234,9 @@ function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | und
       try {
         const data = JSON.parse(event.data) as { event?: string; info?: unknown };
         if (data.event === "onError" && typeof data.info === "number" && YT_EMBED_BLOCKED.has(data.info)) setBlocked(true);
+        // State 0 means the video finished: Priv-Tube then plays the next one when Autoplay is on.
+        const state = data.event === "onStateChange" ? data.info : (data.info as { playerState?: unknown } | undefined)?.playerState;
+        if (state === 0) ended.current?.();
       } catch {
         // not a player message
       }
@@ -2335,14 +2275,14 @@ function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | und
     };
   }, [route, id]);
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black">
+    <div className={short ? "absolute inset-0 overflow-hidden bg-black" : "relative aspect-video w-full overflow-hidden rounded-xl bg-black"}>
       {route === "direct" && (
         <iframe
           key={`direct-${id}`}
           ref={directRef}
           onLoad={listen}
           title="YouTube player"
-          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`}
+          src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1${short ? `&loop=1&playlist=${id}` : ""}&origin=${encodeURIComponent(window.location.origin)}`}
           allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write"
           allowFullScreen
           referrerPolicy="strict-origin-when-cross-origin"
@@ -2354,7 +2294,7 @@ function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | und
       {blocked && (
         <div className="absolute inset-0 grid place-items-center bg-black p-6 text-center">
           <div className="max-w-sm">
-            <YouTubeIcon className="mx-auto h-8 w-11" />
+            <PrivTubeIcon className="mx-auto size-10" />
             <p className="mt-3 text-[15px] font-semibold text-white">This video only plays on YouTube</p>
             <p className="mt-1 text-[12px] text-white/60">Its owner turned off playing it on other websites, which is common for music videos.</p>
             <div className="mt-4 flex justify-center gap-2">
@@ -2371,128 +2311,9 @@ function YouTubePlayer({ id, onNext }: { id: string; onNext?: (() => void) | und
 }
 
 function YouTubeApp({ close }: { close: () => void }) {
-  const [query, setQuery] = useState("");
-  const [shown, setShown] = useState<{ query: string; videos: YouTubeVideo[] | null; error: string }>({ query: "", videos: null, error: "" });
-  const [playing, setPlaying] = useState<YouTubeVideo | null>(null);
-  const request = useRef(0);
-
-  const search = (text: string) => {
-    const value = text.trim();
-    if (!value) return;
-    const linked = youTubeId(value);
-    if (linked) {
-      setPlaying({ id: linked, title: "", channel: "", views: "", length: "", published: "", live: false });
-      return;
-    }
-    const ticket = ++request.current;
-    setPlaying(null);
-    setShown({ query: value, videos: null, error: "" });
-    try {
-      localStorage.setItem("pos-yt-last", value);
-    } catch {
-      // storage unavailable
-    }
-    fetch(`/api/youtube?q=${encodeURIComponent(value)}`)
-      .then(async (response) => (await response.json()) as { videos?: YouTubeVideo[]; error?: string })
-      .then((data) => {
-        if (ticket !== request.current) return;
-        setShown({ query: value, videos: data.videos ?? [], error: data.videos?.length ? "" : data.error || "No videos found." });
-      })
-      .catch(() => {
-        if (ticket === request.current) setShown({ query: value, videos: [], error: "YouTube couldn't be reached. Try again in a moment." });
-      });
-  };
-
-  useEffect(() => {
-    let start = YT_TOPICS[0]!;
-    try {
-      start = localStorage.getItem("pos-yt-last") || start;
-    } catch {
-      // storage unavailable
-    }
-    search(start);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const list = shown.videos ?? [];
-  const upNext = playing ? list.filter((video) => video.id !== playing.id) : [];
-  const card = (video: YouTubeVideo, compact = false) => (
-    <button key={video.id} type="button" onClick={() => setPlaying(video)} className={`group text-left outline-none ${compact ? "flex gap-2.5" : "flex flex-col gap-2.5"}`}>
-      <span className={`relative block shrink-0 overflow-hidden rounded-xl ${compact ? "w-40" : "w-full"}`}>
-        <YouTubeThumb id={video.id} className="transition-transform duration-300 group-hover:scale-[1.04]" />
-        {(video.length || video.live) && <span className={`absolute bottom-1.5 right-1.5 rounded px-1 py-px text-[10px] font-semibold ${video.live ? "bg-red-600" : "bg-black/80"}`}>{video.live ? "LIVE" : video.length}</span>}
-      </span>
-      <span className="min-w-0">
-        <span className={`line-clamp-2 font-semibold leading-snug text-white ${compact ? "text-[12px]" : "text-[13px]"}`}>{video.title}</span>
-        <span className="mt-1 block truncate text-[11px] text-white/55">{video.channel}</span>
-        <span className="block truncate text-[11px] text-white/45">{[video.views, video.published].filter(Boolean).join(" • ")}</span>
-      </span>
-    </button>
-  );
-
-  const openOutside = (
-    <button type="button" aria-label="Open YouTube in a new tab" onClick={() => window.open(playing ? `https://www.youtube.com/watch?v=${playing.id}` : YOUTUBE_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
-      <ExternalLink className="size-3.5" />
-    </button>
-  );
-
   return (
-    <WindowFrame title="YouTube" icon={YouTubeIcon} close={close} app startMaximized actions={openOutside}>
-      <div className="flex min-h-0 flex-1 flex-col bg-[#0f0f0f] text-white">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            search(query);
-          }}
-          className="flex shrink-0 items-center gap-3 px-4 py-2.5"
-        >
-          <button type="button" onClick={() => setPlaying(null)} className="flex shrink-0 items-center gap-1.5 outline-none" aria-label="YouTube home">
-            <YouTubeIcon className="h-5 w-7" />
-            <span className="text-[17px] font-bold tracking-tight">YouTube</span>
-          </button>
-          <label className="mx-auto flex h-9 w-full max-w-xl items-center overflow-hidden rounded-full border border-white/15 bg-[#121212] focus-within:border-[#3ea6ff]">
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search or paste a YouTube link" aria-label="Search YouTube" className="h-full min-w-0 flex-1 bg-transparent px-4 text-[13px] outline-none placeholder:text-white/40" />
-            <button type="submit" aria-label="Search" className="grid h-full w-14 place-items-center border-l border-white/15 bg-white/[.08] hover:bg-white/15"><Search className="size-4" /></button>
-          </label>
-          <span className="hidden w-28 shrink-0 sm:block" aria-hidden />
-        </form>
-        <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-3">
-          {YT_TOPICS.map((topic) => (
-            <button key={topic} type="button" onClick={() => { setQuery(""); search(topic); }} className={`shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-colors ${!playing && shown.query === topic ? "bg-white text-black" : "bg-white/10 hover:bg-white/20"}`}>{topic}</button>
-          ))}
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
-          {playing ? (
-            <div className="flex flex-col gap-5 lg:flex-row">
-              <div className="min-w-0 flex-1">
-                <YouTubePlayer key={playing.id} id={playing.id} onNext={upNext[0] ? () => setPlaying(upNext[0]!) : undefined} />
-                {playing.title && <h2 className="mt-3 text-[17px] font-bold leading-snug">{playing.title}</h2>}
-                {playing.channel && <p className="mt-1 text-[12px] text-white/60">{[playing.channel, playing.views, playing.published].filter(Boolean).join(" • ")}</p>}
-              </div>
-              {upNext.length > 0 && (
-                <aside className="flex w-full shrink-0 flex-col gap-3 lg:w-[22rem]">
-                  <p className="text-[13px] font-semibold text-white/80">Up next</p>
-                  {upNext.slice(0, 18).map((video) => card(video, true))}
-                </aside>
-              )}
-            </div>
-          ) : shown.videos === null ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-7">
-              {Array.from({ length: 12 }, (_, index) => (
-                <div key={index} className="animate-pulse">
-                  <div className="aspect-video rounded-xl bg-white/10" />
-                  <div className="mt-2.5 h-3 w-4/5 rounded bg-white/10" />
-                  <div className="mt-2 h-3 w-1/2 rounded bg-white/10" />
-                </div>
-              ))}
-            </div>
-          ) : shown.error ? (
-            <p className="py-16 text-center text-sm text-white/60">{shown.error}</p>
-          ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-4 gap-y-7">{list.map((video) => card(video))}</div>
-          )}
-        </div>
-      </div>
+    <WindowFrame title="Priv-Tube" icon={PrivTubeIcon} close={close} app startMaximized>
+      <PrivTube Player={YouTubePlayer} />
     </WindowFrame>
   );
 }
@@ -4405,7 +4226,7 @@ const MINIMAL_APPS = [
   { id: "browser", label: "Browser", Icon: PrivateBrowserIcon },
   { id: "spotify", label: "Spotify", Icon: brandIcon("spotify.svg") },
   { id: "messages", label: "Messages", Icon: MessagesIcon },
-  { id: "youtube", label: "YouTube", Icon: YouTubeIcon },
+  { id: "youtube", label: "Priv-Tube", Icon: PrivTubeIcon },
 ];
 const DOCK_PINS = ["netflix", "spotify", "playstation", "discord", "messages", "settings", "browser", "games", "taskview", "minecraft"];
 const OLD_DOCK_PINS = ["browser", "files", "notes", "calc", "figure", "settings"];

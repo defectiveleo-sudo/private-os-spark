@@ -50,6 +50,8 @@ type Props = {
   patch: (patch: Partial<NovaSettingsData>) => void;
   apps: NovaApp[];
   version: string;
+  /** NOVA OS no longer gets updates: show that in About and on the home page. */
+  discontinued?: boolean;
   changelog: { v: string; date: string; items: string[] }[];
   walls: Wall[];
   customFrom: number;
@@ -422,7 +424,7 @@ export function NovaSettingsApp(props: Props) {
             <span>{initial}</span>
           </button>
           <div className="min-w-0">
-            <p className="text-[12px] font-medium uppercase tracking-[.22em] text-white/50">NOVA OS {props.version}</p>
+            <p className="text-[12px] font-medium uppercase tracking-[.22em] text-white/50">NOVA OS {props.version}{props.discontinued && <span className="ml-2 rounded-full border border-amber-300/40 px-2 py-0.5 text-[9.5px] tracking-[.14em] text-amber-200">{tx("No more updates")}</span>}</p>
             <h2 className="nova-serif truncate text-[clamp(1.7rem,3.8cqw,2.6rem)] leading-tight">{greeting}{comma()} <em className="nsx-gradient-text">{settings.userName || t("friend")}</em></h2>
           </div>
         </div>
@@ -997,6 +999,15 @@ export function NovaSettingsApp(props: Props) {
             <p className="relative mt-1 text-[12px] uppercase tracking-[.3em] text-white/60">{t("Version {v}", { v: props.version })}</p>
             <p className="relative mt-3 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[10px] font-bold tracking-[.2em] text-amber-200">{RELEASE_LABEL}</p>
           </div>
+          {props.discontinued && (
+            <div data-setting="news" className="nsx-pane nsx-rise flex items-start gap-3 border border-amber-300/30 bg-amber-300/[.08] p-4 text-left">
+              <Info className="mt-0.5 size-4 shrink-0 text-amber-200" />
+              <div>
+                <p className="text-[13px] font-bold text-amber-100">{tx("NOVA OS no longer gets updates")}</p>
+                <p className="mt-1 text-[12px] text-white/65">{`Version ${props.version} is the last version of NOVA OS. New features now come only to PRIVATE OS. NOVA keeps working, and you can switch any time.`}</p>
+              </div>
+            </div>
+          )}
           <Pane>
             <Line id="switch" label={t("Switch to PRIVATE OS")} hint="The classic desktop. Your open windows stay open.">
               <button type="button" onClick={props.switchToPrivate} className="nsx-btn flex items-center gap-1.5"><RotateCw className="size-3.5" />{t("Switch")}</button>

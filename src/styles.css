@@ -192,6 +192,10 @@
 .desktop-status { position: absolute; top: 18px; left: 24px; right: 24px; display: flex; justify-content: space-between; align-items: center; color: var(--foreground); font-size: 11px; text-transform: capitalize; opacity: .8; pointer-events: none; }
 .os-desktop > .pointer-events-none.absolute.left-3 { top: 64px; }
 .os-window { border-radius: 18px; }
+/* Full screen window: no corners or frame; the title bar hides at the top and shows when the pointer reaches it. */
+.os-window:fullscreen { border-radius: 0 !important; border: 0 !important; animation: none !important; transform: none !important; inset: 0 !important; width: 100% !important; height: 100% !important; }
+.os-window:fullscreen > header { position: absolute; inset-inline: 0; top: 0; z-index: 40; opacity: 0; transition: opacity .2s ease; background: rgba(10, 10, 12, .78); backdrop-filter: blur(12px); }
+.os-window:fullscreen > header:hover, .os-window:fullscreen > header:focus-within { opacity: 1; }
 section.os-window { transition: opacity .2s cubic-bezier(.22, 1, .36, 1), transform .22s cubic-bezier(.22, 1, .36, 1); }
 .window-titlebar { background: color-mix(in oklab, var(--foreground) 5%, transparent); user-select: none; touch-action: none; }
 .window-control, .utility-icon { display: inline-flex; width: 32px; height: 32px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 6px; }

@@ -15,10 +15,12 @@ export function newSticky(list: StickyNote[], color?: StickyColor): StickyNote {
 type Props = {
   notes: StickyNote[];
   onChange: (notes: StickyNote[]) => void;
+  /** A top-left area kept clear (the Game Hub card): notes inside it are shown just below it. */
+  reserve?: { w: number; h: number } | undefined;
 };
 
 // Quick Note cards like the video: drag them by the header, or right-click for Move Widget and Delete Widget.
-export function StickyNotes({ notes, onChange }: Props) {
+export function StickyNotes({ notes, onChange, reserve }: Props) {
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
   const drag = useRef<{ id: string; sx: number; sy: number; ox: number; oy: number } | null>(null);
@@ -53,12 +55,14 @@ export function StickyNotes({ notes, onChange }: Props) {
   const update = (id: string, patch: Partial<StickyNote>) => onChange(notes.map((note) => (note.id === id ? { ...note, ...patch } : note)));
   const clamp = (x: number, y: number) => ({ x: Math.max(4, Math.min(window.innerWidth - 190, x)), y: Math.max(40, Math.min(window.innerHeight - 160, y)) });
 
+  const topOf = (note: StickyNote) => (reserve && note.x < reserve.w && note.y < reserve.h ? reserve.h : note.y);
+
   return (
     <>
       {notes.map((note) => (
         <div
           key={note.id}
-          style={{ left: note.x, top: note.y }}
+          style={{ left: note.x, top: topOf(note) }}
           className={`sticky-frame ${moving === note.id ? "is-moving" : ""}`}
           onContextMenu={(event) => {
             event.preventDefault();
@@ -71,7 +75,7 @@ export function StickyNotes({ notes, onChange }: Props) {
             className="sticky-note-head"
             onPointerDown={(event) => {
               if (event.button !== 0) return;
-              drag.current = { id: note.id, sx: event.clientX, sy: event.clientY, ox: note.x, oy: note.y };
+              drag.current = { id: note.id, sx: event.clientX, sy: event.clientY, ox: note.x, oy: topOf(note) };
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
             onPointerMove={(event) => {

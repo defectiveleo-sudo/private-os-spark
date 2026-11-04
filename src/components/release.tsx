@@ -1,10 +1,10 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { Clapperboard, Globe2, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
-// Release labels and the one-time "Welcome to 4.5" tour.
+// Release labels and the one-time "Welcome to 4.6" tour.
 
 export const RELEASE_LABEL = "ALPHA RELEASE (STILL IN DEVELOPMENT)";
-export const BUILD = "4500.01";
+export const BUILD = "4600.01";
 const SEEN_KEY = "pos-seen-release";
 
 /** The ALPHA pill used on start and boot screens. */
@@ -29,6 +29,8 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
+  { icon: Rocket, kicker: "Version 4.6", title: "Game Hub", body: "Games is now Game Hub, with a featured game, Continue playing, Favourites and three new arcade games that work with a controller.", points: ["Blocks, Flappy Jet and Pong", "The Minecraft Launcher with version 26.3", "A Game Hub card on the desktop"], hue: ["#9be15d", "#1f7a3a"] },
+  { icon: Layers, kicker: "Version 4.6", title: "Solid, like Quick Note", body: "Windows, menus and the dock are solid cards now, with no glass blur, and windows shrink away when you close them.", points: ["Priv-Tube autoplay, Theater mode and Loop", "Pages in All apps", "Reopen the last app from the desktop menu"], hue: ["#3a3a44", "#121214"] },
   { icon: Clapperboard, kicker: "Version 4.5", title: "Meet Priv-Tube", body: "The YouTube app is now Priv-Tube: a whole YouTube of its own, with no account. The feed brings new videos every 39 minutes.", points: ["Home, Shorts, Live, Subscriptions and channels", "Comments, likes, Watch later and History", "Save videos to your library on this device"], hue: ["#ff5f6d", "#7b3fe4"] },
   { icon: Layers, kicker: "Version 4.5", title: "Cherrion and BeeZ, on their own", body: "Cherrion and BeeZ are standalone apps now. They open straight away, without going through the browser's proxy.", points: ["Cleaner Microsoft app icons", "NOVA OS stays on 4.1: new features come to PRIVATE OS"], hue: ["#e8436f", "#f5b301"] },
   { icon: Palette, kicker: "Version 4.4", title: "New icons, a new forest", body: "Apps that only had drawn icons now have real desktop app icons, and there is a green forest wallpaper.", points: ["Task Manager, Focus Timer, Converter, PDF Reader", "System Info, Activity, Chat and Task view", "Green Forest in Settings › Wallpaper"], hue: ["#22c55e", "#0f766e"] },

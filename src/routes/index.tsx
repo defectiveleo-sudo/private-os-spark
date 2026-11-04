@@ -85,7 +85,7 @@ import {
   Map as MapIcon,
   History,
 } from "lucide-react";
-import { Copy as LuCopy, Square as LuSquare, CirclePlus as LuCirclePlus, Scissors as LuScissors, ClipboardPaste as LuClipboardPaste, TextCursorInput as LuTextCursorInput, Trash2 as LuTrash2, ArrowUpDown as LuArrowUpDown, LayoutList as LuLayoutList, Ellipsis as LuEllipsis, PanelRight as LuPanelRight, ArrowUp as LuArrowUp, Images as LuImages, Monitor as LuMonitor, HardDrive as LuHardDrive, Pin as LuPin, FolderOpen as LuFolderOpen, CheckCheck as LuCheckCheck, FlipHorizontal as LuFlipHorizontal, Bold as LuBold, Italic as LuItalic, Underline as LuUnderline, Strikethrough as LuStrikethrough, Subscript as LuSubscript, Superscript as LuSuperscript, Highlighter as LuHighlighter, Baseline as LuBaseline, List as LuList, ListOrdered as LuListOrdered, IndentDecrease as LuIndentDecrease, IndentIncrease as LuIndentIncrease, AlignLeft as LuAlignLeft, AlignCenter as LuAlignCenter, AlignRight as LuAlignRight, AlignJustify as LuAlignJustify, Replace as LuReplace, TextSelect as LuTextSelect, RemoveFormatting as LuRemoveFormatting, AArrowUp as LuAArrowUp, AArrowDown as LuAArrowDown, Table as LuTable, ImagePlus as LuImagePlus, Link as LuLink, SeparatorHorizontal as LuSeparatorHorizontal, CalendarClock as LuCalendarClock, FileDown as LuFileDown, Printer as LuPrinter, Sigma as LuSigma, Eraser as LuEraser, ArrowDownAZ as LuArrowDownAZ, ArrowDownZA as LuArrowDownZA, PaintBucket as LuPaintBucket, DollarSign as LuDollarSign, Percent as LuPercent, Rows3 as LuRows3, Columns3 as LuColumns3, SquarePlus as LuSquarePlus, Presentation as LuPresentation, StickyNote as LuStickyNote, ZoomIn as LuZoomIn, ZoomOut as LuZoomOut, Expand as LuExpand, MoveUp as LuMoveUp, MoveDown as LuMoveDown, ImageOff as LuImageOff, BetweenHorizontalStart as LuBetweenHorizontalStart, BetweenVerticalStart as LuBetweenVerticalStart, FilePen as LuFilePen, Clock as LuClock, Calendar as LuCalendar, SquareFunction as LuSquareFunction, Search as LuSearch, FileText as LuFileText, SquareCheck as LuSquareCheck } from "lucide-react";
+import { Copy as LuCopy, Square as LuSquare, CirclePlus as LuCirclePlus, Scissors as LuScissors, ClipboardPaste as LuClipboardPaste, TextCursorInput as LuTextCursorInput, Trash2 as LuTrash2, ArrowUpDown as LuArrowUpDown, LayoutList as LuLayoutList, Ellipsis as LuEllipsis, PanelRight as LuPanelRight, ArrowUp as LuArrowUp, Images as LuImages, Monitor as LuMonitor, HardDrive as LuHardDrive, Pin as LuPin, FolderOpen as LuFolderOpen, CheckCheck as LuCheckCheck, FlipHorizontal as LuFlipHorizontal, Bold as LuBold, Italic as LuItalic, Underline as LuUnderline, Strikethrough as LuStrikethrough, Subscript as LuSubscript, Superscript as LuSuperscript, Highlighter as LuHighlighter, Baseline as LuBaseline, List as LuList, ListOrdered as LuListOrdered, IndentDecrease as LuIndentDecrease, IndentIncrease as LuIndentIncrease, AlignLeft as LuAlignLeft, AlignCenter as LuAlignCenter, AlignRight as LuAlignRight, AlignJustify as LuAlignJustify, Replace as LuReplace, TextSelect as LuTextSelect, RemoveFormatting as LuRemoveFormatting, AArrowUp as LuAArrowUp, AArrowDown as LuAArrowDown, Table as LuTable, ImagePlus as LuImagePlus, Link as LuLink, SeparatorHorizontal as LuSeparatorHorizontal, CalendarClock as LuCalendarClock, FileDown as LuFileDown, Printer as LuPrinter, Sigma as LuSigma, Eraser as LuEraser, ArrowDownAZ as LuArrowDownAZ, ArrowDownZA as LuArrowDownZA, PaintBucket as LuPaintBucket, DollarSign as LuDollarSign, Percent as LuPercent, Rows3 as LuRows3, Columns3 as LuColumns3, SquarePlus as LuSquarePlus, Presentation as LuPresentation, StickyNote as LuStickyNote, ZoomIn as LuZoomIn, ZoomOut as LuZoomOut, Expand as LuExpand, Fullscreen as LuFullscreen, Shrink as LuShrink, MoveUp as LuMoveUp, MoveDown as LuMoveDown, ImageOff as LuImageOff, BetweenHorizontalStart as LuBetweenHorizontalStart, BetweenVerticalStart as LuBetweenVerticalStart, FilePen as LuFilePen, Clock as LuClock, Calendar as LuCalendar, SquareFunction as LuSquareFunction, Search as LuSearch, FileText as LuFileText, SquareCheck as LuSquareCheck } from "lucide-react";
 import { Backstage, FileGlyph, FolderGlyph, OFFICE, OfficeStatus, OfficeTitle, RBig, RColor, RGroup, RRow, RSmall, RStack, Ribbon, rSelect } from "@/components/office-ui";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
@@ -121,7 +121,6 @@ const CHERRION_URL = "https://cherrion.top/";
 const FIGURE_CLOUD_URL = "https://figure-cloud.figure-softwares.workers.dev/";
 const BEEZ_URL = "https://beez.beez-softwares.workers.dev/";
 const YOUTUBE_URL = "https://www.youtube.com/";
-const MINECRAFT_URL = "https://eaglercraft.com/play?version=modpack-ultimate-wasm";
 
 type IconComponent = ComponentType<{ className?: string }>;
 
@@ -219,7 +218,7 @@ const OS_VERSION = "4.5";
 // NOVA OS stopped getting updates after 4.1; new features only come to PRIVATE OS.
 const NOVA_FINAL_VERSION = "4.1";
 const CHANGELOG = [
-  { v: "4.5", date: "4 Nov 2026", items: ["The YouTube app is now Priv-Tube, our own YouTube with no account: a Home feed with topics and a Shorts shelf, a Shorts player you scroll through, Live streams, search with suggestions and filters, channel pages, and a watch page with the description, comments and an Up next list that can autoplay", "The Priv-Tube feeds (Home, Shorts, Live and Subscriptions) refresh by themselves every 39 minutes with new videos", "Subscribe to channels, like videos, keep a Watch later list and a History, all saved on this device", "Save a video and it stays in your Priv-Tube library on this device, with its picture, even after you reload. Playing it still needs internet, because YouTube doesn't allow downloading the video file", "Cherrion is now a standalone app like BeeZ. Both open straight away in their own window instead of going through the browser's proxy", "NOVA OS no longer gets updates: it stays on version 4.1 and says so in its Settings. New features now come only to PRIVATE OS", "Cleaner icons for Private Word, Excel, PowerPoint, Outlook, OneNote, Figure Cloud, Media Player, Paint, Settings, Terminal and To Do, and the other Windows-style icons lost their white edges"] },
+  { v: "4.5", date: "4 Nov 2026", items: ["The YouTube app is now Priv-Tube, our own YouTube with no account: a Home feed with topics and a Shorts shelf, a Shorts player you scroll through, Live streams, search with suggestions and filters, channel pages, and a watch page with the description, comments and an Up next list that can autoplay", "The Priv-Tube feeds (Home, Shorts, Live and Subscriptions) refresh by themselves every 39 minutes with new videos", "Subscribe to channels, like videos, keep a Watch later list and a History, all saved on this device", "Save a video and it stays in your Priv-Tube library on this device, with its picture, even after you reload. Playing it still needs internet, because YouTube doesn't allow downloading the video file", "Cherrion is now a standalone app like BeeZ. Both open straight away in their own window instead of going through the browser's proxy", "NOVA OS no longer gets updates: it stays on version 4.1 and says so in its Settings. New features now come only to PRIVATE OS", "Cleaner icons for Private Word, Excel, PowerPoint, Outlook, OneNote, Figure Cloud, Media Player, Paint, Settings, Terminal and To Do, and the other Windows-style icons lost their white edges", "Every window has a Full screen button next to Minimize: the app, game or video fills the whole screen, and Esc brings it back", "Minecraft now runs the real Eaglercraft game inside its window instead of the eaglercraft.com website, which refused to open there. Pick 1.8.8 or 1.12.2: the game downloads once (13 to 17 MB), then starts straight away, and worlds are saved in this browser", "Netflix opens in its own browser window, where it can sign in and play. Inside a PRIVATE OS window it stayed black or froze, because Netflix only plays its films on its own site"] },
   { v: "4.4", date: "3 Nov 2026", items: ["New desktop-style app icons for Task Manager, Focus Timer, Converter, PDF Reader, System Info, Activity, Chat and Task view, which only had drawn icons before", "New Green Forest wallpaper in Settings › Wallpaper"] },
   { v: "4.3", date: "3 Nov 2026", items: ["Quick Note sticky cards on the desktop, made after the Figure OS video. Type straight in and drag them by the top, or right-click one for Move Widget and Delete Widget. New notes take turns in yellow, blue, pink and green", "A minimal view like the video: press the menu button at the top left for a black screen with the day, the date, the time, four app shortcuts and a clock widget. Click anywhere to go back", "The top corners now show a menu button and the time on the left, and your battery and avatar on the right", "The browser has the Brave lion as its icon", "The Media, Console and clock cards now start out, and the tab on the right edge still hides them", "Right-click the desktop and pick New sticky note to add one", "A clock card under the Media and Console cards, with the time, the day and date, and a ring that fills with the seconds", "New Desktop look settings in Settings > Widgets: turn the day name, the side cards, the clock card and the sticky notes on or off, add notes or clear them all"] },
   { v: "4.2", date: "2 Nov 2026", items: ["New floating PRIVATE OS dock, made after the Figure OS videos: a rounded, nearly clear pill that floats above the bottom edge, with Start and All apps first, colourful app icons with no tiles and a small white dash under open apps. The clock and quick settings sit in their own pill on the right", "The desktop shows the day name at the top in The Last Shuriken font, like the video, and Media and Console Emulator cards that open Spotify and PlayStation. The cards hide behind a small tab on the right edge: point at it to peek, click it to keep them out", "Drag the small line above the dock to move it to the top, bottom or right edge, with a preview of where it will land", "Maximized windows now stop under the day name and above the floating dock", "Docks still on the old default get the new apps: Netflix, Spotify, PlayStation, Discord, Messages, Settings, Browser, Games, Task view and Minecraft", "Real app icons for YouTube, Spotify, Minecraft, BeeZ and Cherrion, plus new Netflix, PlayStation and Discord apps", "New YouTube app: search YouTube, browse topics, paste any YouTube link, and watch with an Up next list. Videos play straight from YouTube when your network allows it, and through the proxy when it doesn't. Videos whose owners only allow them on YouTube now say so, with Open on YouTube and Next video buttons", "The browser now runs on Scramjet 2, the new version of the proxy engine. It no longer needs shared workers, so it starts in more browsers", "YouTube through the proxy no longer stops at \"Video player configuration error 153\". YouTube may still ask you to confirm you're not a bot there, because it blocks the free proxy servers", "Fixed the browser address bar searching instead of opening addresses with a subdomain, like en.wikipedia.org/wiki/Bee"] },
@@ -684,7 +683,10 @@ function PrivateOS() {
       setLauncher(false);
       return;
     }
-    const link = LINK_APPS.find((app) => app.id === id);
+    // Netflix can't play inside a page (copy protection and its own frame block), so it opens in its
+    // own browser window right away, and a small PRIVATE OS window says why and can open it again.
+    if (id === "netflix") openNetflix();
+    const link = id === "netflix" ? undefined : LINK_APPS.find((app) => app.id === id);
     if (link) {
       setBrowserStart(link.url);
       return openApp("browser");
@@ -841,6 +843,7 @@ function PrivateOS() {
       case "browser": return <PrivateBrowser key={browserStart ?? "home"} initialUrl={browserStart} close={close} nova={nova} />;
       case "figure": return <FigureCloudApp close={close} />;
       case "beez": return <BeeZApp close={close} />;
+      case "netflix": return <NetflixApp close={close} />;
       case "cherrion": return <CherrionApp close={close} />;
       case "youtube": return <YouTubeApp close={close} />;
       case "minecraft": return <MinecraftApp close={close} />;
@@ -1499,6 +1502,18 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
   const live = useRef<WinRect | null>(null);
   const gesture = useRef<{ kind: "move" | "resize" | "pending"; mode: string; sx: number; sy: number; start: WinRect; ratio: number } | null>(null);
   const [maximized, setMaximized] = useState(startMaximized);
+  // Full screen: the window (game, video, page) fills the whole screen. Esc or the button brings it back.
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    const sync = () => setFull(!!el.current && document.fullscreenElement === el.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFull = () => {
+    if (document.fullscreenElement === el.current) void document.exitFullscreen().catch(() => undefined);
+    else void el.current?.requestFullscreen?.({ navigationUI: "hide" }).catch(() => undefined);
+  };
+  const fullLabel = full ? "Exit window full screen" : "Window full screen";
   const toggleMaximize = () => {
     setSnap(null);
     if (!maximized && el.current) prevRect.current = rect ?? measure();
@@ -1645,6 +1660,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
     >
       {nova ? (
         <header className="nova-titlebar absolute inset-x-0 top-0 z-30 flex h-12 items-center justify-end gap-1.5 pl-24 pr-3">
+          <button type="button" aria-label={fullLabel} title={fullLabel} onClick={toggleFull} className="nova-ctl">{full ? <LuShrink className="size-3" /> : <LuFullscreen className="size-3" />}</button>
           <button type="button" aria-label="Minimize" title="Minimize" onClick={minimize} className="nova-ctl"><Minus className="size-3.5" /></button>
           <button type="button" aria-label={maximized ? "Restore" : "Expand"} title={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="nova-ctl">{maximized ? <Minimize2 className="size-3" /> : <Maximize2 className="size-3" />}</button>
           <button type="button" aria-label="Close" title="Close" onClick={close} className="nova-ctl nova-ctl-close"><X className="size-3.5" /></button>
@@ -1653,6 +1669,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
         <header className={`os-bar flex h-10 shrink-0 items-stretch ${bar.className}`} style={bar.style}>
           <div className="flex min-w-0 flex-1 items-center">{bar.content}</div>
           <div className={`win-caption flex shrink-0 items-stretch ${bar.light ? "win-caption-light" : ""}`}>
+            <button type="button" aria-label={fullLabel} title={fullLabel} onClick={toggleFull}>{full ? <LuShrink className="size-3.5" strokeWidth={1.25} /> : <LuFullscreen className="size-3.5" strokeWidth={1.25} />}</button>
             <button type="button" aria-label="Minimize" title="Minimize" onClick={minimize}><Minus className="size-4" strokeWidth={1.25} /></button>
             <button type="button" aria-label={maximized ? "Restore" : "Maximize"} title={maximized ? "Restore Down" : "Maximize"} onClick={toggleMaximize}>{maximized ? <LuCopy className="size-3.5 -scale-x-100" strokeWidth={1.25} /> : <LuSquare className="size-3.5" strokeWidth={1.25} />}</button>
             <button type="button" aria-label="Close" title="Close" onClick={close} className="win-caption-close"><X className="size-4" strokeWidth={1.25} /></button>
@@ -1670,6 +1687,7 @@ function WindowFrame({ title, icon: Icon, close, children, startMaximized = fals
           </div>
           <div className="flex shrink-0 items-center gap-1.5 pr-1">
             {actions}
+            <OsButton label={fullLabel} onClick={toggleFull} className="win-ctl">{full ? <LuShrink className="size-3.5" /> : <LuFullscreen className="size-3.5" />}</OsButton>
             <OsButton label="Minimize" onClick={minimize} className="win-ctl"><Minus className="size-3.5" /></OsButton>
             <OsButton label={maximized ? "Restore" : "Expand"} onClick={toggleMaximize} className="win-ctl">{maximized ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}</OsButton>
             <OsButton label="Close" onClick={close} className="win-ctl win-close"><X className="size-3.5" /></OsButton>
@@ -2073,78 +2091,176 @@ function prewarmProxyEngine() {
 
 const ENGINE_FRAME_PERMISSIONS = "fullscreen; autoplay; clipboard-read; clipboard-write; gamepad; microphone; pointer-lock; keyboard-map";
 
+// Minecraft runs the real Eaglercraft game inside the window. eaglercraft.com refuses to be shown in a
+// frame and its launcher breaks behind the proxy, so the app downloads Eaglercraft's own offline build
+// (one HTML file in a zip, from the Eaglercraft CDN, which allows this site), unzips it in the browser
+// and runs it here. The zip is kept in the browser's cache, so the next launch starts without a download.
+const MINECRAFT_CDN = "https://cdn.eaglercraft.net/objects/dl";
+const MINECRAFT_VERSIONS = [
+  { id: "1.8-wasm", label: "1.8.8", note: "WebAssembly, fastest", zip: `${MINECRAFT_CDN}/1.8.8/eaglercraft1-8-wasm-62da5f39.zip`, size: 12.7 },
+  { id: "1.8", label: "1.8.8", note: "Classic, works everywhere", zip: `${MINECRAFT_CDN}/1.8.8/eaglercraft1-8-62da5f39.zip`, size: 13.6 },
+  { id: "1.12-wasm", label: "1.12.2", note: "WebAssembly", zip: `${MINECRAFT_CDN}/1.12.2/eaglercraft1-12-wasm-62da5f39.zip`, size: 17.4 },
+] as const;
+type MinecraftVersion = (typeof MINECRAFT_VERSIONS)[number];
+const MINECRAFT_CACHE = "privateos-minecraft-v1";
+
+// WebAssembly GC (Chrome 119+, Firefox 120+, Safari 18.2+) is what the fast builds need.
+function hasWasmGc() {
+  try {
+    // A module with one GC struct type: (type (struct)).
+    return WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 3, 1, 95, 0]));
+  } catch {
+    return false;
+  }
+}
+
+async function downloadZip(url: string, onProgress: (done: number, total: number) => void) {
+  let cache: Cache | null = null;
+  try {
+    cache = await caches.open(MINECRAFT_CACHE);
+    const hit = await cache.match(url);
+    if (hit) return new Uint8Array(await hit.arrayBuffer());
+  } catch {
+    cache = null;
+  }
+  const response = await fetch(url, { mode: "cors" });
+  if (!response.ok || !response.body) throw new Error(`The game download failed (${response.status})`);
+  const total = Number(response.headers.get("content-length")) || 0;
+  const reader = response.body.getReader();
+  const parts: Uint8Array[] = [];
+  let done = 0;
+  for (;;) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    parts.push(chunk.value);
+    done += chunk.value.length;
+    onProgress(done, total);
+  }
+  const bytes = new Uint8Array(done);
+  let offset = 0;
+  for (const part of parts) {
+    bytes.set(part, offset);
+    offset += part.length;
+  }
+  try {
+    await cache?.put(url, new Response(bytes, { headers: { "content-type": "application/zip" } }));
+  } catch {
+    // no room in the cache: it downloads again next time
+  }
+  return bytes;
+}
+
+// Reads the first file of a zip (the offline build has exactly one) and inflates it.
+async function unzipFirst(bytes: Uint8Array<ArrayBuffer>) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let end = bytes.length - 22;
+  while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end -= 1;
+  if (end < 0) throw new Error("The game download is damaged");
+  const directory = view.getUint32(end + 16, true);
+  const method = view.getUint16(directory + 10, true);
+  const packed = view.getUint32(directory + 20, true);
+  const local = view.getUint32(directory + 42, true);
+  const start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+  const data = bytes.subarray(start, start + packed);
+  if (method === 0) return new Blob([data], { type: "text/html" });
+  if (method !== 8 || typeof DecompressionStream === "undefined") throw new Error("This browser can't unpack the game");
+  const inflated = new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+  return new Blob([await new Response(inflated).arrayBuffer()], { type: "text/html" });
+}
+
 function MinecraftApp({ close }: { close: () => void }) {
-  const [mode, setMode] = useState<"starting" | "engine" | "fallback">("starting");
-  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const controllerRef = useRef<EngineController | null>(null);
-
-  // 1) Epoxy + Scramjet proxy. 2) If this browser can't run it, open the game directly or through the page loader.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        controllerRef.current = await startProxyEngine();
-        if (!cancelled) setMode("engine");
-      } catch {
-        let direct = true;
-        try {
-          const response = await fetch(`/api/proxy?check=1&url=${encodeURIComponent(MINECRAFT_URL)}`);
-          const info = (await response.json()) as { frameable?: boolean | null };
-          if (info.frameable === false) direct = false;
-        } catch {
-          // assume the site can be opened directly
-        }
-        if (cancelled) return;
-        setFallbackSrc(direct ? MINECRAFT_URL : `/api/proxy?url=${encodeURIComponent(MINECRAFT_URL)}`);
-        setMode("fallback");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (mode !== "engine") return;
-    const element = frameRef.current;
-    const controller = controllerRef.current;
-    if (element && controller) controller.createFrame(element).go(MINECRAFT_URL);
-  }, [mode]);
-
-  const openOutside = (
-    <button type="button" aria-label="Open Minecraft in a new tab" onClick={() => window.open(MINECRAFT_URL, "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
-      <ExternalLink className="size-3.5" />
-    </button>
+  const gc = useMemo(() => hasWasmGc(), []);
+  const versions = MINECRAFT_VERSIONS.filter((version) => gc || !version.id.endsWith("wasm"));
+  const [pick, setPick] = useState<MinecraftVersion["id"]>(() => {
+    try {
+      const saved = localStorage.getItem("pos-minecraft-version");
+      if (saved && versions.some((version) => version.id === saved)) return saved as MinecraftVersion["id"];
+    } catch {
+      // storage unavailable
+    }
+    return versions[0]!.id;
+  });
+  const [state, setState] = useState<{ step: "menu" | "download" | "unpack" | "play" | "error"; done?: number; total?: number; error?: string }>({ step: "menu" });
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => () => {
+    if (src) URL.revokeObjectURL(src);
+  }, [src]);
+  const launch = async (id: MinecraftVersion["id"]) => {
+    const version = MINECRAFT_VERSIONS.find((item) => item.id === id)!;
+    setPick(id);
+    try {
+      localStorage.setItem("pos-minecraft-version", id);
+    } catch {
+      // storage unavailable
+    }
+    setState({ step: "download", done: 0, total: version.size * 1e6 });
+    try {
+      const zip = await downloadZip(version.zip, (done, total) => setState({ step: "download", done, total: total || version.size * 1e6 }));
+      setState({ step: "unpack" });
+      const page = await unzipFirst(zip);
+      setSrc(URL.createObjectURL(page));
+      setState({ step: "play" });
+    } catch (error) {
+      setState({ step: "error", error: error instanceof Error ? error.message : "The game could not start" });
+    }
+  };
+  const actions = (
+    <>
+      {state.step === "play" && (
+        <button type="button" aria-label="Back to the Minecraft menu" title="Versions" onClick={() => { setSrc(null); setState({ step: "menu" }); }} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+          <LuLayoutList className="size-3.5" />
+        </button>
+      )}
+      <button type="button" aria-label="Open eaglercraft.com in a new tab" title="eaglercraft.com" onClick={() => window.open("https://eaglercraft.com/fr", "_blank", "noopener,noreferrer")} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+        <ExternalLink className="size-3.5" />
+      </button>
+    </>
   );
-
+  const percent = state.total ? Math.min(100, Math.round(((state.done ?? 0) / state.total) * 100)) : 0;
   return (
-    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized actions={openOutside}>
+    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized actions={actions}>
       <div className="relative flex-1 overflow-hidden bg-black">
-        {loading && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-[#171717]">
-            <div className="text-center">
+        {state.step === "play" && src ? (
+          <iframe key={src} title="Minecraft" src={src} className="size-full border-0 bg-black" allow="fullscreen; autoplay; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write" />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center overflow-auto bg-[#171717] bg-[radial-gradient(ellipse_at_top,#24452a_0%,#171717_65%)] p-6 text-white">
+            <div className="w-full max-w-md text-center">
               <MinecraftIcon className="mx-auto size-20" />
-              <p className="mt-5 text-sm font-bold tracking-[.3em] text-white">MINECRAFT</p>
-              <p className="mt-1 text-[11px] text-white/50">Launching game…</p>
-              <div className="mx-auto mt-5 h-1 w-44 overflow-hidden rounded-full bg-white/10"><div className="h-full origin-left bg-[#3fae4b] [animation:boot-bar_2.2s_ease-in-out_forwards]" /></div>
+              <p className="mt-5 text-sm font-bold tracking-[.3em]">MINECRAFT</p>
+              {state.step === "menu" && (
+                <>
+                  <p className="mt-1 text-[12px] text-white/55">Eaglercraft, the full game in this window. Worlds are saved in this browser.</p>
+                  <div className="mt-5 grid gap-2">
+                    {versions.map((version) => (
+                      <button key={version.id} type="button" onClick={() => void launch(version.id)} className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left outline-none transition-colors ${pick === version.id ? "border-[#3fae4b] bg-[#3fae4b]/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
+                        <span>
+                          <span className="block text-[15px] font-semibold">Play {version.label}</span>
+                          <span className="block text-[11px] text-white/55">{version.note} · {version.size} MB the first time</span>
+                        </span>
+                        <Play className="size-5 fill-white" />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-[11px] text-white/40">Tip: the full screen button at the top makes the game fill the screen.</p>
+                </>
+              )}
+              {(state.step === "download" || state.step === "unpack") && (
+                <>
+                  <p className="mt-1 text-[12px] text-white/55">{state.step === "download" ? `Downloading the game… ${percent}%` : "Starting the game…"}</p>
+                  <div className="mx-auto mt-5 h-1.5 w-56 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-[#3fae4b] transition-[width] duration-200" style={{ width: `${state.step === "unpack" ? 100 : percent}%` }} /></div>
+                </>
+              )}
+              {state.step === "error" && (
+                <>
+                  <p className="mt-2 text-[13px] text-white/75">{state.error}</p>
+                  <div className="mt-4 flex justify-center gap-2">
+                    <button type="button" onClick={() => void launch(pick)} className="rounded-md bg-[#3fae4b] px-4 py-2 text-[13px] font-semibold outline-none hover:bg-[#4cc259]">Try again</button>
+                    <button type="button" onClick={() => setState({ step: "menu" })} className="rounded-md bg-white/10 px-4 py-2 text-[13px] font-semibold outline-none hover:bg-white/20">Versions</button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        )}
-        {mode === "engine" && (
-          <iframe ref={frameRef} key="engine" title="Minecraft" onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} />
-        )}
-        {mode === "fallback" && fallbackSrc && (
-          <iframe
-            key="fallback"
-            title="Minecraft"
-            src={fallbackSrc}
-            onLoad={() => setLoading(false)}
-            className="size-full border-0 bg-black"
-            allow={ENGINE_FRAME_PERMISSIONS}
-            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock allow-downloads allow-presentation allow-orientation-lock"
-          />
         )}
       </div>
     </WindowFrame>
@@ -2186,6 +2302,38 @@ function SiteApp({ close, title, url, icon: Icon, accent }: { close: () => void;
           </div>
         )}
         <iframe key={stamp} title={title} src={url} onLoad={() => setLoading(false)} className="size-full border-0 bg-black" allow={ENGINE_FRAME_PERMISSIONS} sandbox={SITE_FRAME_SANDBOX} />
+      </div>
+    </WindowFrame>
+  );
+}
+
+// Netflix: its films use DRM (Widevine) that only plays on netflix.com itself, and netflix.com refuses to be
+// shown inside another page. Through the proxy it stays black or freezes, so it opens in its own window.
+const NETFLIX_URL = "https://www.netflix.com/browse";
+const NetflixIcon: IconComponent = brandIcon("netflix.svg");
+function openNetflix() {
+  const width = Math.min(1280, window.screen.availWidth - 40);
+  const height = Math.min(800, window.screen.availHeight - 60);
+  const left = Math.max(0, Math.round((window.screen.availWidth - width) / 2));
+  const top = Math.max(0, Math.round((window.screen.availHeight - height) / 2));
+  const opened = window.open(NETFLIX_URL, "privateos-netflix", `popup,width=${width},height=${height},left=${left},top=${top}`);
+  if (opened) opened.focus();
+  return !!opened;
+}
+function NetflixApp({ close }: { close: () => void }) {
+  return (
+    <WindowFrame title="Netflix" icon={NetflixIcon} close={close} app>
+      <div className="grid flex-1 place-items-center overflow-auto bg-[radial-gradient(ellipse_at_top,#3a0a0d_0%,#0b0b0b_60%)] p-6 text-center text-white">
+        <div className="max-w-md">
+          <NetflixIcon className="mx-auto size-20" />
+          <p className="mt-5 text-[20px] font-semibold">Netflix is open in its own window</p>
+          <p className="mt-2 text-[13px] leading-relaxed text-white/65">Netflix only plays its films on netflix.com itself, because of its copy protection, and it doesn't let other sites show it. Inside a PRIVATE OS window it would stay black or freeze, so it opens in a real browser window where you can sign in and watch.</p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <button type="button" onClick={() => openNetflix() || window.open(NETFLIX_URL, "_blank")} className="rounded-md bg-[#e50914] px-5 py-2 text-[14px] font-semibold outline-none hover:bg-[#f6121d]">Open Netflix</button>
+            <button type="button" onClick={close} className="rounded-md bg-white/10 px-5 py-2 text-[14px] font-semibold outline-none hover:bg-white/20">Close</button>
+          </div>
+          <p className="mt-4 text-[11px] text-white/40">If nothing opened, your browser blocked the pop-up: press Open Netflix.</p>
+        </div>
       </div>
     </WindowFrame>
   );

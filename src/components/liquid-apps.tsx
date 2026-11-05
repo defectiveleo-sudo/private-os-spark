@@ -281,14 +281,17 @@ const BOXES = [
   { id: "trash", label: "Trash", icon: Trash2 },
 ] as const;
 
-export function MailContent() {
+export function MailContent({ query = "" }: { query?: string }) {
   const [mails, setMails] = useStored<MailItem[]>("pos-mail", WELCOME_MAIL);
   const [box, setBox] = useState<MailItem["box"]>("inbox");
   const [openId, setOpenId] = useState<string | null>(null);
   const [compose, setCompose] = useState<{ to: string; subject: string; body: string } | null>(
     null,
   );
-  const list = mails.filter((mail) => mail.box === box).sort((a, b) => b.at - a.at);
+  const q = query.trim().toLowerCase();
+  const list = mails
+    .filter((mail) => mail.box === box && (!q || `${mail.from} ${mail.to ?? ""} ${mail.subject} ${mail.body}`.toLowerCase().includes(q)))
+    .sort((a, b) => b.at - a.at);
   const open = mails.find((mail) => mail.id === openId && mail.box === box) ?? null;
   const update = (id: string, patch: Partial<MailItem>) =>
     setMails((all) => all.map((mail) => (mail.id === id ? { ...mail, ...patch } : mail)));

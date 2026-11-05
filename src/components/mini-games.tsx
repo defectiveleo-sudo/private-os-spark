@@ -54,13 +54,13 @@ function Bar({ score, best, label = "Score", restart, extra }: { score: number |
   );
 }
 
-function Overlay({ text, sub, action }: { text: string; sub?: string; action: () => void }) {
+function Overlay({ text, sub, action, label = "Play again" }: { text: string; sub?: string; action: () => void; label?: string }) {
   return (
     <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-black/60 backdrop-blur-sm [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]">
       <div className="text-center">
         <p className="text-2xl font-bold">{text}</p>
         {sub && <p className="mt-1 text-xs text-white/60">{sub}</p>}
-        <button type="button" onClick={action} className="mt-4 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground">Play again</button>
+        <button type="button" onClick={action} className="mt-4 rounded-full bg-primary px-5 py-2 text-xs font-semibold text-primary-foreground">{label}</button>
       </div>
     </div>
   );
@@ -470,7 +470,7 @@ function Breakout() {
       <Bar score={score} best={best} restart={start} />
       <div className="relative w-[min(100%,30rem)]">
         <canvas ref={canvas} width={480} height={360} onPointerMove={(event) => { const box = event.currentTarget.getBoundingClientRect(); paddleX.current = Math.min(1, Math.max(0, (event.clientX - box.left - 42 * (box.width / 480)) / (box.width - 84 * (box.width / 480)))); }} className="w-full touch-none rounded-2xl border border-white/10 bg-[#0b1020]" />
-        {status === "ready" && <Overlay text="Breakout" sub="Move the mouse or arrow keys" action={start} />}
+        {status === "ready" && <Overlay label="Play" text="Breakout" sub="Move the mouse or arrow keys" action={start} />}
         {status === "over" && <Overlay text="Game over" sub={`Score ${score}`} action={start} />}
         {status === "won" && <Overlay text="All bricks down! 🎉" sub={`Score ${score}`} action={start} />}
       </div>

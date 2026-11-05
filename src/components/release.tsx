@@ -1,10 +1,10 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
 import { Clapperboard, Globe2, MessagesSquare, ChevronLeft, ChevronRight, Command, Layers, Palette, Rocket, Sparkles, Zap } from "lucide-react";
 
-// Release labels and the one-time "Welcome to 4.6" tour.
+// Release labels and the one-time "Welcome to 4.7" tour.
 
 export const RELEASE_LABEL = "ALPHA RELEASE (STILL IN DEVELOPMENT)";
-export const BUILD = "4600.01";
+export const BUILD = "4700.01";
 const SEEN_KEY = "pos-seen-release";
 
 /** The ALPHA pill used on start and boot screens. */
@@ -29,6 +29,8 @@ export function AlphaWatermark({ name, version, className = "" }: { name: string
 
 type Slide = { icon: ComponentType<{ className?: string }>; kicker: string; title: string; body: string; points: string[]; hue: [string, string] };
 const SLIDES: Slide[] = [
+  { icon: Globe2, kicker: "Version 4.7", title: "A real desktop browser", body: "PRIVATE Browser now looks like a desktop browser, with tabs in the title bar, a flat address bar and a welcome page to pick your search engine.", points: ["Pages show up while they load", "Shields, Extensions and a profile button", "Private Search or Bing results"], hue: ["#5568bc", "#152671"] },
+  { icon: Rocket, kicker: "Version 4.7", title: "Typing fixed, real game pictures", body: "Private Word keeps what you type, the Office search boxes work again, and Game Hub shows real pictures of every game.", points: ["Clumsy Bird, A Dark Room and Solitaire", "Enter in Search jumps to the next match", "Minecraft 26.3 offers 1.8.8 if it gets stuck"], hue: ["#9be15d", "#1f7a3a"] },
   { icon: Rocket, kicker: "Version 4.6", title: "Game Hub", body: "Games is now Game Hub, with a featured game, Continue playing, Favourites and three new arcade games that work with a controller.", points: ["Blocks, Flappy Jet and Pong", "The Minecraft Launcher with version 26.3", "A Game Hub card on the desktop"], hue: ["#9be15d", "#1f7a3a"] },
   { icon: Layers, kicker: "Version 4.6", title: "Solid, like Quick Note", body: "Windows, menus and the dock are solid cards now, with no glass blur, and windows shrink away when you close them.", points: ["Priv-Tube autoplay, Theater mode and Loop", "Pages in All apps", "Reopen the last app from the desktop menu"], hue: ["#3a3a44", "#121214"] },
   { icon: Clapperboard, kicker: "Version 4.5", title: "Meet Priv-Tube", body: "The YouTube app is now Priv-Tube: a whole YouTube of its own, with no account. The feed brings new videos every 39 minutes.", points: ["Home, Shorts, Live, Subscriptions and channels", "Comments, likes, Watch later and History", "Save videos to your library on this device"], hue: ["#ff5f6d", "#7b3fe4"] },

@@ -185,4 +185,4 @@ export const Route = createFileRoute("/api/search")({
       },
     },
   },
-};
+});

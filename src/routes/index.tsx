@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { installUiSounds, playClick, playHover, type SoundPack, type SoundPrefs, SOUND_PACKS } from "@/lib/ui-sound";
 import { MINI_GAMES, MiniGame, type MiniGameId } from "@/components/mini-games";
+import { ARCADE_GAMES, ArcadeGame, type ArcadeId, usePadName } from "@/components/arcade-games";
 import { OsPreview, WelcomeSetup, type WelcomeResult } from "@/components/welcome-setup";
 import { VIDEO_LINK, VideoEngine } from "@/components/video-engine";
 import { LANGUAGES, detectLanguage, isLang, locale, setLanguage, t, textDir, tx, upper, type Lang } from "@/lib/i18n";
@@ -44,6 +45,7 @@ import {
   Signal,
   Sparkles,
   Volume2,
+  VolumeX,
   Wifi,
   X,
   Calculator,
@@ -214,10 +216,11 @@ const LINK_APPS = [
 ];
 const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.5";
+const OS_VERSION = "4.6";
 // NOVA OS stopped getting updates after 4.1; new features only come to PRIVATE OS.
 const NOVA_FINAL_VERSION = "4.1";
 const CHANGELOG = [
+  { v: "4.6", date: "4 Nov 2026", items: ["Solid cards everywhere, like the Quick Note cards: windows, menus, the dock, the launcher and widgets are now solid dark panels with no glass blur. Turn it off in Settings › Widgets › Desktop look", "Windows shrink and fade away when you close them, and shrink toward the dock when you minimize them", "Game Hub replaces Games: a big featured game, Continue playing, Favourites, Recommended with genre filters and a page for every game. A Game Hub card on the desktop suggests two games every hour", "Three new arcade games that work with a keyboard, a mouse, touch or a game controller: Blocks, Flappy Jet and Pong", "The Minecraft Launcher: pick a version on the left or in the list, press Play and watch the download. Minecraft 26.3 is there, like on eaglercraft.com, next to 1.12.2 and 1.8.8. If your network blocks the game's server, the game now downloads through PRIVATE OS instead", "Priv-Tube starts videos by itself. When the browser blocks sound, the video starts muted with a Tap to unmute button. After a video ends, Up next counts down from 5, with Cancel and Play now", "Priv-Tube also has Theater mode, Loop, Dislike and an Auto button for autoplay", "The All apps screen has pages: scroll, swipe, use the arrow keys or click the dots", "Right-click the desktop for Reopen (the last app you closed), Hide Sidebar and New sticky note"] },
   { v: "4.5", date: "4 Nov 2026", items: ["The YouTube app is now Priv-Tube, our own YouTube with no account: a Home feed with topics and a Shorts shelf, a Shorts player you scroll through, Live streams, search with suggestions and filters, channel pages, and a watch page with the description, comments and an Up next list that can autoplay", "The Priv-Tube feeds (Home, Shorts, Live and Subscriptions) refresh by themselves every 39 minutes with new videos", "Subscribe to channels, like videos, keep a Watch later list and a History, all saved on this device", "Save a video and it stays in your Priv-Tube library on this device, with its picture, even after you reload. Playing it still needs internet, because YouTube doesn't allow downloading the video file", "Cherrion is now a standalone app like BeeZ. Both open straight away in their own window instead of going through the browser's proxy", "NOVA OS no longer gets updates: it stays on version 4.1 and says so in its Settings. New features now come only to PRIVATE OS", "Cleaner icons for Private Word, Excel, PowerPoint, Outlook, OneNote, Figure Cloud, Media Player, Paint, Settings, Terminal and To Do, and the other Windows-style icons lost their white edges", "Every window has a Full screen button next to Minimize: the app, game or video fills the whole screen, and Esc brings it back", "Minecraft now runs the real Eaglercraft game inside its window instead of the eaglercraft.com website, which refused to open there. Pick 1.8.8 or 1.12.2: the game downloads once (13 to 17 MB), then starts straight away, and worlds are saved in this browser", "Netflix opens in its own browser window, where it can sign in and play. Inside a PRIVATE OS window it stayed black or froze, because Netflix only plays its films on its own site"] },
   { v: "4.4", date: "3 Nov 2026", items: ["New desktop-style app icons for Task Manager, Focus Timer, Converter, PDF Reader, System Info, Activity, Chat and Task view, which only had drawn icons before", "New Green Forest wallpaper in Settings › Wallpaper"] },
   { v: "4.3", date: "3 Nov 2026", items: ["Quick Note sticky cards on the desktop, made after the Figure OS video. Type straight in and drag them by the top, or right-click one for Move Widget and Delete Widget. New notes take turns in yellow, blue, pink and green", "A minimal view like the video: press the menu button at the top left for a black screen with the day, the date, the time, four app shortcuts and a clock widget. Click anywhere to go back", "The top corners now show a menu button and the time on the left, and your battery and avatar on the right", "The browser has the Brave lion as its icon", "The Media, Console and clock cards now start out, and the tab on the right edge still hides them", "Right-click the desktop and pick New sticky note to add one", "A clock card under the Media and Console cards, with the time, the day and date, and a ring that fills with the seconds", "New Desktop look settings in Settings > Widgets: turn the day name, the side cards, the clock card and the sticky notes on or off, add notes or clear them all"] },
@@ -312,7 +315,7 @@ const launcherApps: { id: string; label: string; icon: IconComponent }[] = [
   { id: "photos", label: "Photos", icon: PhotosIcon },
   { id: "settings", label: "Settings", icon: SettingsIcon },
 ];
-launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: PrivateActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Games", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: PrivateChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
+launcherApps.push(...linkLauncher, { id: "activity", label: "Activity", icon: PrivateActivityIcon }, { id: "writer", label: "Private Word", icon: WriterIcon }, { id: "sheets", label: "Private Excel", icon: SheetsIcon }, { id: "slides", label: "Private PowerPoint", icon: SlidesIcon }, { id: "pdfreader", label: "PDF Reader", icon: PdfIcon }, { id: "sticky", label: "Sticky Notes", icon: StickyIcon }, { id: "focus", label: "Focus Timer", icon: FocusIcon }, { id: "convert", label: "Converter", icon: ConvertIcon }, { id: "passwords", label: "Passwords", icon: PasswordIcon }, { id: "recorder", label: "Recorder", icon: RecorderIcon }, { id: "games", label: "Game Hub", icon: GamesIcon }, { id: "camera", label: "Camera", icon: CameraIcon }, { id: "media", label: "Media Player", icon: MediaIcon }, { id: "about", label: "System Info", icon: AboutIcon }, { id: "chat", label: "Chat", icon: PrivateChatIcon }, { id: "messages", label: "Messages", icon: MessagesIcon }, { id: "mail", label: "Private Outlook", icon: MailIcon }, { id: "contacts", label: "Contacts", icon: ContactsIcon }, { id: "maps", label: "Maps", icon: MapsIcon });
 
 // App names in the interface language. Generic apps (Calculator, Photos...) are translated, brands are not.
 const appLabel = (app: { label: string }) => tx(app.label);
@@ -645,10 +648,12 @@ function PrivateOS() {
     setZOrder((list) => list.filter((item) => item !== id));
   };
   // Play the close animation first, then remove the window.
+  const [lastClosed, setLastClosed] = useState<string | null>(null);
   const closeWindow = (id: string) => {
+    setLastClosed(id);
     if (settings.reduceMotion || settings.lite) return removeWindow(id);
     setClosingWins((list) => (list.includes(id) ? list : [...list, id]));
-    window.setTimeout(() => removeWindow(id), 190);
+    window.setTimeout(() => removeWindow(id), settings.solidUi ? 250 : 190);
   };
   const nova = settings.edition === "nova";
   // NOVA shows app names in the interface language and keeps the English name for search.
@@ -790,12 +795,15 @@ function PrivateOS() {
     hit.run();
   };
 
-  const menuItems: { label: string; action: () => void; icon: ReactNode }[] = [
+  const reopenApp = lastClosed && !openWins.includes(lastClosed) ? lookupApp(lastClosed) : undefined;
+  const menuItems: { label: string; action: () => void; icon: ReactNode; split?: boolean }[] = [
+    ...(reopenApp && lastClosed ? [{ label: `Reopen ${appLabel(reopenApp)}`, action: () => openApp(lastClosed), icon: <reopenApp.icon className="size-3.5" /> }] : []),
     { label: t("Adjust Wallpaper"), action: () => openApp("settings"), icon: <ImageIcon className="size-3" /> },
     { label: t("Expand Icons"), action: () => patchSettings({ bigIcons: true }), icon: <Maximize className="size-3" /> },
     { label: t("Standard Icons"), action: () => patchSettings({ bigIcons: false }), icon: <Minimize className="size-3" /> },
-    { label: t("Search… (Ctrl+K)"), action: () => setRunOpen(true), icon: <Terminal className="size-3" /> },
+    { label: settings.sideCards ? "Hide Sidebar" : "Show Sidebar", action: () => patchSettings({ sideCards: !settings.sideCards }), icon: <LuPanelRight className="size-3" />, split: true },
     { label: t("Reload"), action: () => window.location.reload(), icon: <RotateCw className="size-3" /> },
+    { label: t("Search… (Ctrl+K)"), action: () => setRunOpen(true), icon: <Terminal className="size-3" />, split: true },
     { label: tx("New sticky note"), action: () => patchSettings((current) => ({ showStickies: true, stickies: [...current.stickies, newSticky(current.stickies)] })), icon: <StickyNote className="size-3" /> },
   ];
 
@@ -871,7 +879,7 @@ function PrivateOS() {
       case "sheets": return <SheetsApp close={close} />;
       case "slides": return <SlidesApp close={close} />;
       case "pdfreader": return <PdfApp close={close} />;
-      case "games": return <GamesApp close={close} launch={(url) => { setBrowserStart(url); openApp("browser"); }} />;
+      case "games": return <GamesApp close={close} openApp={openApp} launch={(url) => { setBrowserStart(url); openApp("browser"); }} />;
       case "camera": return <CameraApp close={close} />;
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
@@ -940,7 +948,7 @@ function PrivateOS() {
   }
 
   return (
-    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-clay={clay ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={taskbarMode ? settings.dockPos : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
+    <main style={themeStyle} data-ctl={settings.titleButtons} data-reduce={settings.reduceMotion ? "" : undefined} data-native-cursor={settings.nativeCursor ? "" : undefined} data-clay={clay ? "" : undefined} data-lite={settings.lite ? "" : undefined} data-ui={settings.uiStyle} data-glass={glassTheme ? "" : undefined} data-taskbar={taskbarMode ? settings.dockPos : undefined} data-solid={settings.solidUi ? "" : undefined} onContextMenu={(event) => { if ((event.target as HTMLElement).closest("section, nav, aside")) return; event.preventDefault(); setMenu({ x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - 260) }); }} onClick={(event) => { setMenu(null); setDockMenu(null); setBarMenu(null); if (!(event.target as HTMLElement).closest('[data-start], [aria-label^="PRIVATE OS menu"]')) setStartMenu(false); }} className="os-desktop relative h-dvh w-full overflow-hidden bg-background font-sans text-foreground [animation:desktop-in_.9s_cubic-bezier(.22,1,.36,1)]">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0" style={{ filter: settings.blur && !settings.lite ? `blur(${settings.blur}px)` : undefined, transform: settings.blur && !settings.lite ? "scale(1.08)" : undefined }}>
           {clay ? <ClayWallpaper /> : <Wallpaper index={wallpaper} options={allWalls} />}
@@ -1087,13 +1095,14 @@ function PrivateOS() {
 
       </>)}
 
-      {settings.showStickies && <StickyNotes notes={settings.stickies} onChange={(stickies) => patchSettings({ stickies })} />}
+      {settings.showStickies && <StickyNotes notes={settings.stickies} onChange={(stickies) => patchSettings({ stickies })} reserve={settings.gameCard && taskbarMode && settings.edition !== "nova" ? { w: 392, h: settings.dockPos === "top" ? 266 : 206 } : undefined} />}
       {dockDrag && <div aria-hidden className={`dock-drop is-${dockDrag}`} />}
       {taskbarMode ? (
         <>
           {settings.dayName && <div className="desktop-day">{dateLabel}</div>}
           <DesktopTopBar clock24={settings.clock24} locale={dateLocale} userName={settings.userName} onMenu={() => setMinimal(true)} onAvatar={() => openApp("settings")} />
           {minimal && <MinimalView clock24={settings.clock24} locale={dateLocale} dayLabel={dateLabel} apps={MINIMAL_APPS} openApp={openApp} onClose={() => setMinimal(false)} />}
+          {settings.gameCard && <HubCard openApp={openApp} />}
           {settings.sideCards && <DesktopWidgets openApp={openApp} openWins={openWins} clock={settings.clockCard ? <ClockCard clock24={settings.clock24} locale={dateLocale} /> : null} />}
         </>
       ) : (
@@ -1312,7 +1321,7 @@ function PrivateOS() {
         <div role="menu" dir={textDir()} style={{ left: menu.x, top: menu.y }} className="fixed z-50 w-52 soft-glass rounded-2xl p-1.5 text-[11px] text-white shadow-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
           {menuItems.map((item, index) => (
             <div key={item.label}>
-              {index === 4 && <div className="my-1 h-px bg-white/10" />}
+              {item.split && index > 0 && <div className="my-1 h-px bg-white/10" />}
               <button type="button" role="menuitem" onClick={() => { item.action(); setMenu(null); }} className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left hover:bg-white/10">
                 <span className={`grid size-5 place-items-center rounded bg-white/10`}>{item.icon}</span>
                 {item.label}
@@ -1466,24 +1475,73 @@ function BootScreen() {
   );
 }
 
-function AppLauncher({ query, setQuery, openApp, close }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void }) {
+// Full-screen app launcher, like the Figure OS video: a wide search pill, six columns of app tiles and
+// pages of 18 apps with dots under them. Scroll, swipe, the arrow keys or the dots change the page.
+const LAUNCHER_PAGE = 18;
+function AppLauncher({ query, setQuery, openApp, close, badges = {} }: { query: string; setQuery: (value: string) => void; openApp: (id: string) => void; close: () => void; badges?: Record<string, number> }) {
   const filtered = launcherApps.filter((app) => appMatches(app, query));
+  const pages = Math.max(1, Math.ceil(filtered.length / LAUNCHER_PAGE));
+  const [page, setPageRaw] = useState(0);
+  const [dir, setDir] = useState(1);
+  const current = Math.min(page, pages - 1);
+  const setPage = (next: number) => {
+    const value = Math.max(0, Math.min(pages - 1, next));
+    if (value === current) return;
+    setDir(value > current ? 1 : -1);
+    setPageRaw(value);
+  };
+  useEffect(() => setPageRaw(0), [query]);
+  const wheelAt = useRef(0);
+  const swipe = useRef<number | null>(null);
+  const shown = filtered.slice(current * LAUNCHER_PAGE, (current + 1) * LAUNCHER_PAGE);
   return (
-    <section onClick={close} className="absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-16 pt-[9dvh] backdrop-blur-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]">
-      <div onClick={(event) => event.stopPropagation()} className="flex w-full max-w-xl items-center gap-2 soft-glass rounded-2xl px-4">
-        <Search className="size-4 text-white/60" />
-        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && filtered[0]) openApp(filtered[0].id); }} placeholder={t("Search all apps...")} className="h-11 w-full bg-transparent text-sm text-white outline-none placeholder:text-white/50" />
+    <section
+      data-launcher
+      onClick={close}
+      onWheel={(event) => {
+        const now = Date.now();
+        if (now - wheelAt.current < 450 || Math.abs(event.deltaY) + Math.abs(event.deltaX) < 18) return;
+        wheelAt.current = now;
+        setPage(current + ((Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY) > 0 ? 1 : -1));
+      }}
+      onPointerDown={(event) => { swipe.current = event.clientX; }}
+      onPointerUp={(event) => {
+        if (swipe.current === null) return;
+        const dx = event.clientX - swipe.current;
+        swipe.current = null;
+        if (Math.abs(dx) > 70) setPage(current + (dx < 0 ? 1 : -1));
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") close();
+        if (event.key === "ArrowRight" && !(event.target instanceof HTMLInputElement && event.target.value)) setPage(current + 1);
+        if (event.key === "ArrowLeft" && !(event.target instanceof HTMLInputElement && event.target.value)) setPage(current - 1);
+      }}
+      className="os-launcher absolute inset-0 z-30 flex flex-col items-center bg-black/55 px-4 pb-10 pt-[8dvh] backdrop-blur-2xl [animation:window-in_.22s_cubic-bezier(.22,1,.36,1)]"
+    >
+      <div onClick={(event) => event.stopPropagation()} className="os-launcher-search soft-glass flex w-full max-w-2xl items-center gap-2 rounded-xl px-4">
+        <Search className="size-4 text-white/55" />
+        <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && filtered[0]) openApp(filtered[0].id); }} placeholder={t("Search all apps...")} className="h-10 w-full bg-transparent text-[13px] text-white outline-none placeholder:text-white/45" />
       </div>
-      <div onClick={(event) => event.stopPropagation()} className="mt-10 grid w-full max-w-3xl flex-1 grid-cols-3 content-start gap-x-3 gap-y-6 overflow-auto sm:grid-cols-4 md:grid-cols-6">
-        {filtered.map(({ id, label, icon: Icon }) => (
-          <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex flex-col items-center gap-2 rounded-2xl p-2 transition-transform hover:scale-105">
-            <Icon className="size-14 md:size-16" />
-            <span className="text-center text-[11px] font-semibold leading-tight text-white drop-shadow">{tx(label)}</span>
-          </OsButton>
+      <div className="flex w-full max-w-3xl flex-1 items-start justify-center overflow-hidden pt-10">
+        <div key={`${current}-${query}`} onClick={(event) => event.stopPropagation()} style={{ "--from": `${dir * 28}px` } as React.CSSProperties} className="os-launcher-page grid w-full grid-cols-3 content-start gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
+          {shown.map(({ id, label, icon: Icon }) => (
+            <OsButton key={id} label={`Open ${label}`} onClick={() => openApp(id)} className="flex flex-col items-center gap-1.5 rounded-xl p-2 transition-transform hover:scale-105">
+              <span className="relative">
+                <Icon className="size-12 md:size-[52px]" />
+                {badges[id] ? <span className="os-launcher-badge">{badges[id]}</span> : null}
+              </span>
+              <span className="max-w-full truncate text-center text-[11px] font-medium leading-tight text-white/90 drop-shadow">{tx(label)}</span>
+            </OsButton>
+          ))}
+          {!shown.length && <p className="col-span-full pt-8 text-center text-[13px] text-white/55">No apps match “{query}”.</p>}
+        </div>
+      </div>
+      <div onClick={(event) => event.stopPropagation()} className="flex items-center gap-2" role="tablist" aria-label="Launcher pages">
+        {Array.from({ length: pages }, (_, index) => (
+          <button key={index} type="button" role="tab" aria-label={`Page ${index + 1}`} aria-current={index === current} aria-selected={index === current} onClick={() => setPage(index)} className="os-launcher-dot" />
         ))}
       </div>
-      <div className="flex gap-1.5" aria-hidden><span className="size-1.5 rounded-full bg-white" /><span className="size-1.5 rounded-full bg-white/40" /></div>
-      <ChevronDown className="mt-3 size-5 text-white/60" />
+      <button type="button" aria-label="Close the app launcher" onClick={close} className="mt-3 grid size-8 place-items-center rounded-full text-white/60 hover:bg-white/10 hover:text-white"><ChevronDown className="size-5" /></button>
     </section>
   );
 }
@@ -2096,10 +2154,13 @@ const ENGINE_FRAME_PERMISSIONS = "fullscreen; autoplay; clipboard-read; clipboar
 // (one HTML file in a zip, from the Eaglercraft CDN, which allows this site), unzips it in the browser
 // and runs it here. The zip is kept in the browser's cache, so the next launch starts without a download.
 const MINECRAFT_CDN = "https://cdn.eaglercraft.net/objects/dl";
+// `file` is the download's path on the CDN; this site's /api/minecraft route serves the same files when
+// the visitor's network blocks the CDN (many school and work filters do).
 const MINECRAFT_VERSIONS = [
-  { id: "1.8-wasm", label: "1.8.8", note: "WebAssembly, fastest", zip: `${MINECRAFT_CDN}/1.8.8/eaglercraft1-8-wasm-62da5f39.zip`, size: 12.7 },
-  { id: "1.8", label: "1.8.8", note: "Classic, works everywhere", zip: `${MINECRAFT_CDN}/1.8.8/eaglercraft1-8-62da5f39.zip`, size: 13.6 },
-  { id: "1.12-wasm", label: "1.12.2", note: "WebAssembly", zip: `${MINECRAFT_CDN}/1.12.2/eaglercraft1-12-wasm-62da5f39.zip`, size: 17.4 },
+  { id: "26.3", label: "26.3", note: "Newest release, like eaglercraft.com", file: "26.3/eaglercraft26-3-6eda6918.zip", size: 59.8, wasm: true },
+  { id: "1.12-wasm", label: "1.12.2", note: "WebAssembly", file: "1.12.2/eaglercraft1-12-wasm-62da5f39.zip", size: 17.4, wasm: true },
+  { id: "1.8-wasm", label: "1.8.8", note: "WebAssembly, fastest", file: "1.8.8/eaglercraft1-8-wasm-62da5f39.zip", size: 12.7, wasm: true },
+  { id: "1.8", label: "1.8.8", note: "Classic, works on every browser", file: "1.8.8/eaglercraft1-8-62da5f39.zip", size: 13.6, wasm: false },
 ] as const;
 type MinecraftVersion = (typeof MINECRAFT_VERSIONS)[number];
 const MINECRAFT_CACHE = "privateos-minecraft-v1";
@@ -2114,16 +2175,7 @@ function hasWasmGc() {
   }
 }
 
-async function downloadZip(url: string, onProgress: (done: number, total: number) => void) {
-  let cache: Cache | null = null;
-  try {
-    cache = await caches.open(MINECRAFT_CACHE);
-    const hit = await cache.match(url);
-    if (hit) return new Uint8Array(await hit.arrayBuffer());
-  } catch {
-    cache = null;
-  }
-  const response = await fetch(url, { mode: "cors" });
+async function readAll(response: Response, onProgress: (done: number, total: number) => void) {
   if (!response.ok || !response.body) throw new Error(`The game download failed (${response.status})`);
   const total = Number(response.headers.get("content-length")) || 0;
   const reader = response.body.getReader();
@@ -2142,8 +2194,31 @@ async function downloadZip(url: string, onProgress: (done: number, total: number
     bytes.set(part, offset);
     offset += part.length;
   }
+  return bytes;
+}
+
+// Straight from the Eaglercraft CDN first; if the network blocks it (or it is down), through this site.
+async function downloadZip(file: string, onProgress: (done: number, total: number) => void, onRoute: (route: "cdn" | "site") => void) {
+  const key = `${MINECRAFT_CDN}/${file}`;
+  let cache: Cache | null = null;
   try {
-    await cache?.put(url, new Response(bytes, { headers: { "content-type": "application/zip" } }));
+    cache = await caches.open(MINECRAFT_CACHE);
+    const hit = await cache.match(key);
+    if (hit) return new Uint8Array(await hit.arrayBuffer());
+  } catch {
+    cache = null;
+  }
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    onRoute("cdn");
+    bytes = await readAll(await fetch(key, { mode: "cors" }), onProgress);
+  } catch {
+    onRoute("site");
+    onProgress(0, 0);
+    bytes = await readAll(await fetch(`/api/minecraft?file=${encodeURIComponent(file)}`), onProgress);
+  }
+  try {
+    await cache?.put(key, new Response(bytes, { headers: { "content-type": "application/zip" } }));
   } catch {
     // no room in the cache: it downloads again next time
   }
@@ -2170,7 +2245,7 @@ async function unzipFirst(bytes: Uint8Array<ArrayBuffer>) {
 
 function MinecraftApp({ close }: { close: () => void }) {
   const gc = useMemo(() => hasWasmGc(), []);
-  const versions = MINECRAFT_VERSIONS.filter((version) => gc || !version.id.endsWith("wasm"));
+  const versions = MINECRAFT_VERSIONS.filter((version) => gc || !version.wasm);
   const [pick, setPick] = useState<MinecraftVersion["id"]>(() => {
     try {
       const saved = localStorage.getItem("pos-minecraft-version");
@@ -2180,11 +2255,28 @@ function MinecraftApp({ close }: { close: () => void }) {
     }
     return versions[0]!.id;
   });
-  const [state, setState] = useState<{ step: "menu" | "download" | "unpack" | "play" | "error"; done?: number; total?: number; error?: string }>({ step: "menu" });
+  const [state, setState] = useState<{ step: "menu" | "download" | "unpack" | "play" | "error"; done?: number; total?: number; error?: string; route?: "cdn" | "site" }>({ step: "menu" });
   const [src, setSrc] = useState<string | null>(null);
+  const [cached, setCached] = useState<string[]>([]);
   useEffect(() => () => {
     if (src) URL.revokeObjectURL(src);
   }, [src]);
+  useEffect(() => {
+    let alive = true;
+    void (async () => {
+      try {
+        const cache = await caches.open(MINECRAFT_CACHE);
+        const keys = (await cache.keys()).map((request) => request.url);
+        if (alive) setCached(MINECRAFT_VERSIONS.filter((version) => keys.includes(`${MINECRAFT_CDN}/${version.file}`)).map((version) => version.id));
+      } catch {
+        // no cache in this browser
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [state.step]);
+  const current = MINECRAFT_VERSIONS.find((item) => item.id === pick) ?? versions[0]!;
   const launch = async (id: MinecraftVersion["id"]) => {
     const version = MINECRAFT_VERSIONS.find((item) => item.id === id)!;
     setPick(id);
@@ -2193,9 +2285,10 @@ function MinecraftApp({ close }: { close: () => void }) {
     } catch {
       // storage unavailable
     }
-    setState({ step: "download", done: 0, total: version.size * 1e6 });
+    let route: "cdn" | "site" = "cdn";
+    setState({ step: "download", done: 0, total: version.size * 1e6, route });
     try {
-      const zip = await downloadZip(version.zip, (done, total) => setState({ step: "download", done, total: total || version.size * 1e6 }));
+      const zip = await downloadZip(version.file, (done, total) => setState({ step: "download", done, total: total || version.size * 1e6, route }), (next) => { route = next; });
       setState({ step: "unpack" });
       const page = await unzipFirst(zip);
       setSrc(URL.createObjectURL(page));
@@ -2204,10 +2297,19 @@ function MinecraftApp({ close }: { close: () => void }) {
       setState({ step: "error", error: error instanceof Error ? error.message : "The game could not start" });
     }
   };
+  const forget = async (id: MinecraftVersion["id"]) => {
+    try {
+      const version = MINECRAFT_VERSIONS.find((item) => item.id === id)!;
+      await (await caches.open(MINECRAFT_CACHE)).delete(`${MINECRAFT_CDN}/${version.file}`);
+      setCached((list) => list.filter((item) => item !== id));
+    } catch {
+      // nothing to remove
+    }
+  };
   const actions = (
     <>
       {state.step === "play" && (
-        <button type="button" aria-label="Back to the Minecraft menu" title="Versions" onClick={() => { setSrc(null); setState({ step: "menu" }); }} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
+        <button type="button" aria-label="Back to the Minecraft Launcher" title="Launcher" onClick={() => { setSrc(null); setState({ step: "menu" }); }} className="grid size-6 place-items-center rounded outline-none hover:bg-white/10">
           <LuLayoutList className="size-3.5" />
         </button>
       )}
@@ -2217,48 +2319,52 @@ function MinecraftApp({ close }: { close: () => void }) {
     </>
   );
   const percent = state.total ? Math.min(100, Math.round(((state.done ?? 0) / state.total) * 100)) : 0;
+  const busy = state.step === "download" || state.step === "unpack";
   return (
-    <WindowFrame title="Minecraft" icon={MinecraftIcon} close={close} app startMaximized actions={actions}>
+    <WindowFrame title="Minecraft Launcher" icon={MinecraftIcon} close={close} app startMaximized actions={actions}>
       <div className="relative flex-1 overflow-hidden bg-black">
         {state.step === "play" && src ? (
           <iframe key={src} title="Minecraft" src={src} className="size-full border-0 bg-black" allow="fullscreen; autoplay; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write" />
         ) : (
-          <div className="absolute inset-0 grid place-items-center overflow-auto bg-[#171717] bg-[radial-gradient(ellipse_at_top,#24452a_0%,#171717_65%)] p-6 text-white">
-            <div className="w-full max-w-md text-center">
-              <MinecraftIcon className="mx-auto size-20" />
-              <p className="mt-5 text-sm font-bold tracking-[.3em]">MINECRAFT</p>
-              {state.step === "menu" && (
-                <>
-                  <p className="mt-1 text-[12px] text-white/55">Eaglercraft, the full game in this window. Worlds are saved in this browser.</p>
-                  <div className="mt-5 grid gap-2">
-                    {versions.map((version) => (
-                      <button key={version.id} type="button" onClick={() => void launch(version.id)} className={`flex items-center justify-between rounded-lg border px-4 py-3 text-left outline-none transition-colors ${pick === version.id ? "border-[#3fae4b] bg-[#3fae4b]/20" : "border-white/10 bg-white/5 hover:bg-white/10"}`}>
-                        <span>
-                          <span className="block text-[15px] font-semibold">Play {version.label}</span>
-                          <span className="block text-[11px] text-white/55">{version.note} · {version.size} MB the first time</span>
-                        </span>
-                        <Play className="size-5 fill-white" />
-                      </button>
-                    ))}
+          <div className="mc-launcher absolute inset-0 flex text-white">
+            <aside className="hidden w-52 shrink-0 flex-col gap-1 border-r border-white/5 bg-[#1e1e1e] p-3 sm:flex">
+              <div className="mb-3 flex items-center gap-2 px-1"><MinecraftIcon className="size-8" /><span className="text-[13px] font-bold leading-tight">Minecraft<br /><span className="text-[10px] font-medium text-white/50">Eaglercraft</span></span></div>
+              <p className="px-2 text-[9px] font-bold uppercase tracking-[.16em] text-white/40">Installations</p>
+              {versions.map((version) => (
+                <button key={version.id} type="button" disabled={busy} onClick={() => setPick(version.id)} className={`flex items-center gap-2 rounded-md px-2 py-2 text-left outline-none transition-colors disabled:opacity-60 ${pick === version.id ? "bg-white/10" : "hover:bg-white/5"}`}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded bg-[#3c8527] text-[10px] font-black">{version.label.split(".").slice(0, 2).join(".")}</span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[12px] font-semibold">Release {version.label}</span>
+                    <span className="block truncate text-[10px] text-white/45">{cached.includes(version.id) ? "Ready to play" : `${version.size} MB download`}</span>
+                  </span>
+                </button>
+              ))}
+              <p className="mt-auto px-2 text-[10px] leading-snug text-white/35">Worlds are saved in this browser. Press F3 in the game for the debug screen.</p>
+            </aside>
+            <div className="flex min-w-0 flex-1 flex-col bg-[#262626]">
+              <div className="mc-hero relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6 text-center">
+                <p className="mc-title text-[42px] font-black tracking-[.06em] sm:text-[56px]">MINECRAFT</p>
+                <p className="mt-1 text-[11px] font-bold uppercase tracking-[.3em] text-[#ffe36e]">Release {current.label}</p>
+                {state.step === "error" && <p role="alert" className="mt-5 max-w-md rounded-md bg-black/55 px-4 py-2.5 text-[12px] text-white/85">{state.error}. Check your connection and try again.</p>}
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 border-t border-black/40 bg-[#1e1e1e] px-4 py-4">
+                <label className="flex flex-col text-[10px] font-semibold uppercase tracking-[.12em] text-white/45">
+                  Version
+                  <select aria-label="Minecraft version" value={pick} disabled={busy} onChange={(event) => setPick(event.target.value as MinecraftVersion["id"])} className="mt-1 h-10 w-56 rounded-md border border-white/10 bg-[#313131] px-3 text-[13px] font-semibold normal-case tracking-normal text-white outline-none">
+                    {versions.map((version) => <option key={version.id} value={version.id}>Release {version.label} · {version.note}</option>)}
+                  </select>
+                </label>
+                {busy ? (
+                  <div className="w-64">
+                    <p className="text-[12px] font-semibold">{state.step === "download" ? `Downloading ${current.label}… ${percent}%` : "Starting the game…"}</p>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-[#3c8527] transition-[width] duration-200" style={{ width: `${state.step === "unpack" ? 100 : percent}%` }} /></div>
+                    {state.route === "site" && <p className="mt-1 text-[10px] text-white/45">Your network blocks the game's server, so it is coming through PRIVATE OS.</p>}
                   </div>
-                  <p className="mt-4 text-[11px] text-white/40">Tip: the full screen button at the top makes the game fill the screen.</p>
-                </>
-              )}
-              {(state.step === "download" || state.step === "unpack") && (
-                <>
-                  <p className="mt-1 text-[12px] text-white/55">{state.step === "download" ? `Downloading the game… ${percent}%` : "Starting the game…"}</p>
-                  <div className="mx-auto mt-5 h-1.5 w-56 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-[#3fae4b] transition-[width] duration-200" style={{ width: `${state.step === "unpack" ? 100 : percent}%` }} /></div>
-                </>
-              )}
-              {state.step === "error" && (
-                <>
-                  <p className="mt-2 text-[13px] text-white/75">{state.error}</p>
-                  <div className="mt-4 flex justify-center gap-2">
-                    <button type="button" onClick={() => void launch(pick)} className="rounded-md bg-[#3fae4b] px-4 py-2 text-[13px] font-semibold outline-none hover:bg-[#4cc259]">Try again</button>
-                    <button type="button" onClick={() => setState({ step: "menu" })} className="rounded-md bg-white/10 px-4 py-2 text-[13px] font-semibold outline-none hover:bg-white/20">Versions</button>
-                  </div>
-                </>
-              )}
+                ) : (
+                  <button type="button" onClick={() => void launch(pick)} className="mc-play h-14 min-w-56 rounded-md bg-[#3c8527] px-10 text-[17px] font-black uppercase tracking-[.08em] outline-none hover:bg-[#45a02f]">{state.step === "error" ? "Try again" : "Play"}</button>
+                )}
+                {cached.includes(pick) && !busy && <button type="button" onClick={() => void forget(pick)} className="h-10 rounded-md px-3 text-[11px] font-semibold text-white/55 outline-none hover:bg-white/10 hover:text-white">Remove download</button>}
+              </div>
             </div>
           </div>
         )}
@@ -2382,8 +2488,10 @@ function YouTubePlayer({ id, onNext, onEnded, short = false }: TubePlayerProps) 
       try {
         const data = JSON.parse(event.data) as { event?: string; info?: unknown };
         if (data.event === "onError" && typeof data.info === "number" && YT_EMBED_BLOCKED.has(data.info)) setBlocked(true);
+        if (data.event === "onReady" || data.event === "initialDelivery") command("playVideo");
         // State 0 means the video finished: Priv-Tube then plays the next one when Autoplay is on.
         const state = data.event === "onStateChange" ? data.info : (data.info as { playerState?: unknown } | undefined)?.playerState;
+        if (state === 1 || state === 3) started.current = true;
         if (state === 0) ended.current?.();
       } catch {
         // not a player message
@@ -2392,12 +2500,27 @@ function YouTubePlayer({ id, onNext, onEnded, short = false }: TubePlayerProps) 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [route]);
+  const started = useRef(false);
+  const [mutedStart, setMutedStart] = useState(false);
+  const command = (func: string) => directRef.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args: [] }), "https://www.youtube-nocookie.com");
   const listen = () => {
     const target = directRef.current?.contentWindow;
     if (!target) return;
+    started.current = false;
     // The embed only starts sending events after it hears this, so say it a few times while it boots.
     for (const delay of [0, 600, 1500, 3000]) window.setTimeout(() => target.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "https://www.youtube-nocookie.com"), delay);
+    // Autoplay: ask the player to play; if the browser refuses to start a video with sound, start it muted
+    // (browsers always allow that) and show a button to turn the sound on.
+    window.setTimeout(() => command("playVideo"), 900);
+    window.setTimeout(() => {
+      if (started.current || blockedRef.current) return;
+      command("mute");
+      command("playVideo");
+      setMutedStart(true);
+    }, 3200);
   };
+  const blockedRef = useRef(false);
+  blockedRef.current = blocked;
   useEffect(() => {
     let cancelled = false;
     void canReachYouTube().then((ok) => {
@@ -2436,6 +2559,11 @@ function YouTubePlayer({ id, onNext, onEnded, short = false }: TubePlayerProps) 
           referrerPolicy="strict-origin-when-cross-origin"
           className="absolute inset-0 size-full border-0"
         />
+      )}
+      {route === "direct" && mutedStart && !blocked && (
+        <button type="button" onClick={() => { command("unMute"); command("playVideo"); setMutedStart(false); }} className="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-full bg-black/80 px-3.5 py-2 text-[12px] font-semibold text-white shadow-lg hover:bg-black">
+          <VolumeX className="size-4" />Tap to unmute
+        </button>
       )}
       {route === "proxy" && <iframe key={`proxy-${id}`} ref={frameRef} title="YouTube player" allow={`${ENGINE_FRAME_PERMISSIONS}; encrypted-media; picture-in-picture`} allowFullScreen className="absolute inset-0 size-full border-0" />}
       {route === "checking" && <div className="absolute inset-0 grid place-items-center"><span className="size-8 animate-spin rounded-full border-2 border-white/20 border-t-white" /></div>}
@@ -4315,6 +4443,34 @@ function TaskManagerApp({ close, wins, end, show }: { close: () => void; wins: s
 // Where a dragged dock lands: the right edge, the top, or the bottom.
 const dockEdgeAt = (x: number, y: number): "top" | "bottom" | "right" => (x > window.innerWidth * 0.8 ? "right" : y < window.innerHeight * 0.4 ? "top" : "bottom");
 
+// Top-left desktop card, like the hub card in the Figure OS video: two recommended games with Play buttons.
+// The picks change every hour; Play opens the Game Hub (Minecraft opens its launcher).
+function HubCard({ openApp }: { openApp: (id: string) => void }) {
+  const [hour, setHour] = useState(() => Math.floor(Date.now() / 3_600_000));
+  useEffect(() => {
+    const timer = window.setInterval(() => setHour(Math.floor(Date.now() / 3_600_000)), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const picks = [HUB_GAMES[hour % HUB_GAMES.length]!, HUB_GAMES[(hour + 3) % HUB_GAMES.length]!];
+  return (
+    <div className="hub-card" aria-label="Game Hub recommendations">
+      <div className="flex items-center justify-between px-1 pb-2"><button type="button" onClick={() => openApp("games")} className="text-[11px] font-bold text-[#ffcf6e] hover:underline">Game Hub</button><span className="text-[9px] font-semibold text-white/45">Recommended</span></div>
+      <div className="grid grid-cols-2 gap-2">
+        {picks.map((game) => (
+          <div key={game.id} className="hub-card-item">
+            <span className={`grid h-14 w-10 shrink-0 place-items-center rounded-md bg-gradient-to-br ${game.tone} text-xl`}>{game.emoji}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-[11px] font-bold leading-tight">{game.name}</span>
+              <span className="block truncate text-[9px] text-white/50">{game.genre}</span>
+              <button type="button" aria-label={`Play ${game.name}`} onClick={() => openApp(game.kind === "app" ? game.id : "games")} className="hub-card-play"><Play className="size-2.5 fill-current" />Play</button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Top-right desktop cards: what's playing, and the console emulator.
 function DesktopWidgets({ openApp, openWins, clock }: { openApp: (id: string) => void; openWins: string[]; clock: ReactNode }) {
   const cards = [
@@ -4378,8 +4534,8 @@ const MINIMAL_APPS = [
 ];
 const DOCK_PINS = ["netflix", "spotify", "playstation", "discord", "messages", "settings", "browser", "games", "taskview", "minecraft"];
 const OLD_DOCK_PINS = ["browser", "files", "notes", "calc", "figure", "settings"];
-type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang; stickies: StickyData[]; showStickies: boolean; sideCards: boolean; clockCard: boolean; dayName: boolean };
-const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: DOCK_PINS, dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en", stickies: DEFAULT_STICKIES, showStickies: true, sideCards: true, clockCard: true, dayName: true };
+type OsSettings = { blur: number; dim: number; lockBlur: number; lockDim: number; clock24: boolean; widgets: string[]; wpos: Record<string, { x: number; y: number }>; desktop: string[]; railHidden: boolean; hubHidden: boolean; bigIcons: boolean; dockPos: "bottom" | "top" | "right"; theme: string; accent: string; scrollAccent: string; particles: boolean; ambient: boolean; reduceMotion: boolean; nativeCursor: boolean; glassBlur: number; glassOpacity: number; dockScale: number; showDate: boolean; showIcons: boolean; slideshow: number; dockPins: string[]; dockAutoHide: boolean; timeZone: string; worldClocks: string[]; titleButtons: "compact" | "comfortable" | "large"; autoLock: number; weekStart: number; desktopLabels: boolean; skipStart: boolean; uiStyle: "classic" | "modern"; uiSounds: boolean; soundHover: boolean; soundClick: boolean; soundVolume: number; lite: boolean; onboarded: boolean; userName: string; dockStyle: "taskbar" | "floating"; dockOpacity: number; dockLiquid: boolean; edition: "private" | "nova"; novaTheme: string; novaPhoto: boolean; novaWall: string; novaWallDim: number; novaParallax: boolean; novaMagnify: boolean; novaHotCorner: boolean; novaNight: boolean; novaFocus: boolean; novaBright: number; novaPins: string[]; novaGreet: "hello" | "clock" | "off"; novaGreetPos: "left" | "center"; novaIcons: string[]; novaWidgets: string[]; novaDockSize: number; novaDockHide: boolean; novaIsland: boolean; novaGlass: "clear" | "frosted" | "solid"; novaShuffle: number; novaCustom: string[]; novaSaver: number; nova4: boolean; novaDockStyle: "float" | "bar" | "bare"; novaDockPos: "bottom" | "left"; novaDockLabels: boolean; soundPack: SoundPack; language: Lang; stickies: StickyData[]; showStickies: boolean; sideCards: boolean; clockCard: boolean; dayName: boolean; solidUi: boolean; gameCard: boolean };
+const DEFAULT_SETTINGS: OsSettings = { blur: 0, dim: 15, lockBlur: 8, lockDim: 65, clock24: true, widgets: [], wpos: {}, desktop: ["files", "browser", "notes", "photos"], railHidden: true, hubHidden: true, bigIcons: false, dockPos: "bottom", theme: "private", accent: "", scrollAccent: "", particles: true, ambient: true, reduceMotion: false, nativeCursor: false, glassBlur: 42, glassOpacity: 0, dockScale: 100, showDate: true, showIcons: true, slideshow: 0, dockPins: DOCK_PINS, dockAutoHide: false, timeZone: "", worldClocks: [], titleButtons: "comfortable", autoLock: 0, weekStart: 0, desktopLabels: true, skipStart: false, uiStyle: "classic", uiSounds: true, soundHover: true, soundClick: true, soundVolume: 40, lite: false, onboarded: false, userName: "", dockStyle: "taskbar", dockOpacity: 70, dockLiquid: false, edition: "private", novaTheme: "eclipse", novaPhoto: false, novaWall: "eclipse", novaWallDim: 0, novaParallax: true, novaMagnify: true, novaHotCorner: true, novaNight: false, novaFocus: false, novaBright: 100, novaPins: NOVA_PINS, novaGreet: "hello", novaGreetPos: "left", novaIcons: [], novaWidgets: [], novaDockSize: 44, novaDockHide: false, novaIsland: true, novaGlass: "frosted", novaShuffle: 0, novaCustom: NOVA_CUSTOM_DEFAULT, novaSaver: 5, nova4: true, novaDockStyle: "float", novaDockPos: "bottom", novaDockLabels: false, soundPack: "eclipse", language: "en", stickies: DEFAULT_STICKIES, showStickies: true, sideCards: true, clockCard: true, dayName: true, solidUi: true, gameCard: true };
 const WIDGET_LIST = [
   { id: "music", label: "Music" },
   { id: "notes", label: "Quick note" },
@@ -5303,6 +5459,8 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
             <div className="stagger space-y-4">
             <CfgCard title={tx("Desktop look")}>
               <CfgRow title={tx("Day name")} sub={tx("The day at the top of the desktop, in The Last Shuriken font")}>
+                <Switch on={settings.solidUi} label="Solid cards (Quick Note style, no glass)" onChange={(value) => { patch({ solidUi: value }); log(`Solid cards ${value ? "on" : "off"}`); }} />
+                <Switch on={settings.gameCard} label="Game Hub card (top left)" onChange={(value) => { patch({ gameCard: value }); log(`Game Hub card ${value ? "shown" : "hidden"}`); }} />
                 <Switch on={settings.dayName} label="Day name" onChange={(value) => { patch({ dayName: value }); log(`Day name ${value ? "shown" : "hidden"}`); }} />
               </CfgRow>
               <CfgRow title={tx("Side cards")} sub={tx("Media and Console Emulator cards behind the tab on the right edge")}>
@@ -5634,13 +5792,46 @@ const FREE_GAMES = [
   { name: "Diablo (shareware)", sub: "Browser port of the free shareware version", url: "https://johnimril.github.io/diablo_web/" },
 ];
 
-function GamesApp({ close, launch }: { close: () => void; launch: (url: string) => void }) {
+// Game Hub (PRIVATE OS 4.6), laid out like the hub in the Figure OS video: a big featured game with a green
+// Play button, a Recommended row, and every game as a poster. All games here run offline in the window,
+// except Minecraft, which opens its own launcher. Plays, favourites and last played are saved on this device.
+type HubGame = { id: string; name: string; sub: string; emoji: string; tone: string; genre: string; kind: "mini" | "arcade" | "app" };
+const HUB_GAMES: HubGame[] = [
+  { id: "minecraft", name: "Minecraft", sub: "Build, mine and survive. Versions 1.8.8 to 26.3", emoji: "⛏️", tone: "from-green-500 to-emerald-900", genre: "Sandbox", kind: "app" },
+  ...ARCADE_GAMES.map((game) => ({ ...game, kind: "arcade" as const })),
+  ...MINI_GAMES.map((game) => ({ ...game, genre: game.id === "snake" || game.id === "breakout" ? "Arcade" : "Puzzle", kind: "mini" as const })),
+];
+const HUB_RATING: Record<string, string> = { minecraft: "9.6", blocks: "9.1", flappy: "8.4", pong: "8.2", snake: "8.7", "2048": "8.9", breakout: "8.5", minesweeper: "8.3", memory: "7.9", tictactoe: "7.6" };
+type GameStats = Record<string, { plays: number; last: number; fav?: boolean }>;
+
+function GamePoster({ game, onOpen, onPlay, wide = false }: { game: HubGame; onOpen: () => void; onPlay: () => void; wide?: boolean }) {
+  return (
+    <div className={`hub-poster group relative overflow-hidden rounded-xl border border-white/10 bg-[#18181b] ${wide ? "flex items-center gap-3 p-2" : ""}`}>
+      <button type="button" aria-label={`About ${game.name}`} onClick={onOpen} className={`block bg-gradient-to-br ${game.tone} ${wide ? "grid h-16 w-12 shrink-0 place-items-center rounded-lg text-2xl" : "grid h-28 w-full place-items-center text-5xl"}`}>
+        <span className="transition-transform duration-300 group-hover:scale-110">{game.emoji}</span>
+      </button>
+      <div className={wide ? "min-w-0 flex-1" : "p-2.5"}>
+        <p className="truncate text-[13px] font-bold">{game.name}</p>
+        <p className="truncate text-[10px] text-white/50">{game.genre} · ★ {HUB_RATING[game.id] ?? "8.0"}</p>
+        <button type="button" aria-label={`Play ${game.name}`} onClick={onPlay} className="hub-play mt-2 flex h-7 items-center gap-1 rounded-md px-3 text-[11px] font-bold"><Play className="size-3 fill-current" />Play</button>
+      </div>
+    </div>
+  );
+}
+
+function GamesApp({ close, launch, openApp }: { close: () => void; launch: (url: string) => void; openApp: (id: string) => void }) {
   const [custom, setCustom] = useState<{ name: string; url: string }[]>([]);
+  const [stats, setStats] = useState<GameStats>({});
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
+  const [detail, setDetail] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<string | null>(null);
+  const [filter, setFilter] = useState("All");
+  const pad = usePadName();
   useEffect(() => {
     try {
       setCustom(JSON.parse(localStorage.getItem("pos-games") ?? "[]") as { name: string; url: string }[]);
+      setStats(JSON.parse(localStorage.getItem("pos-game-stats") ?? "{}") as GameStats);
     } catch {
       // storage unavailable
     }
@@ -5653,6 +5844,23 @@ function GamesApp({ close, launch }: { close: () => void; launch: (url: string) 
       // storage unavailable
     }
   };
+  const saveStats = (update: (current: GameStats) => GameStats) => {
+    setStats((current) => {
+      const next = update(current);
+      try {
+        localStorage.setItem("pos-game-stats", JSON.stringify(next));
+      } catch {
+        // storage unavailable
+      }
+      return next;
+    });
+  };
+  const play = (game: HubGame) => {
+    saveStats((current) => ({ ...current, [game.id]: { ...current[game.id], plays: (current[game.id]?.plays ?? 0) + 1, last: Date.now() } }));
+    if (game.kind === "app") return openApp(game.id);
+    setPlaying(game.id);
+  };
+  const toggleFav = (id: string) => saveStats((current) => ({ ...current, [id]: { plays: current[id]?.plays ?? 0, last: current[id]?.last ?? 0, fav: !current[id]?.fav } }));
   const add = () => {
     const link = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
     if (!name.trim() || !url.trim() || !/^https?:\/\/[^\s.]+\.[^\s]+$/i.test(link)) return;
@@ -5660,58 +5868,107 @@ function GamesApp({ close, launch }: { close: () => void; launch: (url: string) 
     setName("");
     setUrl("");
   };
-  const card = "fx-card flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 p-3 text-left hover:bg-white/10";
-  const [playing, setPlaying] = useState<MiniGameId | null>(null);
-  const current = MINI_GAMES.find((game) => game.id === playing);
+  const recent = HUB_GAMES.filter((game) => stats[game.id]?.last).sort((x, y) => (stats[y.id]?.last ?? 0) - (stats[x.id]?.last ?? 0)).slice(0, 4);
+  const favs = HUB_GAMES.filter((game) => stats[game.id]?.fav);
+  const featured = HUB_GAMES.find((game) => game.id === detail) ?? HUB_GAMES[Math.floor(Date.now() / 3_600_000) % HUB_GAMES.length]!;
+  const genres = ["All", ...Array.from(new Set(HUB_GAMES.map((game) => game.genre)))];
+  const listed = HUB_GAMES.filter((game) => filter === "All" || game.genre === filter);
+  const current = HUB_GAMES.find((game) => game.id === playing);
+  const padChip = <span className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold sm:flex ${pad ? "bg-[#3fbf5f]/15 text-[#7be08f]" : "bg-white/5 text-white/45"}`}><Gamepad2 className="size-3.5" />{pad ? `${pad} connected` : "Plug in a controller to use it"}</span>;
   if (current) {
     return (
-      <WindowFrame title={`Games · ${current.name}`} icon={GamesIcon} close={close}>
-        <div className="flex-1 overflow-auto p-4">
-          <button type="button" onClick={() => setPlaying(null)} className="mb-3 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15"><ArrowLeft className="size-3.5" />All games</button>
-          <div key={current.id} className="mx-auto max-w-lg [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]"><MiniGame id={current.id} /></div>
+      <WindowFrame title={`Game Hub · ${current.name}`} icon={GamesIcon} close={close} actions={padChip}>
+        <div className="hub flex-1 overflow-auto p-4">
+          <button type="button" onClick={() => setPlaying(null)} className="mb-3 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15"><ArrowLeft className="size-3.5" />Game Hub</button>
+          <div key={current.id} className="mx-auto max-w-lg [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]">{current.kind === "arcade" ? <ArcadeGame id={current.id as ArcadeId} /> : <MiniGame id={current.id as MiniGameId} />}</div>
         </div>
       </WindowFrame>
     );
   }
+  const more = HUB_GAMES.filter((game) => game.genre === featured.genre && game.id !== featured.id).concat(HUB_GAMES.filter((game) => game.genre !== featured.genre && game.id !== featured.id)).slice(0, 6);
   return (
-    <WindowFrame title="Games" icon={GamesIcon} close={close}>
-      <div className="flex-1 overflow-auto p-4">
-        <p className="text-xs font-semibold text-muted-foreground">BUILT-IN · PLAY OFFLINE</p>
-        <div className="stagger mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {MINI_GAMES.map((game) => (
-            <button key={game.id} type="button" aria-label={`Play ${game.name}`} onClick={() => setPlaying(game.id)} className="fx-card group overflow-hidden rounded-2xl border border-white/10 bg-black/20 text-left">
-              <span className={`grid h-20 place-items-center bg-gradient-to-br ${game.tone} text-4xl transition-transform duration-300 group-hover:scale-105`}>{game.emoji}</span>
-              <span className="block p-2.5"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.sub}</span></span>
-            </button>
-          ))}
-        </div>
-        <p className="mt-6 text-xs font-semibold text-muted-foreground">FREE TO PLAY ON THE WEB</p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {FREE_GAMES.map((game) => (
-            <button key={game.url} type="button" onClick={() => launch(game.url)} className={card}>
-              <GamesIcon className="size-10 shrink-0" />
-              <span className="min-w-0"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.sub}</span></span>
-            </button>
-          ))}
-        </div>
-        <p className="mt-6 text-xs font-semibold text-muted-foreground">YOUR GAMES</p>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {custom.length === 0 && <p className="text-xs text-muted-foreground">Nothing added yet. Add a game you can play in the browser below.</p>}
-          {custom.map((game) => (
-            <div key={game.url} className={card}>
-              <button type="button" onClick={() => launch(game.url)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                <GamesIcon className="size-10 shrink-0" />
-                <span className="min-w-0"><span className="block truncate text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-muted-foreground">{game.url}</span></span>
-              </button>
-              <button type="button" aria-label={`Remove ${game.name}`} onClick={() => save(custom.filter((item) => item.url !== game.url))} className="rounded p-1 hover:bg-white/10"><X className="size-4" /></button>
+    <WindowFrame title="Game Hub" icon={GamesIcon} close={close} actions={padChip}>
+      <div className="hub flex-1 overflow-auto bg-[#0f0f11]">
+        <div className={`hub-hero relative overflow-hidden bg-gradient-to-br ${featured.tone}`}>
+          <span aria-hidden className="hub-hero-art">{featured.emoji}</span>
+          <div className="relative z-[1] flex min-h-56 flex-col justify-end gap-3 bg-gradient-to-r from-black/85 via-black/55 to-transparent p-5 sm:p-7">
+            {detail && <button type="button" aria-label="Back to all games" onClick={() => setDetail(null)} className="absolute left-4 top-4 grid size-8 place-items-center rounded-full bg-black/50 hover:bg-black/70"><ChevronLeft className="size-4" /></button>}
+            <p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/60">{detail ? "Game" : "Featured"}</p>
+            <h2 className="text-3xl font-black tracking-tight sm:text-4xl">{featured.name}</h2>
+            <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+              <span className="hub-chip">★ {HUB_RATING[featured.id] ?? "8.0"}/10</span>
+              <span className="hub-chip">GAME</span>
+              <span className="hub-chip">{featured.genre.toUpperCase()}</span>
+              {stats[featured.id]?.plays ? <span className="hub-chip">PLAYED {stats[featured.id]!.plays}×</span> : null}
             </div>
-          ))}
+            <p className="max-w-md text-[12px] text-white/75">{featured.sub}.</p>
+            <div className="flex items-center gap-2">
+              <button type="button" aria-label={`Play ${featured.name} now`} onClick={() => play(featured)} className="hub-play flex h-10 items-center gap-2 rounded-lg px-6 text-[13px] font-black"><Play className="size-4 fill-current" />Play</button>
+              <button type="button" aria-label={stats[featured.id]?.fav ? `Remove ${featured.name} from favourites` : `Add ${featured.name} to favourites`} aria-pressed={Boolean(stats[featured.id]?.fav)} onClick={() => toggleFav(featured.id)} className="grid size-10 place-items-center rounded-full border border-white/25 bg-black/30 text-lg font-bold hover:bg-black/50">{stats[featured.id]?.fav ? "✓" : "+"}</button>
+            </div>
+          </div>
         </div>
-        <form onSubmit={(event) => { event.preventDefault(); add(); }} className="mt-4 flex flex-wrap gap-2">
-          <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Game name" aria-label="Game name" className="utility-input min-w-0 flex-1" />
-          <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Web address" aria-label="Game web address" className="utility-input min-w-0 flex-[2]" />
-          <button type="submit" className="rounded-md bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground">Add game</button>
-        </form>
+        <div className="space-y-6 p-4 sm:p-5">
+          {detail ? (
+            <section>
+              <p className="hub-label">More Like This</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">{more.map((game) => <GamePoster key={game.id} game={game} onOpen={() => setDetail(game.id)} onPlay={() => play(game)} />)}</div>
+            </section>
+          ) : (
+            <>
+              {recent.length > 0 && (
+                <section>
+                  <p className="hub-label">Continue playing</p>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{recent.map((game) => <GamePoster key={game.id} wide game={game} onOpen={() => setDetail(game.id)} onPlay={() => play(game)} />)}</div>
+                </section>
+              )}
+              {favs.length > 0 && (
+                <section>
+                  <p className="hub-label">Favourites</p>
+                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">{favs.map((game) => <GamePoster key={game.id} wide game={game} onOpen={() => setDetail(game.id)} onPlay={() => play(game)} />)}</div>
+                </section>
+              )}
+              <section>
+                <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                  <p className="hub-label mb-0 mr-2">Recommended</p>
+                  {genres.map((genre) => <button key={genre} type="button" aria-pressed={filter === genre} onClick={() => setFilter(genre)} className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${filter === genre ? "bg-white text-black" : "bg-white/10 text-white/70 hover:bg-white/15"}`}>{genre}</button>)}
+                </div>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">{listed.map((game) => <GamePoster key={game.id} game={game} onOpen={() => setDetail(game.id)} onPlay={() => play(game)} />)}</div>
+              </section>
+            </>
+          )}
+          <section>
+            <p className="hub-label">Free to play on the web</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {FREE_GAMES.map((game) => (
+                <button key={game.url} type="button" onClick={() => launch(game.url)} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#18181b] p-3 text-left hover:bg-[#202024]">
+                  <GamesIcon className="size-10 shrink-0" />
+                  <span className="min-w-0"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-white/50">{game.sub}</span></span>
+                </button>
+              ))}
+            </div>
+          </section>
+          <section>
+            <p className="hub-label">Your games</p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {custom.length === 0 && <p className="text-xs text-white/50">Nothing added yet. Add a game you can play in the browser below.</p>}
+              {custom.map((game) => (
+                <div key={game.url} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#18181b] p-3">
+                  <button type="button" onClick={() => launch(game.url)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+                    <GamesIcon className="size-10 shrink-0" />
+                    <span className="min-w-0"><span className="block truncate text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-white/50">{game.url}</span></span>
+                  </button>
+                  <button type="button" aria-label={`Remove ${game.name}`} onClick={() => save(custom.filter((item) => item.url !== game.url))} className="rounded p-1 hover:bg-white/10"><X className="size-4" /></button>
+                </div>
+              ))}
+            </div>
+            <form onSubmit={(event) => { event.preventDefault(); add(); }} className="mt-3 flex flex-wrap gap-2">
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Game name" aria-label="Game name" className="utility-input min-w-0 flex-1" />
+              <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Web address" aria-label="Game web address" className="utility-input min-w-0 flex-[2]" />
+              <button type="submit" className="hub-play rounded-md px-4 py-1.5 text-xs font-bold">Add game</button>
+            </form>
+          </section>
+        </div>
       </div>
     </WindowFrame>
   );

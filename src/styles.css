@@ -1165,3 +1165,82 @@ main[data-taskbar="top"] .desktop-topbar { top: 70px; }
 .minimal-app:hover { background: rgb(255 255 255 / .14); transform: translateY(-2px); }
 .minimal-widget { margin-top: 22px; width: 160px; border-radius: 12px; background: rgb(255 255 255 / .06); padding: 12px 14px; box-shadow: 0 0 0 7px rgb(255 255 255 / .03); }
 .minimal-hint { margin: 22px 0 0; font-size: 8px; font-weight: 700; letter-spacing: .2em; color: rgb(255 255 255 / .25); text-transform: uppercase; }
+
+/* ================= PRIVATE OS 4.6 ================= */
+/* Solid look (the Quick Note card style) for the whole desktop: dark, opaque cards with a thin light edge
+   and soft shadow instead of liquid glass. No backdrop blur anywhere, which is also faster. */
+main[data-solid] > * {
+  --glass-sheen: linear-gradient(transparent, transparent);
+  --glass-tint: #151518;
+  --glass-highlight: rgb(255 255 255 / .08);
+  --glass-shadow: 0 18px 44px rgb(0 0 0 / .5);
+}
+main[data-solid] *, main[data-solid] *::before, main[data-solid] *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+main[data-solid] section.os-window { background: #151518; border: 1px solid rgb(255 255 255 / .08); border-radius: 14px; box-shadow: 0 0 0 1px rgb(0 0 0 / .55), 0 24px 60px rgb(0 0 0 / .55); }
+main[data-solid] section.os-window.rounded-none { border-radius: 0; }
+main[data-solid] section.os-window:has(> header.os-bar) { border-radius: 10px; background: #202020; }
+main[data-solid] .window-titlebar { min-height: 34px; background: #1b1b1f; border-bottom: 1px solid rgb(255 255 255 / .06); box-shadow: none; }
+main[data-solid] .window-titlebar .text-\[11px\] { color: rgb(255 255 255 / .62); font-weight: 600; }
+main[data-solid] .win-ctl { width: 28px; height: 24px; border-radius: 7px; color: rgb(255 255 255 / .55); }
+main[data-solid] .win-ctl:hover { background: rgb(255 255 255 / .1); color: #fff; }
+main[data-solid] .win-ctl.win-close:hover { background: #e5484d; color: #fff; }
+main[data-solid] :is(.soft-glass, .glass-panel:not(.os-window), .liquid-menu, .liquid-tip, .liquid-sheet, .liquid-float, .modern-card) { background: #17171a; border: 1px solid rgb(255 255 255 / .08); box-shadow: 0 16px 40px rgb(0 0 0 / .5); }
+main[data-solid] :is(.desktop-widget, .desktop-clock) { background: #151518; border-color: rgb(255 255 255 / .08); box-shadow: 0 0 0 6px #0c0c0e, 0 14px 34px rgb(0 0 0 / .45); }
+main[data-solid] .desktop-widget:hover { background: #1c1c20; }
+main[data-solid] .sticky-frame { background: #0c0c0e; }
+main[data-solid] .sticky-menu, .sticky-menu.is-solid { background: #17171a; }
+main[data-solid] :is(.desktop-topbar-btn, .desktop-battery) { background: #151518; border: 1px solid rgb(255 255 255 / .08); }
+main[data-solid] .os-launcher { background: rgb(8 8 10 / .78); }
+main[data-solid] .os-launcher-search { background: #17171a; border: 1px solid rgb(255 255 255 / .08); }
+
+/* Dock, 1:1 with the Figure OS video: a dark solid bar with square corners softened to 12px, the logo and
+   the app grid on the left, small rounded app tiles, and the grab line under it. */
+main[data-solid] .taskbar-strip { background: #121214; border: 1px solid rgb(255 255 255 / .07); box-shadow: 0 12px 32px rgb(0 0 0 / .45); }
+main[data-solid] .taskbar-pill { border-radius: 12px; }
+main[data-solid] .dock-bar.dock-glass { background: #121214; border: 1px solid rgb(255 255 255 / .07); }
+.strip-app > :first-child { border-radius: 8px; }
+.strip-gap { width: 14px; flex-shrink: 0; }
+nav.taskbar-strip.is-vertical { flex-direction: column; height: auto; width: 52px; padding: 10px 0; overflow: visible; }
+nav.taskbar-strip.is-vertical .strip-gap { width: auto; height: 10px; }
+nav.taskbar-strip.is-vertical .taskbar-tip { bottom: auto; left: auto; right: calc(100% + 12px); top: 50%; transform: translateY(-50%); }
+nav.taskbar-strip.is-vertical .strip-dash { bottom: 50%; left: 1px; width: 2px; height: 8px; transform: translateY(50%); }
+
+/* Windows: open with a spring, close by shrinking and fading (slow enough to see), minimize into the dock. */
+main[data-solid] .os-window-closing { animation: window-close-46 .26s cubic-bezier(.4, 0, .7, .2) forwards; }
+@keyframes window-close-46 { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(14px) scale(.86); filter: blur(2px); } }
+main[data-solid] .os-window-min { opacity: 0; transform: translateY(48vh) scale(.18); filter: blur(3px); transition: opacity .3s ease, transform .34s cubic-bezier(.55, 0, .3, 1), filter .3s ease; }
+main[data-reduce] .os-window-closing { animation-duration: .12s; }
+
+/* App launcher, 1:1 with the video: a wide search pill, six columns of app tiles, pages with dots. */
+.os-launcher-page { animation: launcher-page .28s cubic-bezier(.22, 1, .36, 1) both; }
+@keyframes launcher-page { from { opacity: 0; transform: translateX(var(--from, 24px)); } }
+.os-launcher-dot { width: 7px; height: 7px; border-radius: 9999px; background: rgb(255 255 255 / .35); transition: width .2s ease, background-color .2s ease; }
+.os-launcher-dot[aria-current="true"] { width: 18px; background: #fff; }
+.os-launcher-badge { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 9999px; background: #9aa0a6; color: #111; font-size: 9px; font-weight: 800; line-height: 16px; text-align: center; box-shadow: 0 0 0 2px #0b0b0d; }
+
+/* Minecraft Launcher */
+.mc-hero { background: linear-gradient(180deg, rgb(0 0 0 / 0) 55%, rgb(0 0 0 / .55)), linear-gradient(180deg, #7ec7ff 0%, #bfe6ff 46%, #6fbf4a 46.5%, #4f9a33 62%, #8a5a33 62.5%, #6b4426 100%); }
+.mc-hero::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(90deg, rgb(0 0 0 / .08) 1px, transparent 1px), linear-gradient(rgb(0 0 0 / .08) 1px, transparent 1px); background-size: 32px 32px; mask-image: linear-gradient(180deg, transparent 46%, #000 47%); pointer-events: none; }
+.mc-title { position: relative; color: #e8e8e8; text-shadow: 0 4px 0 #3f3f3f, 0 8px 18px rgb(0 0 0 / .45); -webkit-text-stroke: 1px #2a2a2a; font-family: ui-monospace, "Courier New", monospace; }
+.mc-play { box-shadow: inset 0 -4px 0 rgb(0 0 0 / .28), 0 0 0 2px #1e1e1e, 0 0 0 3px rgb(255 255 255 / .12); transition: transform .12s ease, background-color .15s ease; }
+.mc-play:active { transform: translateY(2px); box-shadow: inset 0 -2px 0 rgb(0 0 0 / .28), 0 0 0 2px #1e1e1e; }
+
+/* Game Hub: dark hub with a big featured game and green Play buttons, like the hub in the Figure OS video. */
+.hub-play { background: #9be15d; color: #0b0b0b; box-shadow: 0 6px 18px rgb(155 225 93 / .25); transition: transform .12s ease, filter .15s ease; }
+.hub-play:hover { filter: brightness(1.08); }
+.hub-play:active { transform: scale(.96); }
+.hub-chip { border-radius: 6px; border: 1px solid rgb(255 255 255 / .25); background: rgb(0 0 0 / .35); padding: 3px 7px; letter-spacing: .06em; }
+.hub-label { margin-bottom: 8px; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: rgb(255 255 255 / .7); }
+.hub-hero-art { position: absolute; right: 6%; top: 50%; font-size: 170px; line-height: 1; transform: translateY(-50%) rotate(-8deg); filter: drop-shadow(0 18px 30px rgb(0 0 0 / .45)); opacity: .9; animation: hub-float 6s ease-in-out infinite; }
+@keyframes hub-float { 50% { transform: translateY(-54%) rotate(-4deg); } }
+.hub-poster { transition: transform .2s cubic-bezier(.22, 1, .36, 1), border-color .2s ease; }
+.hub-poster:hover { transform: translateY(-3px); border-color: rgb(155 225 93 / .45); }
+@media (max-width: 640px) { .hub-hero-art { font-size: 110px; opacity: .45; } }
+main[data-reduce] .hub-hero-art { animation: none; }
+.hub-card { position: absolute; z-index: 2; top: 48px; left: 112px; width: 268px; border-radius: 14px; border: 1px solid rgb(255 255 255 / .08); background: #151518; padding: 9px; color: #fff; box-shadow: 0 0 0 6px #0c0c0e, 0 14px 34px rgb(0 0 0 / .45); animation: window-in .3s cubic-bezier(.22, 1, .36, 1) both; }
+.hub-card-item { display: flex; gap: 7px; border-radius: 10px; background: #1e1e22; padding: 6px; transition: box-shadow .2s ease; }
+.hub-card-item:first-child { box-shadow: inset 0 0 0 1.5px #9be15d; }
+.hub-card-play { margin-top: 5px; display: inline-flex; align-items: center; gap: 3px; border-radius: 6px; border: 1px solid rgb(255 255 255 / .2); padding: 2px 7px; font-size: 9px; font-weight: 700; }
+.hub-card-play:hover { background: #9be15d; border-color: #9be15d; color: #0b0b0b; }
+main[data-taskbar="top"] .hub-card { top: 108px; }
+@media (max-width: 760px) { .hub-card { display: none; } }

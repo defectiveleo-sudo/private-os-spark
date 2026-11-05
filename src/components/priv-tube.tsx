@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft, Bell, Check, ChevronDown, ChevronUp, Clapperboard, Clock, Download, Flame, Gamepad2, History, House, Library, Lightbulb,
-  ListVideo, Menu, MessageSquare, Music2, Newspaper, Play, Radio, RefreshCw, Search, Share2, ThumbsUp, Trash2, Trophy, X, Zap,
+  ListVideo, Menu, MessageSquare, Music2, Newspaper, Play, Radio, RefreshCw, Search, Share2, ThumbsDown, ThumbsUp, Trash2, Tv, Repeat, Trophy, X, Zap,
 } from "lucide-react";
 import type { TubeChannel, TubeComment, TubeDetails, TubeVideo } from "../routes/api.youtube";
 
@@ -51,9 +51,9 @@ const blankVideo = (id: string, short = false): TubeVideo => ({ id, title: "", c
 
 // ---------- What stays on this device ----------
 
-type TubeStore = { subs: ChannelRef[]; history: TubeVideo[]; later: TubeVideo[]; liked: TubeVideo[]; searches: string[]; autoplay: boolean };
+type TubeStore = { subs: ChannelRef[]; history: TubeVideo[]; later: TubeVideo[]; liked: TubeVideo[]; searches: string[]; autoplay: boolean; theater: boolean; disliked: string[] };
 const STORE_KEY = "privtube-v1";
-const EMPTY_STORE: TubeStore = { subs: [], history: [], later: [], liked: [], searches: [], autoplay: true };
+const EMPTY_STORE: TubeStore = { subs: [], history: [], later: [], liked: [], searches: [], autoplay: true, theater: false, disliked: [] };
 
 function loadStore(): TubeStore {
   try {
@@ -67,6 +67,8 @@ function loadStore(): TubeStore {
       liked: Array.isArray(saved.liked) ? saved.liked : [],
       searches: Array.isArray(saved.searches) ? saved.searches : [],
       autoplay: saved.autoplay !== false,
+      theater: saved.theater === true,
+      disliked: Array.isArray(saved.disliked) ? saved.disliked.filter((item): item is string => typeof item === "string") : [],
     };
   } catch {
     return EMPTY_STORE;
@@ -634,14 +636,66 @@ function WatchView({ video }: { video: TubeVideo }) {
     update((s) => ({ ...s, history: [entry, ...s.history.filter((item) => item.id !== entry.id)].slice(0, 300) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [video.id, !!details.data]);
+  // When a video ends with Autoplay on, the next one starts after a short countdown that can be cancelled.
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [loop, setLoop] = useState(false);
+  const [replay, setReplay] = useState(0);
+  useEffect(() => setCountdown(null), [video.id]);
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) {
+      setCountdown(null);
+      if (next) go({ name: "watch", video: next }, true);
+      return;
+    }
+    const timer = window.setTimeout(() => setCountdown((value) => (value === null ? null : value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [countdown, next, go]);
   const onEnded = () => {
-    if (store.autoplay && next) go({ name: "watch", video: next }, true);
+    if (loop) return setReplay((value) => value + 1);
+    if (store.autoplay && next) setCountdown(5);
   };
+  const disliked = store.disliked.includes(video.id);
+  const theater = store.theater;
+  const upNext = (
+    <aside className={`flex w-full shrink-0 flex-col gap-2 ${theater ? "" : "@5xl:w-[25rem]"}`}>
+      <div className="mb-1 flex items-center justify-between">
+        <p className="text-[16px] font-bold">Up next</p>
+        <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#aaa]">
+          Autoplay
+          <button type="button" role="switch" aria-checked={store.autoplay} onClick={() => update((s) => ({ ...s, autoplay: !s.autoplay }))} className={`relative h-5 w-9 rounded-full transition-colors ${store.autoplay ? "bg-[#ff4e6a]" : "bg-white/25"}`}>
+            <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${store.autoplay ? "left-[1.15rem]" : "left-0.5"}`} />
+          </button>
+        </label>
+      </div>
+      {!details.data && !details.error ? <Spinner /> : <div className={theater ? "grid gap-2 @3xl:grid-cols-2 @6xl:grid-cols-3" : "flex flex-col gap-2"}>{related.map((item) => <VideoRow key={item.id} video={item} compact />)}</div>}
+    </aside>
+  );
   return (
-    <div className="mx-auto flex max-w-[110rem] flex-col gap-6 p-4 @5xl:flex-row @5xl:px-6">
+    <div className={`mx-auto flex max-w-[110rem] flex-col gap-6 p-4 @5xl:px-6 ${theater ? "" : "@5xl:flex-row"}`}>
       <div className="min-w-0 flex-1">
-        <Player key={video.id} id={video.id} onEnded={onEnded} {...(next ? { onNext: () => go({ name: "watch", video: next }, true) } : {})} />
-        <h1 className="mt-3 text-[20px] font-bold leading-7">{full.title || (details.error ? "Video" : "Loading…")}</h1>
+        <div className="relative">
+          <Player key={`${video.id}-${replay}`} id={video.id} onEnded={onEnded} {...(next ? { onNext: () => go({ name: "watch", video: next }, true) } : {})} />
+          {countdown !== null && next && (
+            <div className="absolute inset-0 z-20 grid place-items-center rounded-xl bg-black/85 p-4 text-center">
+              <div className="w-full max-w-sm">
+                <p className="text-[12px] text-[#aaa]">Up next in {countdown}</p>
+                <p className="mt-1 line-clamp-2 text-[16px] font-bold">{next.title}</p>
+                <p className="text-[12px] text-[#aaa]">{next.channel}</p>
+                <div className="mx-auto mt-3 h-1 w-48 overflow-hidden rounded-full bg-white/15"><div className="h-full bg-[#ff4e6a] transition-[width] duration-1000 ease-linear" style={{ width: `${((5 - countdown) / 5) * 100}%` }} /></div>
+                <div className="mt-4 flex justify-center gap-2">
+                  <button type="button" onClick={() => setCountdown(null)} className="rounded-full bg-white/15 px-4 py-1.5 text-[13px] font-semibold hover:bg-white/25">Cancel</button>
+                  <button type="button" onClick={() => { setCountdown(null); go({ name: "watch", video: next }, true); }} className="rounded-full bg-white px-4 py-1.5 text-[13px] font-semibold text-black hover:bg-white/85">Play now</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="mt-2 flex items-center justify-end gap-2">
+          <button type="button" aria-pressed={loop} onClick={() => { setLoop((value) => !value); toast(loop ? "Loop off" : "This video will play again when it ends"); }} className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold transition-colors ${loop ? "bg-white text-black" : "text-[#ccc] hover:bg-white/10"}`}><Repeat className="size-4" />Loop</button>
+          <button type="button" aria-pressed={theater} onClick={() => update((s) => ({ ...s, theater: !s.theater }))} className={`flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-semibold transition-colors ${theater ? "bg-white text-black" : "text-[#ccc] hover:bg-white/10"}`}><Tv className="size-4" />Theater mode</button>
+        </div>
+        <h1 className="mt-1 text-[20px] font-bold leading-7">{full.title || (details.error ? "Video" : "Loading…")}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button type="button" disabled={!full.channelId} onClick={() => full.channelId && go({ name: "channel", id: full.channelId, title: full.channel, tab: "videos" })} className="flex min-w-0 items-center gap-3 text-left outline-none">
             <Avatar src={full.avatar} name={full.channel || "?"} className="size-10" />
@@ -652,13 +706,22 @@ function WatchView({ video }: { video: TubeVideo }) {
           </button>
           <SubscribeButton channel={{ id: full.channelId, title: full.channel, avatar: full.avatar }} />
           <div className="ml-auto flex flex-wrap gap-2">
-            <ActionPill label="Like" active={liked} onClick={() => { update((s) => ({ ...s, liked: toggleIn(s.liked, full) })); toast(liked ? "Removed from Liked videos" : "Added to Liked videos"); }}>
-              <ThumbsUp className="size-4" />{full.likes || "Like"}
-            </ActionPill>
+            <div className="flex h-9 overflow-hidden rounded-full bg-white/10">
+              <button type="button" aria-label="Like" aria-pressed={liked} onClick={() => { update((s) => ({ ...s, liked: toggleIn(s.liked, full), disliked: s.disliked.filter((item) => item !== video.id) })); toast(liked ? "Removed from Liked videos" : "Added to Liked videos"); }} className={`flex items-center gap-2 px-4 text-[14px] font-semibold transition-colors ${liked ? "bg-white text-black" : "hover:bg-white/20"}`}>
+                <ThumbsUp className="size-4" />{full.likes || "Like"}
+              </button>
+              <span aria-hidden className="my-2 w-px bg-white/20" />
+              <button type="button" aria-label="Dislike" aria-pressed={disliked} onClick={() => { update((s) => ({ ...s, disliked: disliked ? s.disliked.filter((item) => item !== video.id) : [video.id, ...s.disliked].slice(0, 500), liked: s.liked.filter((item) => item.id !== video.id) })); toast(disliked ? "Dislike removed" : "You disliked this video"); }} className={`grid place-items-center px-3.5 transition-colors ${disliked ? "bg-white text-black" : "hover:bg-white/20"}`}>
+                <ThumbsDown className="size-4" />
+              </button>
+            </div>
             <ActionPill label="Share" onClick={() => shareLink(video.id, toast)}><Share2 className="size-4" />Share</ActionPill>
             <SaveButton video={full} />
             <ActionPill label="Watch later" active={later} onClick={() => { update((s) => ({ ...s, later: toggleIn(s.later, full) })); toast(later ? "Removed from Watch later" : "Saved to Watch later"); }}>
               <Clock className="size-4" />Later
+            </ActionPill>
+            <ActionPill label={store.autoplay ? "Autoplay is on" : "Autoplay is off"} active={store.autoplay} onClick={() => { update((s) => ({ ...s, autoplay: !s.autoplay })); toast(store.autoplay ? "Autoplay off" : "Autoplay on: the next video starts by itself"); }}>
+              <Play className="size-4" />Auto
             </ActionPill>
           </div>
         </div>
@@ -676,20 +739,10 @@ function WatchView({ video }: { video: TubeVideo }) {
           Video not starting? Some videos only play on YouTube itself:{" "}
           <button type="button" onClick={() => window.open(`https://www.youtube.com/watch?v=${video.id}`, "_blank", "noopener,noreferrer")} className="font-semibold text-[#3ea6ff] hover:underline">watch it on YouTube</button>.
         </p>
+        {theater && upNext}
         {details.data && <Comments token={details.data.comments} />}
       </div>
-      <aside className="flex w-full shrink-0 flex-col gap-2 @5xl:w-[25rem]">
-        <div className="mb-1 flex items-center justify-between">
-          <p className="text-[16px] font-bold">Up next</p>
-          <label className="flex cursor-pointer items-center gap-2 text-[12px] text-[#aaa]">
-            Autoplay
-            <button type="button" role="switch" aria-checked={store.autoplay} onClick={() => update((s) => ({ ...s, autoplay: !s.autoplay }))} className={`relative h-5 w-9 rounded-full transition-colors ${store.autoplay ? "bg-[#ff4e6a]" : "bg-white/25"}`}>
-              <span className={`absolute top-0.5 size-4 rounded-full bg-white transition-all ${store.autoplay ? "left-[1.15rem]" : "left-0.5"}`} />
-            </button>
-          </label>
-        </div>
-        {!details.data && !details.error ? <Spinner /> : related.map((item) => <VideoRow key={item.id} video={item} compact />)}
-      </aside>
+      {!theater && upNext}
     </div>
   );
 }

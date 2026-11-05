@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiMinecraftRouteImport } from './routes/api.minecraft'
 import { Route as ApiProxyRouteImport } from './routes/api.proxy'
 import { Route as ApiRedditRouteImport } from './routes/api.reddit'
 import { Route as ApiSearchRouteImport } from './routes/api.search'
@@ -18,6 +19,11 @@ import { Route as ApiYoutubeRouteImport } from './routes/api.youtube'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMinecraftRoute = ApiMinecraftRouteImport.update({
+  id: '/api/minecraft',
+  path: '/api/minecraft',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProxyRoute = ApiProxyRouteImport.update({
@@ -43,6 +49,7 @@ const ApiYoutubeRoute = ApiYoutubeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/minecraft': typeof ApiMinecraftRoute
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/minecraft': typeof ApiMinecraftRoute
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/minecraft': typeof ApiMinecraftRoute
   '/api/proxy': typeof ApiProxyRoute
   '/api/reddit': typeof ApiRedditRoute
   '/api/search': typeof ApiSearchRoute
@@ -65,12 +74,25 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/proxy' | '/api/reddit' | '/api/search' | '/api/youtube'
+  fullPaths:
+    | '/'
+    | '/api/minecraft'
+    | '/api/proxy'
+    | '/api/reddit'
+    | '/api/search'
+    | '/api/youtube'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/proxy' | '/api/reddit' | '/api/search' | '/api/youtube'
+  to:
+    | '/'
+    | '/api/minecraft'
+    | '/api/proxy'
+    | '/api/reddit'
+    | '/api/search'
+    | '/api/youtube'
   id:
     | '__root__'
     | '/'
+    | '/api/minecraft'
     | '/api/proxy'
     | '/api/reddit'
     | '/api/search'
@@ -79,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiMinecraftRoute: typeof ApiMinecraftRoute
   ApiProxyRoute: typeof ApiProxyRoute
   ApiRedditRoute: typeof ApiRedditRoute
   ApiSearchRoute: typeof ApiSearchRoute
@@ -92,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/minecraft': {
+      id: '/api/minecraft'
+      path: '/api/minecraft'
+      fullPath: '/api/minecraft'
+      preLoaderRoute: typeof ApiMinecraftRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/proxy': {
@@ -127,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiMinecraftRoute: ApiMinecraftRoute,
   ApiProxyRoute: ApiProxyRoute,
   ApiRedditRoute: ApiRedditRoute,
   ApiSearchRoute: ApiSearchRoute,

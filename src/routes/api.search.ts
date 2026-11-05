@@ -5,6 +5,8 @@ type Hit = { title: string; url: string; snippet: string; image?: string };
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
+const char = (code: number) => (code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "");
+
 const clean = (text: string) =>
   text
     .replace(/<[^>]+>/g, "")
@@ -13,6 +15,9 @@ const clean = (text: string) =>
     .replace(/&#x27;|&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x([0-9a-f]{1,6});/gi, (_, hex: string) => char(parseInt(hex, 16)))
+    .replace(/&#(\d{1,7});/g, (_, dec: string) => char(Number(dec)))
     .replace(/\s+/g, " ")
     .trim();
 
@@ -180,4 +185,4 @@ export const Route = createFileRoute("/api/search")({
       },
     },
   },
-});
+};

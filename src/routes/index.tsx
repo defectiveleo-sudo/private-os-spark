@@ -86,11 +86,14 @@ import {
   BookUser,
   Map as MapIcon,
   History,
+  Puzzle,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Copy as LuCopy, Square as LuSquare, CirclePlus as LuCirclePlus, Scissors as LuScissors, ClipboardPaste as LuClipboardPaste, TextCursorInput as LuTextCursorInput, Trash2 as LuTrash2, ArrowUpDown as LuArrowUpDown, LayoutList as LuLayoutList, Ellipsis as LuEllipsis, PanelRight as LuPanelRight, ArrowUp as LuArrowUp, Images as LuImages, Monitor as LuMonitor, HardDrive as LuHardDrive, Pin as LuPin, FolderOpen as LuFolderOpen, CheckCheck as LuCheckCheck, FlipHorizontal as LuFlipHorizontal, Bold as LuBold, Italic as LuItalic, Underline as LuUnderline, Strikethrough as LuStrikethrough, Subscript as LuSubscript, Superscript as LuSuperscript, Highlighter as LuHighlighter, Baseline as LuBaseline, List as LuList, ListOrdered as LuListOrdered, IndentDecrease as LuIndentDecrease, IndentIncrease as LuIndentIncrease, AlignLeft as LuAlignLeft, AlignCenter as LuAlignCenter, AlignRight as LuAlignRight, AlignJustify as LuAlignJustify, Replace as LuReplace, TextSelect as LuTextSelect, RemoveFormatting as LuRemoveFormatting, AArrowUp as LuAArrowUp, AArrowDown as LuAArrowDown, Table as LuTable, ImagePlus as LuImagePlus, Link as LuLink, SeparatorHorizontal as LuSeparatorHorizontal, CalendarClock as LuCalendarClock, FileDown as LuFileDown, Printer as LuPrinter, Sigma as LuSigma, Eraser as LuEraser, ArrowDownAZ as LuArrowDownAZ, ArrowDownZA as LuArrowDownZA, PaintBucket as LuPaintBucket, DollarSign as LuDollarSign, Percent as LuPercent, Rows3 as LuRows3, Columns3 as LuColumns3, SquarePlus as LuSquarePlus, Presentation as LuPresentation, StickyNote as LuStickyNote, ZoomIn as LuZoomIn, ZoomOut as LuZoomOut, Expand as LuExpand, Fullscreen as LuFullscreen, Shrink as LuShrink, MoveUp as LuMoveUp, MoveDown as LuMoveDown, ImageOff as LuImageOff, BetweenHorizontalStart as LuBetweenHorizontalStart, BetweenVerticalStart as LuBetweenVerticalStart, FilePen as LuFilePen, Clock as LuClock, Calendar as LuCalendar, SquareFunction as LuSquareFunction, Search as LuSearch, FileText as LuFileText, SquareCheck as LuSquareCheck } from "lucide-react";
 import { Backstage, FileGlyph, FolderGlyph, OFFICE, OfficeStatus, OfficeTitle, RBig, RColor, RGroup, RRow, RSmall, RStack, Ribbon, rSelect } from "@/components/office-ui";
 import { CalendarUtility, ClockUtility, PhotosUtility } from "@/components/desktop-utilities";
 import { OsButton } from "@/components/os-button";
+import { BrowserSetup, readBrowserPrefs, saveBrowserPrefs, SEARCH_ENGINES, type BrowserPrefs } from "@/components/browser-setup";
 import { ContactsContent, MailContent, MapsContent, MessagesContent } from "@/components/liquid-apps";
 import { OPTIMIZE_EVENT, OptimizeOverlay, isLowPowerDevice, requestOptimize } from "@/components/optimize-overlay";
 import mountainAsset from "@/assets/private-os-mountains.jpg.asset.json";
@@ -216,10 +219,11 @@ const LINK_APPS = [
 ];
 const linkLauncher = LINK_APPS.map((app) => ({ id: app.id, label: app.label, icon: brandIcon(app.icon) }));
 
-const OS_VERSION = "4.6";
+const OS_VERSION = "4.7";
 // NOVA OS stopped getting updates after 4.1; new features only come to PRIVATE OS.
 const NOVA_FINAL_VERSION = "4.1";
 const CHANGELOG = [
+  { v: "4.7", date: "5 Nov 2026", items: ["PRIVATE Browser looks and works like a desktop browser: tabs sit in the title bar, a flat toolbar with back, forward and reload, a wide address bar that shows private://newtab on the New Tab page, a star, the Shields lion, Extensions, a profile button and the menu", "The first time you open PRIVATE Browser, a Meet PRIVATE Browser page lets you keep the defaults or pick the search engine (Private Search with DuckDuckGo results, or Bing) and the bookmarks bar. Results always come back as a list in the browser, because the search sites block searches that come through the page engine. Reopen it from the menu: Search engine and setup", "Pages open faster: the page engine starts as soon as the browser opens, and pages show up while they load instead of behind an Opening securely screen. A thin bar under the toolbar shows the progress", "Private Word: typing no longer gets erased. The page used to wipe what you typed as soon as anything else on the window changed", "The Search box at the top of Private Excel, PowerPoint and Outlook takes typing again. Press Enter to jump to the next cell or slide that matches, and Outlook filters your mail as you type", "Game Hub shows real pictures of every game, taken from the games themselves, instead of drawn emoji art. Three new games: Clumsy Bird, A Dark Room and Solitaire", "Minecraft: the game gets keyboard focus as soon as it loads, so its press any key screen works without a click first. 26.3 is a very heavy game: if it crashes, or is still on the loading screen after two and a half minutes, the launcher offers to play 1.8.8 instead", "Breakout's start button says Play instead of Play again"] },
   { v: "4.6", date: "4 Nov 2026", items: ["Solid cards everywhere, like the Quick Note cards: windows, menus, the dock, the launcher and widgets are now solid dark panels with no glass blur. Turn it off in Settings › Widgets › Desktop look", "Windows shrink and fade away when you close them, and shrink toward the dock when you minimize them", "Game Hub replaces Games: a big featured game, Continue playing, Favourites, Recommended with genre filters and a page for every game. A Game Hub card on the desktop suggests two games every hour", "Three new arcade games that work with a keyboard, a mouse, touch or a game controller: Blocks, Flappy Jet and Pong", "The Minecraft Launcher: pick a version on the left or in the list, press Play and watch the download. Minecraft 26.3 is there, like on eaglercraft.com, next to 1.12.2 and 1.8.8. If your network blocks the game's server, the game now downloads through PRIVATE OS instead", "Priv-Tube starts videos by itself. When the browser blocks sound, the video starts muted with a Tap to unmute button. After a video ends, Up next counts down from 5, with Cancel and Play now", "Priv-Tube also has Theater mode, Loop, Dislike and an Auto button for autoplay", "The All apps screen has pages: scroll, swipe, use the arrow keys or click the dots", "Right-click the desktop for Reopen (the last app you closed), Hide Sidebar and New sticky note"] },
   { v: "4.5", date: "4 Nov 2026", items: ["The YouTube app is now Priv-Tube, our own YouTube with no account: a Home feed with topics and a Shorts shelf, a Shorts player you scroll through, Live streams, search with suggestions and filters, channel pages, and a watch page with the description, comments and an Up next list that can autoplay", "The Priv-Tube feeds (Home, Shorts, Live and Subscriptions) refresh by themselves every 39 minutes with new videos", "Subscribe to channels, like videos, keep a Watch later list and a History, all saved on this device", "Save a video and it stays in your Priv-Tube library on this device, with its picture, even after you reload. Playing it still needs internet, because YouTube doesn't allow downloading the video file", "Cherrion is now a standalone app like BeeZ. Both open straight away in their own window instead of going through the browser's proxy", "NOVA OS no longer gets updates: it stays on version 4.1 and says so in its Settings. New features now come only to PRIVATE OS", "Cleaner icons for Private Word, Excel, PowerPoint, Outlook, OneNote, Figure Cloud, Media Player, Paint, Settings, Terminal and To Do, and the other Windows-style icons lost their white edges", "Every window has a Full screen button next to Minimize: the app, game or video fills the whole screen, and Esc brings it back", "Minecraft now runs the real Eaglercraft game inside its window instead of the eaglercraft.com website, which refused to open there. Pick 1.8.8 or 1.12.2: the game downloads once (13 to 17 MB), then starts straight away, and worlds are saved in this browser", "Netflix opens in its own browser window, where it can sign in and play. Inside a PRIVATE OS window it stayed black or froze, because Netflix only plays its films on its own site"] },
   { v: "4.4", date: "3 Nov 2026", items: ["New desktop-style app icons for Task Manager, Focus Timer, Converter, PDF Reader, System Info, Activity, Chat and Task view, which only had drawn icons before", "New Green Forest wallpaper in Settings › Wallpaper"] },
@@ -884,7 +888,7 @@ function PrivateOS() {
       case "media": return <MediaApp close={close} />;
       case "about": return <AboutApp close={close} />;
       case "messages": return <WindowFrame title="Messages" icon={MessagesIcon} close={close}><MessagesContent /></WindowFrame>;
-      case "mail": return <WindowFrame title="Mail - Private Outlook" icon={MailIcon} close={close} bar={{ className: "text-white", style: { background: OFFICE.outlook.color }, content: <OfficeTitle brand={OFFICE.outlook} icon={MailIcon} name="Mail" /> }}><MailContent /></WindowFrame>;
+      case "mail": return <OutlookApp close={close} />;
       case "contacts": return <WindowFrame title="Contacts" icon={ContactsIcon} close={close}><ContactsContent openApp={openApp} /></WindowFrame>;
       case "maps": return <WindowFrame title="Maps" icon={MapsIcon} close={close}><MapsContent /></WindowFrame>;
       case "taskmgr": return <TaskManagerApp close={close} wins={openWins} end={closeWindow} show={openApp} />;
@@ -2277,8 +2281,38 @@ function MinecraftApp({ close }: { close: () => void }) {
     };
   }, [state.step]);
   const current = MINECRAFT_VERSIONS.find((item) => item.id === pick) ?? versions[0]!;
+  // 26.3 is a port of the newest Minecraft and is very heavy: on slower computers it can sit on the Mojang
+  // screen for minutes or run out of memory before the main menu. The game writes how far it got to a
+  // journal in this site's storage (the game page shares this origin), so the launcher can tell a crash or
+  // a long start apart and offer the light 1.8.8 build instead of leaving a frozen screen.
+  const launchedAt = useRef(0);
+  const [health, setHealth] = useState<{ state: string; kind?: string | undefined; slow: boolean; hidden?: boolean | undefined } | null>(null);
+  const fastest = versions.find((version) => version.id === "1.8-wasm") ?? versions.find((version) => version.id === "1.8")!;
+  useEffect(() => {
+    if (state.step !== "play" || pick !== "26.3") {
+      setHealth(null);
+      return;
+    }
+    const check = () => {
+      let journal: { state?: string; fatalKind?: string; startedAt?: number } | null = null;
+      try {
+        const raw = localStorage.getItem("eaglercraft26.crashJournal.v2");
+        journal = raw ? JSON.parse(raw) : null;
+      } catch {
+        journal = null;
+      }
+      const fresh = journal && (journal.startedAt ?? 0) >= launchedAt.current - 5000 ? journal : null;
+      const slow = Date.now() - launchedAt.current > 150_000;
+      setHealth((current) => ({ state: fresh?.state ?? "booting", kind: fresh?.fatalKind, slow, hidden: current?.hidden }));
+    };
+    check();
+    const timer = window.setInterval(check, 3000);
+    return () => window.clearInterval(timer);
+  }, [state.step, pick, src]);
   const launch = async (id: MinecraftVersion["id"]) => {
     const version = MINECRAFT_VERSIONS.find((item) => item.id === id)!;
+    launchedAt.current = Date.now();
+    setSrc(null);
     setPick(id);
     try {
       localStorage.setItem("pos-minecraft-version", id);
@@ -2324,7 +2358,21 @@ function MinecraftApp({ close }: { close: () => void }) {
     <WindowFrame title="Minecraft Launcher" icon={MinecraftIcon} close={close} app startMaximized actions={actions}>
       <div className="relative flex-1 overflow-hidden bg-black">
         {state.step === "play" && src ? (
-          <iframe key={src} title="Minecraft" src={src} className="size-full border-0 bg-black" allow="fullscreen; autoplay; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write" />
+          <>
+            {/* Focus goes into the game as soon as it loads, so keys reach it ("press any key" screens) without a click first. */}
+            <iframe key={src} title="Minecraft" src={src} onLoad={(event) => { event.currentTarget.focus(); event.currentTarget.contentWindow?.focus(); }} className="size-full border-0 bg-black" allow="fullscreen; autoplay; gamepad; pointer-lock; keyboard-map; clipboard-read; clipboard-write" />
+            {health && !health.hidden && (health.state === "fatal" || (health.slow && health.state !== "running")) && (
+              <div role={health.state === "fatal" ? "alert" : "status"} className="absolute inset-x-0 bottom-4 mx-auto flex w-fit max-w-[92%] flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-[#1e1e1e]/95 px-4 py-3 text-[12px] text-white shadow-2xl">
+                <span className="max-w-md leading-snug">
+                  {health.state === "fatal"
+                    ? `Minecraft 26.3 stopped${health.kind ? ` (${health.kind.replace(/-/g, " ")})` : ""}. It is a very heavy game and needs a fast computer with a lot of memory.`
+                    : "Minecraft 26.3 is still starting. On slower computers it can take several minutes to reach the main menu."}
+                </span>
+                <button type="button" onClick={() => void launch(fastest.id)} className="h-8 rounded-md bg-[#3c8527] px-3 font-bold outline-none hover:bg-[#45a02f]">Play {fastest.label} instead</button>
+                {health.state !== "fatal" && <button type="button" onClick={() => setHealth((current) => current && { ...current, hidden: true })} className="h-8 rounded-md px-2 text-white/60 outline-none hover:bg-white/10 hover:text-white">Keep waiting</button>}
+              </div>
+            )}
+          </>
         ) : (
           <div className="mc-launcher absolute inset-0 flex text-white">
             <aside className="hidden w-52 shrink-0 flex-col gap-1 border-r border-white/5 bg-[#1e1e1e] p-3 sm:flex">
@@ -2849,30 +2897,61 @@ function PrivateBrowser({ initialUrl, close, nova = false }: { initialUrl: strin
     if (old && old.title === next.title && old.host === next.host && old.loading === next.loading) return current;
     return { ...current, [id]: next };
   }), []);
+  // PRIVATE OS: tabs sit in the title bar, like a desktop browser. NOVA keeps its own strip under the title bar.
+  const [prefs, setPrefs] = useState<BrowserPrefs>(() => (typeof window === "undefined" ? { setupDone: true, engine: "private", bookmarksBar: false } : readBrowserPrefs()));
+  const updatePrefs = (next: BrowserPrefs) => {
+    setPrefs(next);
+    saveBrowserPrefs(next);
+  };
+  // The page engine starts as soon as the window opens (it is usually warm already), so the first page doesn't wait for it.
+  useEffect(() => {
+    if (!nova) void startProxyEngine().catch(() => undefined);
+  }, [nova]);
+  const tabStrip = tabs.map((tab, index) => {
+    const meta = info[tab.id];
+    const active = tab.id === activeTab;
+    const helium = !nova;
+    return (
+      <div key={tab.id} data-active={active ? "" : undefined} data-nodrag={helium ? "" : undefined} onMouseDown={(event) => { if (event.button === 1) { event.preventDefault(); closeTab(tab.id); } }} className={helium ? `hel-tab group flex h-[30px] min-w-[2.75rem] max-w-[13.75rem] flex-1 items-center gap-2 rounded-lg pl-2.5 pr-1` : `chrome-tab group flex h-[34px] min-w-[3.5rem] max-w-[15rem] flex-1 items-center gap-2 pl-3 pr-1.5 text-xs ${active ? "text-foreground" : "text-foreground/65 hover:text-foreground"}`}>
+        <button type="button" role="tab" aria-selected={active} onClick={() => setActiveTab(tab.id)} title={meta?.title ?? "New Tab"} className="flex min-w-0 flex-1 items-center gap-2 text-left">
+          {meta?.loading ? (helium ? <span aria-hidden className="hel-spinner size-4 shrink-0" /> : <RefreshCw className="size-3.5 shrink-0 animate-spin text-primary" />) : meta?.host ? <SiteIcon host={meta.host} /> : <BrandIcon className="size-4 shrink-0" />}
+          <span className={helium ? "truncate text-[12.5px]" : "truncate"}>{meta?.title || "New Tab"}</span>
+        </button>
+        <button type="button" aria-label={`Close tab ${index + 1}`} onClick={() => closeTab(tab.id)} className={helium ? `hel-tab-x grid size-5 shrink-0 place-items-center rounded-full ${active ? "" : "opacity-0 group-hover:opacity-100"}` : `grid size-5 shrink-0 place-items-center rounded-full hover:bg-white/15 ${active ? "" : "opacity-0 group-hover:opacity-100"}`}><X className={helium ? "size-3.5" : "size-3"} strokeWidth={helium ? 2.2 : 2} /></button>
+      </div>
+    );
+  });
+  const pages = tabs.map((tab, index) => <BrowserTab key={tab.id} nova={nova} initialUrl={tab.url} active={tab.id === activeTab} onInfo={(next) => report(tab.id, next)} newTab={addTab} bookmarks={bookmarks} toggleBookmark={toggleBookmark} prefs={prefs} updatePrefs={updatePrefs} first={index === 0} />);
+  if (!nova) {
+    const bar: WindowBar = {
+      className: "hel-strip",
+      content: (
+        <div role="tablist" aria-label="Tabs" className="flex h-full min-w-0 flex-1 items-center gap-1 overflow-x-auto pl-1.5 pr-2">
+          {tabStrip}
+          <button type="button" aria-label="New tab" title="New tab" onClick={() => addTab()} className="hel-btn ml-0.5 grid size-7 shrink-0 place-items-center rounded-full"><Plus className="size-[18px]" strokeWidth={2} /></button>
+        </div>
+      ),
+    };
+    return (
+      <WindowFrame title="PRIVATE Browser" icon={BrandIcon} close={close} bar={bar}>
+        <div className="hel-browser flex min-h-0 flex-1 flex-col">{pages}</div>
+      </WindowFrame>
+    );
+  }
   return (
-    <WindowFrame title={nova ? "Comet" : "PRIVATE Browser"} icon={BrandIcon} close={close}>
+    <WindowFrame title="Comet" icon={BrandIcon} close={close}>
       <div className="chrome-strip flex h-10 shrink-0 items-end overflow-x-auto px-3 pt-1.5" onDoubleClick={(event) => { if (event.target === event.currentTarget) addTab(); }}>
-        {tabs.map((tab, index) => {
-          const meta = info[tab.id];
-          const active = tab.id === activeTab;
-          return (
-            <div key={tab.id} data-active={active ? "" : undefined} onMouseDown={(event) => { if (event.button === 1) { event.preventDefault(); closeTab(tab.id); } }} className={`chrome-tab group flex h-[34px] min-w-[3.5rem] max-w-[15rem] flex-1 items-center gap-2 pl-3 pr-1.5 text-xs ${active ? "text-foreground" : "text-foreground/65 hover:text-foreground"}`}>
-              <button type="button" role="tab" aria-selected={active} onClick={() => setActiveTab(tab.id)} title={meta?.title ?? "New Tab"} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                {meta?.loading ? <RefreshCw className="size-3.5 shrink-0 animate-spin text-primary" /> : meta?.host ? <SiteIcon host={meta.host} /> : <BrandIcon className="size-4 shrink-0" />}
-                <span className="truncate">{meta?.title || "New Tab"}</span>
-              </button>
-              <button type="button" aria-label={`Close tab ${index + 1}`} onClick={() => closeTab(tab.id)} className={`grid size-5 shrink-0 place-items-center rounded-full hover:bg-white/15 ${active ? "" : "opacity-0 group-hover:opacity-100"}`}><X className="size-3" /></button>
-            </div>
-          );
-        })}
+        {tabStrip}
         <button type="button" aria-label="New tab" title="New tab" onClick={() => addTab()} className="mb-1 ml-1.5 grid size-7 shrink-0 place-items-center rounded-full hover:bg-white/10"><Plus className="size-4" /></button>
       </div>
-      {tabs.map((tab) => <BrowserTab key={tab.id} nova={nova} initialUrl={tab.url} active={tab.id === activeTab} onInfo={(next) => report(tab.id, next)} newTab={addTab} bookmarks={bookmarks} toggleBookmark={toggleBookmark} />)}
+      {pages}
     </WindowFrame>
   );
 }
 
-function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggleBookmark }: { nova: boolean; initialUrl: string | null; active: boolean; onInfo: (info: TabInfo) => void; newTab: (url?: string | null) => void; bookmarks: Bookmark[]; toggleBookmark: (mark: Bookmark) => void }) {
+function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggleBookmark, prefs, updatePrefs, first }: { nova: boolean; initialUrl: string | null; active: boolean; onInfo: (info: TabInfo) => void; newTab: (url?: string | null) => void; bookmarks: Bookmark[]; toggleBookmark: (mark: Bookmark) => void; prefs: BrowserPrefs; updatePrefs: (prefs: BrowserPrefs) => void; first: boolean }) {
+  const helium = !nova;
+  const BrandIcon = nova ? CometIcon : PrivateBrowserIcon;
   const searchStart = initialUrl?.startsWith("search:") ? decodeURIComponent(initialUrl.slice(7)) : null;
   const startUrl = searchStart ? null : initialUrl;
   const [address, setAddress] = useState(startUrl ?? "");
@@ -2896,6 +2975,9 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const [robloxHidden, setRobloxHidden] = useState(false);
   const needsEngine = Boolean(frameTarget) && !gated && !isDirectHost(frameTarget ?? "") && !isRedditUrl(frameTarget ?? "");
   const recentSites = useHistoryList();
+  // The welcome page shows once, in the first tab of the first PRIVATE Browser window.
+  const [setupOpen, setSetupOpen] = useState(() => helium && first && !prefs.setupDone && !initialUrl);
+  const searchEngine = SEARCH_ENGINES.find((item) => item.id === prefs.engine) ?? SEARCH_ENGINES[0]!;
   useEffect(() => {
     if (gated || videoLink) setLoading(false);
   }, [gated, videoLink, frameKey]);
@@ -2971,6 +3053,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   }, [engine, needsEngine, frameTarget, frameKey]);
 
   const show = (url: string) => {
+    setSetupOpen(false);
     setResults(null);
     setHistoryOpen(false);
     retried.current = false;
@@ -2990,7 +3073,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
         .then((response) => response.json() as Promise<{ query?: { search?: { title: string; snippet: string; pageid: number }[] } }>)
         .then((data) => (data.query?.search ?? []).map((item) => ({ title: item.title, url: `https://en.wikipedia.org/?curid=${item.pageid}`, snippet: item.snippet.replace(/<[^>]+>/g, "").replace(/&quot;/g, '"').replace(/&amp;/g, "&") })));
     const fallback = "Web engines weren't reachable, so these results come from Wikipedia.";
-    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+    fetch(`/api/search?q=${encodeURIComponent(query)}${helium ? `&source=${searchEngine.source}` : ""}`)
       .then((response) => response.json() as Promise<{ hits?: SearchHit[]; engine?: string }>)
       .then(async (data) => {
         if (data.hits?.length) return show(data.hits, data.engine ? `Results from ${data.engine}` : undefined);
@@ -3008,7 +3091,11 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
     const clean = value.trim();
     if (!clean) return;
     const isUrl = /^https?:\/\//i.test(clean) || /^(localhost|(?:[\w-]+\.)+[a-z]{2,})([/:?#]|$)/i.test(clean);
-    if (!isUrl) return runSearch(clean);
+    if (!isUrl) {
+      setSetupOpen(false);
+      return runSearch(clean);
+    }
+    setSetupOpen(false);
     const destination = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
     setNav((current) => ({ list: [...current.list.slice(0, current.index + 1), destination], index: current.index + 1 }));
     show(destination);
@@ -3032,6 +3119,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
         : { mode: "engine" as const, src: undefined }
     : null;
   const goHome = () => {
+    setSetupOpen(false);
     setHistoryOpen(false);
     setResults(null);
     setFrameTarget(null);
@@ -3077,9 +3165,90 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
   const selectAll = useRef(false);
   const pretty = !focused && address && /^https?:\/\//i.test(address) ? address.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, "") : address;
   const iconBtn = "grid size-8 shrink-0 place-items-center rounded-full transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent";
+  const hb = "hel-btn grid size-8 shrink-0 place-items-center rounded-full disabled:opacity-40 disabled:hover:bg-transparent";
+  const [panel, setPanel] = useState<null | "menu" | "site" | "extensions" | "profile">(null);
+  const internal = !page && !results;
+  const internalUrl = setupOpen ? "private://setup" : historyOpen ? "private://history" : "private://newtab";
 
   return (
     <div className={active ? "flex min-h-0 flex-1 flex-col" : "hidden"}>
+      {helium ? (
+        <div className="hel-toolbar relative flex h-9 shrink-0 items-center gap-0.5 px-1.5">
+          <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className={hb}><ArrowLeft className="size-[18px]" strokeWidth={2} /></OsButton>
+          <OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className={hb}><ArrowRight className="size-[18px]" strokeWidth={2} /></OsButton>
+          <OsButton label={loading ? "Stop" : "Reload"} onClick={() => { if (loading) setLoading(false); else if (results) runSearch(results.query); else if (page) show(page); }} className={hb}>{loading ? <X className="size-[18px]" strokeWidth={2} /> : <RotateCw className="size-4" strokeWidth={2.2} />}</OsButton>
+          <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); omnibox.current?.blur(); }} className="hel-omni mx-1 flex h-7 min-w-0 flex-1 items-center gap-2 rounded-[7px] pl-2 pr-0.5">
+            {internal && !focused ? (
+              <span className="flex shrink-0 items-center gap-2 pl-0.5 text-[13px] font-medium text-[#e3e3e3]"><BrandIcon className="size-4" />Private<span className="h-4 w-px bg-white/30" /></span>
+            ) : page && !results && !focused ? (
+              <button type="button" aria-label="View site information" title="View site information" onClick={() => setPanel(panel === "site" ? null : "site")} className="hel-btn -ml-1 grid size-6 shrink-0 place-items-center rounded-full"><SlidersHorizontal className="size-3.5" strokeWidth={2} /></button>
+            ) : (
+              <Search className="size-4 shrink-0 text-[#c4c7c5]" strokeWidth={2} />
+            )}
+            <input ref={omnibox} aria-label="Search or enter address" value={pretty} onFocus={(event) => { setFocused(true); selectAll.current = true; const box = event.target; window.setTimeout(() => box.select(), 0); }} onMouseUp={(event) => { if (!selectAll.current) return; selectAll.current = false; event.preventDefault(); event.currentTarget.select(); }} onBlur={() => { setFocused(false); selectAll.current = false; }} onChange={(event) => { selectAll.current = false; setAddress(event.target.value); }} placeholder={internal && !focused ? internalUrl : `Search ${searchEngine.name} or type a URL`} className="min-w-0 flex-1 bg-transparent text-[13px] text-[#e3e3e3] outline-none placeholder:text-[#c4c7c5]" />
+            <button type="button" disabled={!page} aria-label={marked ? "Remove bookmark" : "Bookmark this page"} title={marked ? "Remove bookmark" : "Bookmark this tab"} aria-pressed={marked} onClick={() => page && toggleBookmark({ title: docTitle || hostOf(page) || page, url: page })} className="hel-btn grid size-6 shrink-0 place-items-center rounded-full disabled:opacity-60 disabled:hover:bg-transparent"><Star className={`size-4 ${marked ? "fill-[#8ab4f8] text-[#8ab4f8]" : "text-[#e3e3e3]"}`} strokeWidth={2} /></button>
+          </form>
+          <OsButton label="PRIVATE Shields" onClick={() => setPanel(panel === "site" ? null : "site")} className={hb}><BrandIcon className="size-[19px]" /></OsButton>
+          <OsButton label="Extensions" onClick={() => setPanel(panel === "extensions" ? null : "extensions")} className={hb}><Puzzle className="size-[18px]" strokeWidth={2} /></OsButton>
+          <span aria-hidden className="mx-1 h-5 w-px bg-white/15" />
+          <OsButton label="Profile" onClick={() => setPanel(panel === "profile" ? null : "profile")} className={hb}><CircleUserRound className="size-[19px]" strokeWidth={1.9} /></OsButton>
+          <OsButton label="Browser menu" onClick={() => setPanel(panel === "menu" ? null : "menu")} className={hb}><EllipsisVertical className="size-[18px]" strokeWidth={2.2} /></OsButton>
+          {panel && (
+            <>
+              <div className="fixed inset-0 z-20" onClick={() => setPanel(null)} />
+              <div role={panel === "menu" ? "menu" : "dialog"} aria-label={panel === "site" ? "Site information" : panel === "extensions" ? "Extensions" : panel === "profile" ? "Profile" : "Browser menu"} className={`hel-pop absolute top-full z-30 mt-1 rounded-xl p-1.5 text-[13px] [animation:window-in_.14s_cubic-bezier(.22,1,.36,1)] ${panel === "menu" ? "right-1.5 w-60" : "right-12 w-80"}`}>
+                {panel === "site" && (
+                  <div className="p-2">
+                    <div className="flex items-center gap-3"><BrandIcon className="size-8" /><div className="min-w-0"><p className="font-semibold">PRIVATE Shields</p><p className="truncate text-[12px] text-[#c4c7c5]">{page ? hostOf(page) : "Every site"}</p></div></div>
+                    <ul className="mt-3 space-y-2 text-[12px] text-[#c4c7c5]">
+                      <li className="flex gap-2"><LockKeyhole className="mt-0.5 size-3.5 shrink-0 text-[#8ab4f8]" />Pages load through the secure engine, so the site sees the engine's server, not your network.</li>
+                      <li className="flex gap-2"><ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-[#8ab4f8]" />Cookies and sign-ins stay in this browser on this device.</li>
+                    </ul>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      <button type="button" onClick={() => { clearSiteCookies(); setPanel(null); }} className="hel-chip rounded-full px-3 py-1.5 text-[12px]">Clear cookies</button>
+                      {page && <button type="button" onClick={() => { window.open(page, "_blank", "noopener,noreferrer"); setPanel(null); }} className="hel-chip rounded-full px-3 py-1.5 text-[12px]">Open in a real tab</button>}
+                    </div>
+                  </div>
+                )}
+                {panel === "extensions" && (
+                  <div className="p-2">
+                    <p className="font-semibold">Extensions</p>
+                    <p className="mt-0.5 text-[12px] text-[#c4c7c5]">Built into PRIVATE Browser and always on.</p>
+                    <ul className="mt-2 space-y-1">
+                      {([["Video Engine", "Plays links to video files in a real player."], ["Reddit reader", "Opens Reddit fast, without the proxy."], ["Google sign-in window", "Gmail and Google accounts open in their own window."], ["Roblox cloud", "Plays Roblox games in the cloud."]] as const).map(([name, note]) => (
+                        <li key={name} className="flex items-start gap-2.5 rounded-lg px-1.5 py-1.5"><Puzzle className="mt-0.5 size-4 shrink-0 text-[#8ab4f8]" /><span><span className="block text-[13px]">{name}</span><span className="block text-[11.5px] text-[#c4c7c5]">{note}</span></span></li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 border-t border-white/10 px-1.5 pt-2 text-[11.5px] text-[#9aa0a6]">Chrome Web Store extensions need a real browser: they can't run inside a web page.</p>
+                  </div>
+                )}
+                {panel === "profile" && (
+                  <div className="p-2">
+                    <div className="flex items-center gap-3"><CircleUserRound className="size-9 text-[#8ab4f8]" strokeWidth={1.5} /><div><p className="font-semibold">Personal</p><p className="text-[12px] text-[#c4c7c5]">Not synced. Everything stays on this device.</p></div></div>
+                    <div className="mt-3 grid grid-cols-2 gap-1.5">
+                      <button type="button" onClick={() => { setHistoryOpen(true); setPanel(null); }} className="hel-chip rounded-lg px-3 py-2 text-left text-[12px]"><History className="mb-1 size-4" />History</button>
+                      <button type="button" onClick={() => { updatePrefs({ ...prefs, bookmarksBar: !prefs.bookmarksBar }); setPanel(null); }} className="hel-chip rounded-lg px-3 py-2 text-left text-[12px]"><Star className="mb-1 size-4" />{prefs.bookmarksBar ? "Hide" : "Show"} bookmarks bar</button>
+                    </div>
+                  </div>
+                )}
+                {panel === "menu" && ([
+                  ["New tab", () => newTab(), true],
+                  ["History", () => setHistoryOpen(true), true],
+                  [prefs.bookmarksBar ? "Hide bookmarks bar" : "Show bookmarks bar", () => updatePrefs({ ...prefs, bookmarksBar: !prefs.bookmarksBar }), true],
+                  ["Bookmark this page", () => page && toggleBookmark({ title: docTitle || hostOf(page) || page, url: page }), Boolean(page) && !marked],
+                  ["Open in a real browser tab", () => page && window.open(page, "_blank", "noopener,noreferrer"), Boolean(page)],
+                  ["Clear cookies", clearSiteCookies, true],
+                  ["Search engine and setup", () => { setResults(null); setHistoryOpen(false); setFrameTarget(null); setAddress(""); setLoading(false); setSetupOpen(true); }, true],
+                ] as [string, () => void, boolean][]).map(([label, run, enabled]) => (
+                  <button key={label} type="button" role="menuitem" disabled={!enabled} onClick={() => { run(); setPanel(null); }} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white/10 disabled:opacity-35 disabled:hover:bg-transparent">{label}</button>
+                ))}
+              </div>
+            </>
+          )}
+          {(loading || results?.hits === null) && <div className="absolute inset-x-0 bottom-0 h-[2px] overflow-hidden"><div className="hel-progress h-full w-full origin-left" /></div>}
+        </div>
+      ) : (
+        <>
       <div className="chrome-toolbar relative flex h-11 shrink-0 items-center gap-0.5 px-2">
         <OsButton label="Back" disabled={nav.index <= 0} onClick={() => moveHistory(-1)} className={iconBtn}><ArrowLeft className="size-4" /></OsButton>
         <OsButton label="Forward" disabled={nav.index >= nav.list.length - 1} onClick={() => moveHistory(1)} className={iconBtn}><ArrowRight className="size-4" /></OsButton>
@@ -3118,7 +3287,20 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
           ))}
         </div>
       )}
-      <div className="relative flex-1 overflow-hidden bg-background">
+        </>
+      )}
+      {helium && (bookmarks.length > 0 || prefs.bookmarksBar) && (
+        <div className="hel-toolbar flex h-7 shrink-0 items-center gap-0.5 overflow-x-auto px-2 pb-1">
+          {bookmarks.length === 0 && <span className="px-2 text-[11.5px] text-[#9aa0a6]">Bookmark pages with the star to see them here.</span>}
+          {bookmarks.map((mark) => (
+            <button key={mark.url} type="button" title={mark.url} onClick={() => navigateTo(mark.url)} onContextMenu={(event) => { event.preventDefault(); event.stopPropagation(); toggleBookmark(mark); }} className="hel-btn flex max-w-[10rem] shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] text-[#e3e3e3]">
+              <SiteIcon host={hostOf(mark.url)} className="size-3.5" /><span className="truncate">{mark.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <div className={`relative flex-1 overflow-hidden ${helium ? "bg-[#202124]" : "bg-background"}`}>
+        {setupOpen && <BrowserSetup logo={<BrandIcon className="size-full" />} prefs={prefs} renderIcon={(host) => <SiteIcon host={host} className="size-5" />} done={(next) => { updatePrefs(next); setSetupOpen(false); }} />}
         {results && (
           <div className="absolute inset-0 z-20 overflow-auto bg-background p-4 [animation:rise_.25s_cubic-bezier(.22,1,.36,1)]">
             <div className="mx-auto max-w-2xl">
@@ -3139,9 +3321,40 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
           <RedditView url={frameTarget} go={navigateTo} onReady={(title) => { setDocTitle(title); setLoading(false); }} />
         ) : frame ? <>
           {frameTarget && isRobloxHost(frameTarget) && !robloxHidden && <RobloxBar close={() => setRobloxHidden(true)} />}
-          {loading && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><SiteIcon host={hostOf(frameTarget ?? "")} className="mx-auto size-10 animate-pulse" /><p className="mt-3 text-xs text-muted-foreground">Opening {hostOf(frameTarget ?? "") || "page"} securely…</p></div></div>}
+          {loading && (!helium || (frame.mode === "engine" && engine !== "ready")) && <div className="absolute inset-0 z-10 grid place-items-center bg-background/80"><div className="text-center"><SiteIcon host={hostOf(frameTarget ?? "")} className="mx-auto size-10 animate-pulse" /><p className="mt-3 text-xs text-muted-foreground">Opening {hostOf(frameTarget ?? "") || "page"} securely…</p></div></div>}
           <iframe ref={frameRef} key={frame.mode === "engine" ? "engine" : `${frame.mode}-${frameKey}`} title="PRIVATE Browser page" src={frame.src} onLoad={() => setLoading(false)} className="size-full border-0 bg-background" allow="fullscreen; clipboard-read; clipboard-write; autoplay" sandbox={frame.mode === "direct" ? DIRECT_SANDBOX : frame.mode === "loader" ? PROXY_SANDBOX : undefined} />
-        </> : (
+        </> : helium ? (
+          <div className="hel-ntp flex size-full flex-col items-center overflow-auto px-5 pt-[11%] text-center [animation:rise_.3s_cubic-bezier(.22,1,.36,1)]">
+            <BrandIcon className="size-16" />
+            <p className="mt-3 text-[26px] font-semibold tracking-[.02em] text-[#e3e3e3]">PRIVATE</p>
+            <form onSubmit={(event) => { event.preventDefault(); navigateTo(address); }} className="hel-ntp-search mt-6 flex h-12 w-full max-w-[36rem] items-center gap-3 rounded-full px-5">
+              <Search className="size-[18px] shrink-0 text-[#c4c7c5]" strokeWidth={2} />
+              <input id="home-search" autoFocus={active && !setupOpen} aria-label={`Search ${searchEngine.name} or enter address`} value={address} onChange={(event) => setAddress(event.target.value)} placeholder={`Search ${searchEngine.name} or type a URL`} className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[#e3e3e3] outline-none placeholder:text-[#9aa0a6]" />
+            </form>
+            <div className="mt-8 grid w-full max-w-[36rem] grid-cols-4 gap-1 sm:grid-cols-6">
+              {NTP_SHORTCUTS.map((item) => (
+                <button key={item.url} type="button" aria-label={`Open ${item.title}`} onClick={() => navigateTo(item.url)} className="hel-tile flex flex-col items-center gap-2 rounded-xl px-1 py-3">
+                  <span className="grid size-12 place-items-center rounded-full bg-[#35363a]">{item.url === CHERRION_URL ? <CherryIcon className="size-6" /> : <SiteIcon host={hostOf(item.url)} className="size-6" />}</span>
+                  <span className="w-full truncate text-[12px] text-[#e3e3e3]">{item.title}</span>
+                </button>
+              ))}
+            </div>
+            {recentSites.length > 0 && (
+              <div className="mt-6 w-full max-w-[36rem] text-left">
+                <div className="mb-1.5 flex items-center justify-between px-2"><p className="text-[12px] font-medium text-[#9aa0a6]">Recently visited</p><button type="button" onClick={() => setHistoryOpen(true)} className="text-[12px] text-[#8ab4f8] hover:underline">See all history</button></div>
+                <div className="grid gap-0.5 sm:grid-cols-2">
+                  {recentSites.filter((item, index, list) => list.findIndex((other) => hostOf(other.url) === hostOf(item.url)) === index).slice(0, 6).map((item) => (
+                    <button key={`${item.url}-${item.time}`} type="button" onClick={() => navigateTo(item.url)} className="hel-tile flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-2 text-left">
+                      <SiteIcon host={hostOf(item.url)} />
+                      <span className="min-w-0 truncate text-[13px] text-[#e3e3e3]">{item.title || hostOf(item.url)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="mt-auto flex items-center gap-1.5 pb-5 pt-8 text-[11.5px] text-[#9aa0a6]"><LockKeyhole className="size-3.5" />Pages load through the secure engine · history and sign-ins stay on this device</p>
+          </div>
+        ) : (
           <div className="flex size-full flex-col items-center overflow-auto px-5 pt-[12%] text-center [animation:rise_.35s_cubic-bezier(.22,1,.36,1)]">
             <div className="relative">
               <h2 className="font-['Orbitron',sans-serif] text-[clamp(2rem,6vw,3.4rem)] font-bold leading-none tracking-[.08em] text-primary [text-shadow:0_0_24px_color-mix(in_oklab,var(--primary)_40%,transparent)]">{nova ? "COMET" : "PRIVATE"}</h2>
@@ -3172,7 +3385,7 @@ function BrowserTab({ nova, initialUrl, active, onInfo, newTab, bookmarks, toggl
                 </div>
               </div>
             )}
-            <p className="mt-8 flex items-center gap-1.5 pb-6 text-[11px] text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />Shields on · trackers blocked · history and sign-ins stay on this device</p>
+            <p className="mt-8 flex items-center gap-1.5 pb-6 text-[11px] text-muted-foreground"><ShieldCheck className="size-3.5 text-primary" />Pages load through the secure engine · history and sign-ins stay on this device</p>
           </div>
         )}
       </div>
@@ -4458,7 +4671,7 @@ function HubCard({ openApp }: { openApp: (id: string) => void }) {
       <div className="grid grid-cols-2 gap-2">
         {picks.map((game) => (
           <div key={game.id} className="hub-card-item">
-            <span className={`grid h-14 w-10 shrink-0 place-items-center rounded-md bg-gradient-to-br ${game.tone} text-xl`}>{game.emoji}</span>
+            <img src={hubArt(game.id)} alt="" loading="lazy" decoding="async" draggable={false} className="h-14 w-[4.5rem] shrink-0 rounded-md object-cover" />
             <span className="min-w-0">
               <span className="block truncate text-[11px] font-bold leading-tight">{game.name}</span>
               <span className="block truncate text-[9px] text-white/50">{game.genre}</span>
@@ -5788,27 +6001,33 @@ function SettingsCenter({ wallpaper, setWallpaper, walls, custom, addWall, remov
 }
 
 const FREE_GAMES = [
-  { name: "Hedgewars", sub: "Open-source artillery strategy", url: "https://webwars.link/" },
-  { name: "Diablo (shareware)", sub: "Browser port of the free shareware version", url: "https://johnimril.github.io/diablo_web/" },
+  { id: "hedgewars", name: "Hedgewars", sub: "Open-source artillery strategy", url: "https://webwars.link/" },
+  { id: "diablo", name: "Diablo (shareware)", sub: "Browser port of the free shareware version", url: "https://johnimril.github.io/diablo_web/" },
 ];
 
 // Game Hub (PRIVATE OS 4.6), laid out like the hub in the Figure OS video: a big featured game with a green
 // Play button, a Recommended row, and every game as a poster. All games here run offline in the window,
 // except Minecraft, which opens its own launcher. Plays, favourites and last played are saved on this device.
-type HubGame = { id: string; name: string; sub: string; emoji: string; tone: string; genre: string; kind: "mini" | "arcade" | "app" };
+// 4.7: every game shows a real picture of itself (public/games/<id>.webp, captured from the game running),
+// never drawn art. "web" games are open-source or free games that allow being shown in a frame.
+type HubGame = { id: string; name: string; sub: string; genre: string; kind: "mini" | "arcade" | "app" | "web"; url?: string };
+const hubArt = (id: string) => `/games/${id}.webp`;
 const HUB_GAMES: HubGame[] = [
-  { id: "minecraft", name: "Minecraft", sub: "Build, mine and survive. Versions 1.8.8 to 26.3", emoji: "⛏️", tone: "from-green-500 to-emerald-900", genre: "Sandbox", kind: "app" },
-  ...ARCADE_GAMES.map((game) => ({ ...game, kind: "arcade" as const })),
-  ...MINI_GAMES.map((game) => ({ ...game, genre: game.id === "snake" || game.id === "breakout" ? "Arcade" : "Puzzle", kind: "mini" as const })),
+  { id: "minecraft", name: "Minecraft", sub: "Build, mine and survive. Versions 1.8.8 to 26.3", genre: "Sandbox", kind: "app" },
+  { id: "clumsy-bird", name: "Clumsy Bird", sub: "Flap through the pipes, open-source pixel-art game", genre: "Arcade", kind: "web", url: "https://ellisonleao.github.io/clumsy-bird/" },
+  { id: "dark-room", name: "A Dark Room", sub: "A minimalist text adventure that keeps growing", genre: "Adventure", kind: "web", url: "https://adarkroom.doublespeakgames.com/" },
+  { id: "solitaire", name: "Solitaire", sub: "Klondike, Spider and FreeCell from Solitr", genre: "Cards", kind: "web", url: "https://www.solitr.com/" },
+  ...ARCADE_GAMES.map(({ id, name, sub, genre }) => ({ id, name, sub, genre, kind: "arcade" as const })),
+  ...MINI_GAMES.map(({ id, name, sub }) => ({ id, name, sub, genre: id === "snake" || id === "breakout" ? "Arcade" : "Puzzle", kind: "mini" as const })),
 ];
-const HUB_RATING: Record<string, string> = { minecraft: "9.6", blocks: "9.1", flappy: "8.4", pong: "8.2", snake: "8.7", "2048": "8.9", breakout: "8.5", minesweeper: "8.3", memory: "7.9", tictactoe: "7.6" };
+const HUB_RATING: Record<string, string> = { minecraft: "9.6", "clumsy-bird": "8.6", "dark-room": "9.0", solitaire: "8.4", blocks: "9.1", flappy: "8.4", pong: "8.2", snake: "8.7", "2048": "8.9", breakout: "8.5", minesweeper: "8.3", memory: "7.9", tictactoe: "7.6" };
 type GameStats = Record<string, { plays: number; last: number; fav?: boolean }>;
 
 function GamePoster({ game, onOpen, onPlay, wide = false }: { game: HubGame; onOpen: () => void; onPlay: () => void; wide?: boolean }) {
   return (
     <div className={`hub-poster group relative overflow-hidden rounded-xl border border-white/10 bg-[#18181b] ${wide ? "flex items-center gap-3 p-2" : ""}`}>
-      <button type="button" aria-label={`About ${game.name}`} onClick={onOpen} className={`block bg-gradient-to-br ${game.tone} ${wide ? "grid h-16 w-12 shrink-0 place-items-center rounded-lg text-2xl" : "grid h-28 w-full place-items-center text-5xl"}`}>
-        <span className="transition-transform duration-300 group-hover:scale-110">{game.emoji}</span>
+      <button type="button" aria-label={`About ${game.name}`} onClick={onOpen} className={`relative block shrink-0 overflow-hidden bg-black ${wide ? "h-14 w-24 rounded-lg" : "aspect-video w-full"}`}>
+        <img src={hubArt(game.id)} alt="" loading="lazy" decoding="async" draggable={false} className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.06]" />
       </button>
       <div className={wide ? "min-w-0 flex-1" : "p-2.5"}>
         <p className="truncate text-[13px] font-bold">{game.name}</p>
@@ -5880,7 +6099,13 @@ function GamesApp({ close, launch, openApp }: { close: () => void; launch: (url:
       <WindowFrame title={`Game Hub · ${current.name}`} icon={GamesIcon} close={close} actions={padChip}>
         <div className="hub flex-1 overflow-auto p-4">
           <button type="button" onClick={() => setPlaying(null)} className="mb-3 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/15"><ArrowLeft className="size-3.5" />Game Hub</button>
-          <div key={current.id} className="mx-auto max-w-lg [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]">{current.kind === "arcade" ? <ArcadeGame id={current.id as ArcadeId} /> : <MiniGame id={current.id as MiniGameId} />}</div>
+          {current.kind === "web" && current.url ? (
+            <div key={current.id} className="relative h-[calc(100%-2.75rem)] min-h-80 overflow-hidden rounded-xl bg-black [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]">
+              <iframe title={current.name} src={current.url} className="size-full border-0" allow={ENGINE_FRAME_PERMISSIONS} sandbox={SITE_FRAME_SANDBOX} />
+            </div>
+          ) : (
+            <div key={current.id} className="mx-auto max-w-lg [animation:window-in_.25s_cubic-bezier(.22,1,.36,1)]">{current.kind === "arcade" ? <ArcadeGame id={current.id as ArcadeId} /> : <MiniGame id={current.id as MiniGameId} />}</div>
+          )}
         </div>
       </WindowFrame>
     );
@@ -5889,8 +6114,8 @@ function GamesApp({ close, launch, openApp }: { close: () => void; launch: (url:
   return (
     <WindowFrame title="Game Hub" icon={GamesIcon} close={close} actions={padChip}>
       <div className="hub flex-1 overflow-auto bg-[#0f0f11]">
-        <div className={`hub-hero relative overflow-hidden bg-gradient-to-br ${featured.tone}`}>
-          <span aria-hidden className="hub-hero-art">{featured.emoji}</span>
+        <div className="hub-hero relative overflow-hidden bg-black">
+          <img key={featured.id} src={hubArt(featured.id)} alt="" decoding="async" draggable={false} className="hub-hero-img absolute inset-0 size-full object-cover" />
           <div className="relative z-[1] flex min-h-56 flex-col justify-end gap-3 bg-gradient-to-r from-black/85 via-black/55 to-transparent p-5 sm:p-7">
             {detail && <button type="button" aria-label="Back to all games" onClick={() => setDetail(null)} className="absolute left-4 top-4 grid size-8 place-items-center rounded-full bg-black/50 hover:bg-black/70"><ChevronLeft className="size-4" /></button>}
             <p className="text-[10px] font-bold uppercase tracking-[.2em] text-white/60">{detail ? "Game" : "Featured"}</p>
@@ -5941,8 +6166,8 @@ function GamesApp({ close, launch, openApp }: { close: () => void; launch: (url:
             <p className="hub-label">Free to play on the web</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {FREE_GAMES.map((game) => (
-                <button key={game.url} type="button" onClick={() => launch(game.url)} className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#18181b] p-3 text-left hover:bg-[#202024]">
-                  <GamesIcon className="size-10 shrink-0" />
+                <button key={game.url} type="button" onClick={() => launch(game.url)} className="hub-poster flex items-center gap-3 rounded-xl border border-white/10 bg-[#18181b] p-2 text-left hover:bg-[#202024]">
+                  <img src={hubArt(game.id)} alt="" loading="lazy" decoding="async" draggable={false} className="h-14 w-24 shrink-0 rounded-lg object-cover" />
                   <span className="min-w-0"><span className="block text-sm font-semibold">{game.name}</span><span className="block truncate text-[11px] text-white/50">{game.sub}</span></span>
                 </button>
               ))}
@@ -6443,6 +6668,10 @@ function WriterApp({ close }: { close: () => void }) {
     readState();
     setRev((value) => value + 1);
   };
+  // The page starts with one empty paragraph. It is set once here, not through React, so React never wipes what you type.
+  useEffect(() => {
+    if (page.current && !page.current.innerHTML) page.current.innerHTML = "<p><br></p>";
+  }, []);
   const cmd = (command: string, value?: string) => {
     page.current?.focus();
     document.execCommand(command, false, value);
@@ -6683,7 +6912,6 @@ function WriterApp({ close }: { close: () => void }) {
               onKeyDown={(event) => {
                 if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); saveNow(); }
               }}
-              dangerouslySetInnerHTML={{ __html: "<p><br></p>" }}
               className="doc-page bg-white text-[12pt] leading-[1.15] text-black shadow-[0_0_0_1px_rgb(0_0_0/.06),0_2px_8px_rgb(0_0_0/.12)] outline-none"
               style={{ width: pageW, minHeight: pageH, padding: pad, fontFamily: docFont }}
             />
@@ -6795,6 +7023,14 @@ function SlidesApp({ close }: { close: () => void }) {
   const [autoSave, setAutoSave] = useState(false);
   const [rev, setRev] = useState(0);
   const [epoch, setEpoch] = useState(0);
+  // Search box: go to the next slide whose title or text contains the words.
+  const findSlide = (text: string) => {
+    const q = text.toLowerCase();
+    const hits = slides.map((slide, at) => ({ slide, at })).filter(({ slide }) => `${slide.title} ${slide.body}`.toLowerCase().includes(q)).map(({ at }) => at);
+    if (!hits.length) { setMsg(`No slide contains “${text}”`); return; }
+    setIndex(hits.find((at) => at > index) ?? hits[0]!);
+    setMsg(`Found “${text}” on ${hits.length} slide${hits.length === 1 ? "" : "s"}`);
+  };
   const undo = () => { history.undo(); setEpoch((value) => value + 1); setRev((value) => value + 1); };
   const redo = () => { history.redo(); setEpoch((value) => value + 1); setRev((value) => value + 1); };
   const input = useRef<HTMLInputElement>(null);
@@ -6958,7 +7194,7 @@ function SlidesApp({ close }: { close: () => void }) {
       title={`${name} - Private PowerPoint`}
       icon={SlidesIcon}
       close={close}
-      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={SlidesIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={undo} onRedo={redo} /> }}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle onFind={findSlide} brand={brand} icon={SlidesIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={undo} onRedo={redo} /> }}
     >
       <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light" } as React.CSSProperties}>
         <Ribbon brand={brand} tabs={["Home", "Insert", "Design", "Slide Show", "View"]} tab={tab} setTab={setTab} onFile={() => setBackstage(true)} onShare={download}>{ribbon[tab]}</Ribbon>
@@ -7082,6 +7318,15 @@ function showCell(value: string, num: CellFmt["num"]) {
   return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function OutlookApp({ close }: { close: () => void }) {
+  const [query, setQuery] = useState("");
+  return (
+    <WindowFrame title="Mail - Private Outlook" icon={MailIcon} close={close} bar={{ className: "text-white", style: { background: OFFICE.outlook.color }, content: <OfficeTitle brand={OFFICE.outlook} icon={MailIcon} name="Mail" search={query} onSearch={setQuery} /> }}>
+      <MailContent query={query} />
+    </WindowFrame>
+  );
+}
+
 function SheetsApp({ close }: { close: () => void }) {
   const brand = OFFICE.excel;
   const fs = useFs();
@@ -7136,6 +7381,17 @@ function SheetsApp({ close }: { close: () => void }) {
     forRange((_key, current) => ({ ...current, [key]: on }));
   };
   const setFmt = (patch: CellFmt) => forRange((_key, current) => ({ ...current, ...patch }));
+  // Search box: jump to the first cell after the selected one that contains the text.
+  const findCell = (text: string) => {
+    const q = text.toLowerCase();
+    const cells: [number, number][] = [];
+    data.forEach((row, r) => row.forEach((value, c) => { if (String(value).toLowerCase().includes(q)) cells.push([r, c]); }));
+    if (!cells.length) { setMsg(`No cell contains “${text}”`); return; }
+    const next = cells.find(([r, c]) => r > sel.r || (r === sel.r && c > sel.c)) ?? cells[0]!;
+    setSel({ r: next[0], c: next[1] }); setEnd({ r: next[0], c: next[1] });
+    window.setTimeout(() => document.getElementById(`cell-${next[0]}-${next[1]}`)?.focus(), 0);
+    setMsg(`Found “${text}” in ${cells.length} cell${cells.length === 1 ? "" : "s"}`);
+  };
   const goTo = (r: number, c: number, extend = false) => {
     const rr = Math.max(0, Math.min(data.length - 1, r));
     const cc = Math.max(0, Math.min(cols - 1, c));
@@ -7413,7 +7669,7 @@ function SheetsApp({ close }: { close: () => void }) {
       title={`${name} - Private Excel`}
       icon={SheetsIcon}
       close={close}
-      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle brand={brand} icon={SheetsIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={() => { history.undo(); setRev((value) => value + 1); }} onRedo={() => { history.redo(); setRev((value) => value + 1); }} /> }}
+      bar={{ className: "text-white", style: { background: brand.color }, content: <OfficeTitle onFind={findCell} brand={brand} icon={SheetsIcon} name={name} status={status} autoSave={autoSave} onAutoSave={setAutoSave} onSave={saveNow} onUndo={() => { history.undo(); setRev((value) => value + 1); }} onRedo={() => { history.redo(); setRev((value) => value + 1); }} /> }}
     >
       <div className="office relative flex min-h-0 flex-1 flex-col bg-[#f3f3f3] text-zinc-900" style={{ "--office": brand.color, colorScheme: "light" } as React.CSSProperties}>
         <Ribbon brand={brand} tabs={["Home", "Insert", "Formulas", "Data", "View"]} tab={tab} setTab={setTab} onFile={() => setBackstage(true)} onShare={download}>{ribbon[tab]}</Ribbon>

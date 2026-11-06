@@ -5,6 +5,8 @@ type Hit = { title: string; url: string; snippet: string; image?: string };
 
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
+const char = (code: number) => (code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "");
+
 const clean = (text: string) =>
   text
     .replace(/<[^>]+>/g, "")
@@ -13,6 +15,9 @@ const clean = (text: string) =>
     .replace(/&#x27;|&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x([0-9a-f]{1,6});/gi, (_, hex: string) => char(parseInt(hex, 16)))
+    .replace(/&#(\d{1,7});/g, (_, dec: string) => char(Number(dec)))
     .replace(/\s+/g, " ")
     .trim();
 
@@ -157,7 +162,11 @@ export const Route = createFileRoute("/api/search")({
         const headers = { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" };
         if (!q) return new Response(JSON.stringify({ hits: [] }), { headers });
         const errors: string[] = [];
-        for (const [engine, run] of [["duckduckgo", ddgHtml], ["duckduckgo-lite", ddgLite], ["bing", bing], ["mojeek", mojeek], ["wikipedia", wikipedia]] as const) {
+        // ?source=bing asks for Bing first (the browser's search engine setting); DuckDuckGo leads otherwise.
+        const order = [["duckduckgo", ddgHtml], ["duckduckgo-lite", ddgLite], ["bing", bing], ["mojeek", mojeek], ["wikipedia", wikipedia]] as const;
+        const source = new URL(request.url).searchParams.get("source");
+        const runs = source === "bing" ? [order[2], order[0], order[1], order[3], order[4]] : order;
+        for (const [engine, run] of runs) {
           try {
             const hits = (await run(q)).slice(0, 12);
             if (hits.length > 0) {

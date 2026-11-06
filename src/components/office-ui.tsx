@@ -1,6 +1,6 @@
 // Shared pieces for the Office-style apps (Word, Excel, PowerPoint, OneNote, Outlook) and File Explorer:
 // a coloured title bar, ribbon tabs and groups, the File (backstage) page and a Windows status bar.
-import type { ComponentType, ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { ArrowLeft, FilePlus2, FolderOpen, Minus, Plus, Redo2, Save, Search, Undo2 } from "lucide-react";
 
 type Icon = ComponentType<{ className?: string; style?: React.CSSProperties }>;
@@ -26,7 +26,10 @@ const userInitials = () => {
 };
 
 // Content of the window title bar for an Office app. The window adds the Windows caption buttons on the right.
-export function OfficeTitle({ brand, icon: AppIcon, name, status, autoSave, onAutoSave, onSave, onUndo, onRedo, search, onSearch }: { brand: OfficeBrand; icon: Icon; name: string; status?: string; autoSave?: boolean; onAutoSave?: (on: boolean) => void; onSave?: () => void; onUndo?: () => void; onRedo?: () => void; search?: string; onSearch?: (value: string) => void }) {
+export function OfficeTitle({ brand, icon: AppIcon, name, status, autoSave, onAutoSave, onSave, onUndo, onRedo, search, onSearch, onFind }: { brand: OfficeBrand; icon: Icon; name: string; status?: string; autoSave?: boolean; onAutoSave?: (on: boolean) => void; onSave?: () => void; onUndo?: () => void; onRedo?: () => void; search?: string; onSearch?: (value: string) => void; onFind?: (value: string) => void }) {
+  // The box keeps its own text when the app doesn't, so it can always be typed in. Enter runs the search.
+  const [own, setOwn] = useState("");
+  const value = onSearch ? (search ?? "") : own;
   const qa = "grid size-7 place-items-center rounded hover:bg-white/15";
   return (
     <div className="grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-2 pl-2 text-white" style={{ fontFamily: "'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif" }}>
@@ -48,7 +51,7 @@ export function OfficeTitle({ brand, icon: AppIcon, name, status, autoSave, onAu
       </div>
       <label className="hidden h-7 w-[min(34vw,360px)] items-center gap-2 rounded-md bg-white/20 px-2.5 text-[12px] text-white/85 focus-within:bg-white focus-within:text-zinc-800 md:flex">
         <Search className="size-3.5 shrink-0" />
-        <input value={search ?? ""} onChange={(event) => onSearch?.(event.target.value)} placeholder="Search" aria-label="Search" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-current" />
+        <input value={value} onChange={(event) => (onSearch ? onSearch(event.target.value) : setOwn(event.target.value))} onKeyDown={(event) => { if (event.key === "Enter" && value.trim()) { event.preventDefault(); if (onFind) onFind(value.trim()); else (window as unknown as { find?: (text: string) => boolean }).find?.(value.trim()); } }} placeholder="Search" aria-label="Search" className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-current" />
       </label>
       <span className="truncate text-center text-[12px] md:hidden">{name}</span>
       <div className="flex items-center justify-end pr-2">
